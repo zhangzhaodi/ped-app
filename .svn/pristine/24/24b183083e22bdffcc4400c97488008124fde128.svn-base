@@ -1,0 +1,213 @@
+import Vue from "vue";
+import Router from "vue-router";
+import { format } from "path";
+const PhoneTransfer =()=> import('../pages/phoneTransfer');
+const Remittance =()=> import('../pages/remittance');
+const LinkmanTransfer =()=> import('../pages/linkmanTransfer');
+const CardTransfer =()=> import('../pages/cardTransfer');
+const Config =()=> import('../pages/config/index');
+const SetCard =()=> import('../pages/config/setCard');
+const SetPhone =()=> import('../pages/config/setPhone');
+const ChangePhone =()=> import('../pages/config/changePhone');
+const AllPayee =()=> import('../pages/allPayee/index');
+const Add =()=> import('../pages/allPayee/add');
+const Detail =()=> import('../pages/allPayee/detail');
+const Edit =()=> import('../pages/allPayee/edit');
+//预约转账
+const OrderAdd =()=> import('../pages/subscribe/add');
+// const OrderEdit = ()=>import("../pages/Subscribe/edit");
+const OrderList =()=> import('../pages/subscribe/orderList');
+const OrderDetail =()=> import('../pages/subscribe/orderDetail');
+const Record =()=> import('../pages/record/index');
+const RecordDetail =()=> import('../pages/record/detail');
+const ResultPage =()=> import('../pages/resultPage');
+// import ResultPage from "../pages/ResultPage";
+Vue.use(Router);
+
+const router = new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/Remittance"
+    },
+    {
+      path: "/remittance",
+      name: "remittance",
+      component: Remittance,
+      meta: {
+        title: "转账",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/cardTransfer",
+      name: "cardTransfer",
+      component: CardTransfer,
+      meta: {
+        title: "银行账户转账",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/phoneTransfer",
+      name: "phoneTransfer",
+      component: PhoneTransfer,
+      meta: {
+        title: "手机号转账",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/linkmanTransfer",
+      name: "linkmanTransfer",
+      component: LinkmanTransfer,
+      meta: {
+        title: "常用联系人转账",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/config",
+      name: "config",
+      component: Config,
+      meta: {
+        title: "转账设置",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/config/setCard",
+      name: "setCard",
+      component: SetCard,
+      meta: {
+        title: "设置转账银行卡",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/config/setPhone",
+      name: "setPhone",
+      component: SetPhone,
+      meta: {
+        title: "设置手机号收款",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/config/changePhone",
+      name: "changePhone",
+      component: ChangePhone,
+      meta: {
+        title: "设置手机号收款",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/allPayee",
+      name: "allPayee",
+      component: AllPayee,
+      meta: {
+        title: "全部收款人",
+        keepAlive: false
+      },
+    },
+    {
+      path: "/allPayee/add",
+      name: "payeeAdd",
+      component: Add,
+      meta: {
+        title: "新增收款人",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/allPayee/detail",
+      name: "payeeDetail",
+      component: Detail,
+      meta: {
+        title: "收款人详情",
+        right: "编辑",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/allPayee/edit",
+      name: "edit",
+      component: Edit,
+      meta: {
+        title: "编辑收款人",
+        right: "完成",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/subscribe/add",
+      name: "orderAdd",
+      component: OrderAdd, 
+      meta: {
+        title: "转账预约",
+        keepAlive: false
+      }
+    },
+    // {
+    //   path: "/subscribe/edit",
+    //   name: "orderEdit",
+    //   component: OrderEdit, 
+    //   meta: {
+    //     title: "编辑预约转账",
+    //     keepAlive: false
+    //   }
+    // },
+    {
+      path: "/subscribe/orderList",
+      name: "orderList",
+      component: OrderList, 
+      meta: {
+        title: "预约转账",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/subscribe/orderDetail",
+      name: "orderDetail",
+      component: OrderDetail, 
+      meta: {
+        title: "预约转账详情",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/result",
+      name: "result",
+      component: ResultPage, 
+      meta: {
+        title: "转账结果",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/record",
+      name: "record",
+      component: Record, 
+      meta: {
+        title: "转账记录",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/record/detail",
+      name: "recordDetail",
+      component: RecordDetail, 
+      meta: {
+        title: "转账详情",
+        keepAlive: false
+      }
+    }
+  ]
+});
+
+// router.beforeEach((to, from, next) => {
+//   // ...
+//   next()
+// })
+export default router

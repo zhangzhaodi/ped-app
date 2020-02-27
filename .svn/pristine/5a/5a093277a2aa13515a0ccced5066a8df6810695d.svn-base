@@ -1,0 +1,292 @@
+<template>
+  <van-popup :overlay-style="{background:'#fff',opacity: 0}" v-model="visible" :style="{  height: '100%',width: '100%' }"  position="right" >
+    <div class="outer">
+      <!-- <Myheader title="选择开户网点" :params="headerParams"  @click="onClickLeft"></Myheader> -->
+        <span slot="left" @click="onClickLeft"  id="teshu" class="iconfont iconic_back"></span>
+      <van-nav-bar
+          title="选择开户网点"
+        />
+      <!-- <search></search> -->
+      <!-- 搜索 -->
+      <div class="searchone">
+        <form action="/">
+          <van-search
+            v-model="value"
+            :left-icon="false"
+            placeholder="请输入搜索关键词"
+            :show-action="false"
+            shape="round"
+            @search="onSearch"
+            @cancel="onCancel"
+            @input="oninput($event)"
+          >
+          <!-- <div slot="action" @click="onSearch">搜索</div> -->
+        </van-search>
+      </form>
+      </div>
+      <!-- 内容 -->
+      <Scroller>
+        <van-index-bar
+          :z-index="10"
+          :sticky-offset-top="54"
+        >
+          <div
+            v-for="(item,index) in indexListDatA"
+            :key="index"
+          >
+            <van-index-anchor
+              style="visibility: hidden;height: 0;"
+              :index="item.anchor"
+            >{{item.anchor}}</van-index-anchor>
+            <van-cell
+              v-for="(child,index) in item.children"
+              :key="index"
+              :title="child.DEPTNAME"
+              :clickable="true"
+              @click="selectItem(child)"
+            />
+          </div>
+        </van-index-bar>
+      </Scroller>
+    </div>
+  </van-popup>
+</template>
+<script>
+import { IndexBar, IndexAnchor, Cell,Popup, Toast, NavBar,Search } from "vant";
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+var Pinyin = require("@/tools/pinyin.js").Pinyin;
+// import Search from "./components/Search";
+export default {
+  components: {
+    Search,
+    Myheader: Header,
+    [IndexBar.name]: IndexBar,
+    [IndexAnchor.name]: IndexAnchor,
+    [Cell.name]: Cell,
+    [Toast.name]: Toast,
+    [NavBar.name]: NavBar,
+    [Popup.name]: Popup,
+    Scroller
+  },
+   props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    datainfo:{
+      require:true
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false,
+      },
+      value:"",
+      visible: false,
+      data:[],
+      indexAnchor: [],
+      indexListData: [],
+      indexListData1: [],
+        abcList: [
+        { anchor: "A", children: [] },
+        { anchor: "B", children: [] },
+        { anchor: "C", children: [] },
+        { anchor: "D", children: [] },
+        { anchor: "E", children: [] },
+        { anchor: "F", children: [] },
+        { anchor: "G", children: [] },
+        { anchor: "H", children: [] },
+        { anchor: "I", children: [] },
+        { anchor: "J", children: [] },
+        { anchor: "K", children: [] },
+        { anchor: "L", children: [] },
+        { anchor: "M", children: [] },
+        { anchor: "N", children: [] },
+        { anchor: "O", children: [] },
+        { anchor: "P", children: [] },
+        { anchor: "Q", children: [] },
+        { anchor: "R", children: [] },
+        { anchor: "S", children: [] },
+        { anchor: "T", children: [] },
+        { anchor: "U", children: [] },
+        { anchor: "V", children: [] },
+        { anchor: "W", children: [] },
+        { anchor: "X", children: [] },
+        { anchor: "Y", children: [] },
+        { anchor: "Z", children: [] }
+      ],
+      indexListDatA:[],//保存数据
+      indexListData: [],
+      department: {}
+    };
+  },
+  created() {
+  },
+  mounted(){
+  },
+  methods: {
+    //输入
+    oninput(e){
+      console.log(e);
+      if(e != ''){
+        let indexList = [];
+          for(let indexItem of this.indexListData){
+            // console.log(indexItem);
+            let sItem = {
+              anchor:indexItem.anchor,
+              children: []
+            }
+            for(let child of indexItem.children){
+              if(child.DEPTNAME.indexOf(e)>=0){
+                sItem.children.push(child)
+              }
+              // else{
+              //   this.indexListDatA=this.indexListData
+              // }
+            }
+            indexList.push(sItem);
+          }
+          this.indexListDatA = indexList;
+      }else{
+        this.indexListDatA=this.indexListData
+      }
+    },
+    //搜索
+    onSearch(){
+    },
+    //清除
+    onCancel(){
+
+    },
+    setTitle(){
+      window.NativeCall.SetTitle('选择开户网点')
+      window.NativeCall.RegisterHandler('VXBack',()=>{
+        this.$emit('update:show', false)
+      })
+    },
+    onClickLeft() {
+      this.$emit("close", this.department);
+    },
+    selectItem(item) {
+      this.department = item;
+      this.onClickLeft();
+    },
+  unique(arr){
+      for(var i=0,res=[],json={};i<arr.length;i++){
+        if(!json[arr[i]]){
+            json[arr[i]]=1;
+            res.push(arr[i]);
+        }
+      }
+      return res.sort((a,b)=>(a-b));
+    },
+  },
+  watch:{
+    // 监听父组件变化，并赋值
+    show:{
+      handler(val){
+        this.visible = this.show;
+      }
+    },
+    visible:{
+      handler(val){
+        this.$emit('update:show', val)
+      }
+    },
+    datainfo:{
+      handler(val){
+        if(val.length>0){
+      //   let list =[]
+      // for( let item of val){
+      // list.push(item.Group)
+      // }
+      // let List = this.unique(list)
+      // console.log(List)
+      let data = val;
+      // console.log(data,"数组");
+      //第一轮生成带有26个字母的锚点列表
+      let arrList = [];
+      for (let i = 0; i < 26; i++) {
+        let item = {
+          anchor: String.fromCharCode((65 + i)),
+          children: []
+        }
+        arrList.push(item);
+      }
+      //将对应字母数据插入到indexList里
+      data.map(item => {
+        let bankName = item.DEPTNAME;
+        let PinYin = item.Group;
+        // let firstStr = PinYin.target.substring(0, 1).toUpperCase();
+        for (let child of arrList) {
+          //可以加入其他判断 比如 我的账户（使用id作对比）
+          //字母索引插入ss
+          if (child.anchor === PinYin) {
+            child.children.push(item)
+          }
+        }
+      })
+
+      // 第三轮遍历arrList过滤掉无内容素的item,避免空占位
+      let indexList = [], indexAnchor = [];
+      for (let item of arrList) {
+        if (item.children.length > 0) {
+          indexList.push(item);
+          indexAnchor.push(item.anchor)
+        }
+      }
+      this.indexListDatA = indexList;
+      this.indexListData = this.indexListDatA
+      this.indexAnchor = indexAnchor;
+
+      console.log("结果", indexList)
+        }
+      console.log(val)
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/ .van-nav-bar .van-icon {
+  color: #333;
+}
+/deep/ .van-index-bar__index--active {
+  color: #333 !important;
+}
+/deep/ .van-index-bar__index {
+  color: #0085ff;
+}
+/deep/ .van-cell .van-cell__title{
+  height:px2vw(30);
+  font-size:px2vw(30);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(38,38,38,1);
+  line-height:px2vw(30);
+  letter-spacing:px2vw(1);
+}
+.scrollerBox{
+  padding-left: px2vw(40);
+}
+.searchone{
+  width: 100%;
+  height: px2vw(140);
+}
+.van-cell{
+  display: flex;
+  align-items: center;
+}
+.outer #teseshu{
+  display: block;
+  float: left;
+  margin-top:px2vw(20);
+  .iconfont{
+  font-size: px2vw(22);
+  }
+}
+</style>

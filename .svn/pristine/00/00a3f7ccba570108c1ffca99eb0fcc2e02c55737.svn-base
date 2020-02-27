@@ -1,0 +1,26 @@
+<template>
+  <div class="notice">
+    <p>温馨提示</p>
+    <p>1.理财是投资，投资有风险，选择需谨慎；</p>
+    <p>2.理财为理财银行提供的投资策略服务；</p>
+    <p>3. 销售服务由中旅银行App渠道的每一个理财计划都在“理财详情-产品公告”中披露相关信息公告。</p>
+  </div>
+</template>
+
+<script>
+export default {};
+</script>
+<style lang="scss" scoped>
+.notice {
+  margin-top: px2vw(40);
+  font-size: px2vw(22);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: #7D7D7D;
+  line-height: px2vw(30);
+  padding: 0 px2vw(40);
+  p{
+    margin-top: px2vw(6);
+  }
+}
+</style>

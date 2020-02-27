@@ -1,0 +1,80 @@
+<template>
+  <div class="loan">
+    <p class="name">{{name}}<solt v-if="isSubName"
+            name="sub-name"></solt>
+    </p>
+    <ul>
+      <li class="title">
+        <span>贷款类型</span>
+        <span>央行基准利率</span>
+      </li>
+      <li class="tips"
+          v-for="(item,index) in dataList"
+          :key="index">
+        <span>{{item.type}}</span>
+        <span>{{item.benchmark_rate}}%</span>
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    name: {
+      type: String,
+      default: '活期存款'
+    },
+    isSubName: {
+      type: Boolean,
+      default: false
+    },
+    dataList: {
+      type: Array,
+      default: () => []
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.loan {
+  padding: px2vw(40) px2vw(40) 0 px2vw(40);
+  margin-bottom: px2vw(20);
+  background-color: #ffffff;
+  .name {
+    margin-bottom: px2vw(20);
+    font-size: px2vw(32);
+  }
+  ul {
+    li {
+      padding: px2vw(40) 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: px2vw(1) solid #ebeef0;
+
+      &:last-child {
+        border: none;
+      }
+      &.title {
+        font-size: px2vw(30);
+        color: #7d7d7d;
+      }
+      &.tips {
+        font-size: px2vw(28);
+        color: #262626;
+        span {
+          &:last-child {
+            color: #f96159;
+          }
+        }
+      }
+      span {
+        white-space: nowrap;
+        text-align: center;
+      }
+    }
+  }
+}
+</style>

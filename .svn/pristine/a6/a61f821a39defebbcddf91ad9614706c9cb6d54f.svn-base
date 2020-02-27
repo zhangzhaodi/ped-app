@@ -1,0 +1,569 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <Scroller>
+      <div class="outer-box">
+        <div class="info-top">
+          <div class="input-box">
+            <mInput v-model="payee" @input="verify" title="收卡人" placeholder="请填写收卡人姓名"></mInput>
+          </div>
+          <div class="input-box">
+            <mInput :value="address" @click.native="selectPayee" title="所在地区" placeholder="请选择">
+              <i slot="right" class="iconfont">&#xe649;</i>
+            </mInput>
+          </div>
+          <div class="input-box">
+            <!-- <md-textarea-item
+              ref="demo0"
+              title="详细地址"
+              autosize
+              class="example"
+              v-model="detailAddress"
+              placeholder="街道、楼牌号等"
+            />-->
+            <div class="input-left">详细地址</div>
+            <textarea class="textarea" placeholder="街道、楼牌号等" v-model="detailAddress"></textarea>
+            <!-- <div class="textarea" contenteditable="true"  aria-placeholder="街道、楼牌号等">{{detailAddress}}</div> -->
+            <!-- <mInput v-model="detailAddress" @input="verify" title="详细地址" placeholder="街道、楼牌号等"></mInput> -->
+          </div>
+        </div>
+        <div class="info-bottom">
+          <div class="input-box">
+            <mInput
+              v-model="phoneNumber"
+              @input="verify"
+              title="手机号码"
+              type="phone"
+              placeholder="请填写预留手机号码"
+              maxlength="11"
+            ></mInput>
+          </div>
+          <div class="input-box">
+            <mInput
+              v-model="comfirmNumber"
+              @input="verify"
+              title="确认号码"
+              type="phone"
+              placeholder="请再次填写手机号码，确认无误"
+              maxlength="11"
+            ></mInput>
+          </div>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">提交</van-button>
+        </div>
+      </div>
+    </Scroller>
+    <van-popup class="popup-round" round v-model="show" position="bottom">
+      <div class="select-box">
+        <i @click="closePopup" class="iconfont">&#xe62b;</i>
+        <p>请选择</p>
+      </div>
+      <div class="nav-box">
+        <ul v-show="isSelected == 1">
+          <li>
+            <p>请选择</p>
+            <div class="state-bottom"></div>
+          </li>
+          <li></li>
+          <li></li>
+        </ul>
+        <ul v-show="isSelected == 2">
+          <li @click="isSelected = 1">
+            <p class="selected">{{province}}</p>
+          </li>
+          <li>
+            <p>请选择</p>
+            <div class="state-bottom"></div>
+          </li>
+          <li></li>
+        </ul>
+        <ul v-show="isSelected == 3">
+          <li @click="isSelected = 1">
+            <p class="selected">{{province}}</p>
+          </li>
+          <li @click="isSelected = 2">
+            <p class="selected">{{city}}</p>
+          </li>
+          <li>
+            <p>请选择</p>
+            <div class="state-bottom"></div>
+          </li>
+        </ul>
+      </div>
+      <Scroller>
+        <div class="address-list" v-show="isSelected == 1">
+          <van-cell
+            @click="changeSite(2,item.provinceName,item.provinceCode)"
+            v-for="(item,index) in provinces"
+            :key="index"
+            :title="item.provinceName"
+            clickable
+          >
+            <!-- <i slot="right-icon" class="iconfont">&#xe620;</i> -->
+            <van-radio slot="right-icon" :name="item.provinceName">
+              <!-- <img
+                  slot="icon"
+                  slot-scope="props"
+                  v-show="props.checked"
+                  class="check-icon"
+                  :src="props.checked ? icon.active : icon.inactive"
+              />-->
+            </van-radio>
+          </van-cell>
+        </div>
+        <div class="address-list" v-show="isSelected == 2">
+          <van-cell
+            @click="changeSite(3,item.cityName,item.cityCode)"
+            v-for="(item,index) in citys"
+            :key="index"
+            :title="item.cityName"
+            clickable
+          />
+        </div>
+        <div class="address-list" v-show="isSelected == 3">
+          <van-cell
+            @click="changeSite(0,item.areaName,item.areaCode)"
+            v-for="(item,index) in countys"
+            :key="index"
+            :title="item.areaName"
+            clickable
+          />
+        </div>
+        <!-- <div class="list-out" v-for="(item,index) in provinces" :key="index">
+              <div
+                class="list-box"
+                v-show="isSelected == 1"
+                @click="changeSite(2,item.provinceName,item.provinceCode)"
+              >
+                <div class="list-left">{{item.provinceName}}</div>
+                <div class="list-right">
+                  <i v-show="active" class="iconfont">&#xe620;</i>
+                </div>
+              </div>
+        </div>-->
+        <!-- <div class="list-out" v-for="(item,index) in citys" :key="index">
+              <div
+                class="list-box"
+                v-show="isSelected == 2"
+                @click="changeSite(3,item.cityName,item.cityCode)"
+              >
+                <div class="list-left">{{item.cityName}}</div>
+                <div class="list-right">
+                  <i v-show="active" class="iconfont">&#xe620;</i>
+                </div>
+              </div>
+        </div>-->
+        <!-- <div class="list-out" v-for="(item,index) in countys" :key="index">
+              <div
+                class="list-box"
+                v-show="isSelected == 3"
+                @click="changeSite(0,item.areaName,item.areaCode)"
+              >
+                <div class="list-left">{{item.areaName}}</div>
+                <div class="list-right">
+                  <i v-show="active" class="iconfont">&#xe620;</i>
+                </div>
+              </div>
+        </div>-->
+      </Scroller>
+    </van-popup>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import { CountDown, Toast, Popup } from "vant";
+import { TextareaItem } from "mand-mobile";
+import Scroller from "@/components/Scroller.vue";
+
+export default {
+  components: {
+    Myheader: Header,
+    mInput,
+    [CountDown.name]: CountDown,
+    [Toast.name]: Toast,
+    [Popup.name]: Popup,
+    [TextareaItem.name]: TextareaItem,
+    Scroller
+  },
+  data() {
+    return {
+      payee: "", //收卡人
+      address: "",
+      detailAddress: "", //详细地址
+      phoneNumber: "", //手机号
+      comfirmNumber: "", //确认手机号
+      //显示1省2市3县
+      isSelected: 1,
+      showList: 1,
+      forbidden: true,
+      //是否显示popup
+      show: false,
+      //省市县选中状态
+      active: false,
+      cardNum: "",
+      //省市县数据
+      provinces: [
+        // { provinceName: "河南" },
+        // { provinceName: "河北" },
+        // { provinceName: "湖南" },
+        // { provinceName: "湖北" },
+        // { provinceName: "广西" },
+        // { provinceName: "广东" },
+        // { provinceName: "江西" },
+        // { provinceName: "浙江" },
+        // { provinceName: "江苏" },
+        // { provinceName: "北京" }
+      ],
+      province: "",
+      citys: [
+        // { cityName: "郑州" },
+        // { cityName: "郑州" },
+        // { cityName: "郑州" },
+        // { cityName: "郑州" },
+        // { cityName: "郑州" },
+        // { cityName: "郑州" },
+        // { cityName: "郑州" },
+        // { cityName: "郑州" },
+        // { cityName: "郑州" },
+        // { cityName: "郑州" }
+      ],
+      city: "",
+      countys: [
+        // { areaName: "金水区" },
+        // { areaName: "金水区" },
+        // { areaName: "金水区" },
+        // { areaName: "金水区" },
+        // { areaName: "金水区" },
+        // { areaName: "金水区" },
+        // { areaName: "金水区" },
+        // { areaName: "金水区" },
+        // { areaName: "金水区" }
+      ],
+      county: ""
+    };
+  },
+  created() {
+    this.cardNum = this.$route.query.cardNum;
+  },
+  methods: {
+    verify() {
+      if (
+        this.payee.length !== 0 &&
+        this.detailAddress.length !== 0 &&
+        this.phoneNumber.length == 11 &&
+        this.comfirmNumber.length == 11 &&
+        this.phoneNumber == this.comfirmNumber
+      ) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    },
+    next() {
+      this.request(
+        "EntityCardsApply",
+        {
+          BankId: "9999",
+          BranchId: "1699",
+          ChnlId: "39",
+          OperateType: "4",
+          MainAccount: this.cardNum,
+          ApplyType: "0",
+          CustomerNo: "1234",
+          Address: this.detailAddress,
+          ContactInfo: this.phoneNumber,
+          ControlFlag: "1",
+          ChannelType: "0310",
+          BusinessType: "PHNE"
+        },
+        true
+      )
+        .then(res => {
+          console.log(res);
+          this.provinces = res.ProvinceList;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      this.$router.push({
+        name: "submitSucced"
+      });
+    },
+    //打开省市列表
+    selectPayee() {
+      document.activeElement.blur();
+      this.show = true;
+      this.isSelected = 1;
+      this.showList = 1;
+      this.request(
+        "QryProvince",
+        {
+          BranchId: "2336",
+          ChnlId: "62"
+        },
+        true
+      )
+        .then(res => {
+          console.log(res);
+          this.provinces = res.ProvinceList;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //关闭popup
+    closePopup() {
+      this.show = false;
+    },
+    //省市县切换
+    changeSite(value, data, Code) {
+      if (value == 2) {
+        this.request("QryCity", {
+          BranchId: "2336",
+          ChnlId: "62",
+          ProvinceCode: Code
+        })
+          .then(res => {
+            console.log(res);
+            this.citys = res.CityList;
+            this.province = data;
+            this.isSelected = value;
+          })
+          .catch(error => {
+            console.log(error);
+          });
+        // this.province = data;
+        // this.isSelected = value;
+        // this.showList = value;
+      } else if (value == 3) {
+        this.request("QryArea", {
+          BranchId: "2336",
+          ChnlId: "62",
+          CityCode: Code
+        })
+          .then(res => {
+            console.log(res);
+            this.countys = res.AreaList;
+            this.city = data;
+            this.isSelected = value;
+          })
+          .catch(error => {
+            console.log(error);
+          });
+        // this.city = data;
+        // this.isSelected = value;
+        // this.showList = value;
+      } else if (value == 0) {
+        this.county = data;
+        this.show = false;
+        this.address = this.province + this.city + this.county;
+      }
+    },
+    clickDown() {
+      // this.active = true;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  .scrollerBox {
+    margin-top: px2vw(20);
+    background: #f5f6f8;
+    .info-top {
+      padding: 0 px2vw(40);
+      background: #fff;
+      margin-top: px2vw(20);
+      .input-box {
+        border-bottom: 1px solid rgba(235, 238, 240, 1);
+      }
+      .input-box:last-child {
+        border-bottom: 0;
+        display: flex;
+        .input-left {
+          width: px2vw(160);
+          padding: px2vw(40) 0;
+          font-size: px2vw(30);
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+        }
+        .textarea {
+          flex: 1;
+          padding: px2vw(33) 0;
+          font-size: px2vw(30);
+          border: 0;
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+          line-height: px2vw(45);
+          min-height: px2vw(90);
+          resize: none;
+          &::-webkit-input-placeholder {
+            /* WebKit, Blink, Edge */
+            color: #a8a8a8;
+            font-size: px2vw(30);
+            line-height: inherit;
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::-moz-placeholder {
+            /* Mozilla Firefox 19+ */
+            color: #a8a8a8;
+            font-size: px2vw(30);
+            font-family: PingFangSC;
+            font-weight: 300;
+            line-height: inherit;
+          }
+          &::placeholder {
+            /* 大部分现代浏览器 */
+            color: #a8a8a8;
+            font-size: px2vw(30);
+            font-family: PingFangSC;
+            font-weight: 300;
+            line-height: inherit;
+          }
+          &::-ms-input-placeholder {
+            /* Microsoft Edge */
+            color: #a8a8a8;
+            font-size: px2vw(30);
+            font-family: PingFangSC;
+            font-weight: 300;
+            line-height: inherit;
+          }
+        }
+      }
+    }
+    .info-bottom {
+      padding: 0 px2vw(40);
+      background: #fff;
+      margin-top: px2vw(20);
+      .input-box {
+        border-bottom: 1px solid rgba(235, 238, 240, 1);
+      }
+      .input-box:last-child {
+        border-bottom: 0;
+      }
+    }
+    /deep/ .mand-input {
+      .md-field-item-title {
+        width: px2vw(160);
+      }
+      .md-field-item-right {
+        i {
+          font-size: px2vw(22);
+          color: rgba(168, 168, 168, 1);
+        }
+        .more {
+          width: px2vw(12);
+          height: px2vw(22);
+        }
+        .verify {
+          font-size: px2vw(28);
+          font-size: px2vw(28);
+          font-family: PingFangSC;
+          font-weight: 400;
+          color: rgba(62, 143, 255, 1);
+        }
+        .van-count-down {
+          font-size: px2vw(28);
+          font-size: px2vw(28);
+          font-family: PingFangSC;
+          font-weight: 400;
+          color: rgba(168, 168, 168, 1);
+        }
+      }
+    }
+  }
+  .btn-box {
+    padding: 0 px2vw(40);
+  }
+  .van-popup--round {
+    border-radius: px2vw(20) px2vw(20) 0px 0px;
+    .select-box {
+      font-family: PingFangSC-Regular, PingFangSC;
+      display: flex;
+      padding: 0 px2vw(40);
+      i {
+        font-size: px2vw(22);
+        line-height: px2vw(100);
+        margin-right: px2vw(265);
+        color: #7d7d7d;
+      }
+      p {
+        font-size: px2vw(34);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(100);
+      }
+    }
+    .nav-box {
+      background: rgba(255, 255, 255, 1);
+      padding-top: px2vw(38);
+      padding-bottom: px2vw(16);
+      ul {
+        display: flex;
+        li {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 33%;
+          p {
+            font-size: px2vw(30);
+            font-family: PingFangSC-Medium, PingFangSC;
+            font-weight: 500;
+            color: rgba(38, 38, 38, 1);
+            line-height: px2vw(30);
+          }
+          .selected {
+            font-size: px2vw(28);
+            font-family: PingFangSC-Regular, PingFangSC;
+            font-weight: 400;
+            color: rgba(125, 125, 125, 1);
+          }
+          .state-bottom {
+            width: px2vw(40);
+            height: px2vw(4);
+            background: none;
+            border-radius: px2vw(2);
+            margin-top: px2vw(12);
+            background: rgba(38, 38, 38, 1);
+          }
+        }
+      }
+    }
+    .address-list {
+      .list-out {
+        padding-left: px2vw(40);
+        padding-right: px2vw(50);
+        .list-box {
+          border-bottom: 1px solid rgba(239, 240, 241, 1);
+          display: flex;
+          justify-content: space-between;
+          .list-left {
+            font-size: px2vw(30);
+            font-family: PingFangSC-Regular, PingFangSC;
+            font-weight: 400;
+            color: rgba(51, 51, 51, 1);
+            line-height: px2vw(110);
+            letter-spacing: 1px;
+          }
+          i {
+            font-size: px2vw(30);
+            line-height: px2vw(110);
+            color: #3e8fff;
+          }
+        }
+      }
+      .addressActive {
+        background: rgba(244, 245, 247, 1);
+        opacity: 0.5;
+      }
+    }
+  }
+}
+</style>

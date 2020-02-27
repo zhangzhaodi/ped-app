@@ -1,0 +1,68 @@
+<template>
+    <div class="outer">
+    <Myheader
+     :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'#fff'">
+    </Myheader>
+     <div class="content">
+       <Agreement></Agreement>
+     </div>
+    </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Agreement from "@/components/Agreement.vue"
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+export default {
+   components: {
+    Myheader: Header,
+    Agreement
+  },
+  data(){
+    return{
+      headerParams: {
+        leftShow: false,
+        rightShow: false,
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  height: 100%;
+}
+</style>

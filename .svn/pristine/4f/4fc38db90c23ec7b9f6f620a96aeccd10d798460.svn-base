@@ -1,0 +1,338 @@
+<template>
+  <div class="item" @click="toDetail">
+    <!-- 封闭式产品 -->
+    <div v-if="item.modulCode=='1102'" class="it">
+      <div class="left">
+        <!-- 3.8%~5.5%(个人);4.1%~5.9%(机构) -->
+        <p
+          :class="['rate',{'textOver':item.expectProfRate.length>6&&item.expectProfRate.length<=12},{'textOver1':item.expectProfRate.length>12}]"
+        >
+          <span>{{item.expectProfRate}}</span>
+          <span v-if="item.expectProfRate.indexOf('%')==-1">%</span>
+        </p>
+        <p class="text">预期收益率</p>
+      </div>
+      <div class="right">
+        <p class="productName">{{item.productName}}</p>
+        <p class="gatherTime">
+          <span>筹集期:</span>
+          <span>{{item.raiseStartDate|timeFormat}}</span>
+          <span>-</span>
+          <span>{{item.raiseEndDate|timeFormat}}</span>
+        </p>
+        <div class="tabs">
+          <p v-for="(tab,index) in tabs" :key="index" class="tabItem">{{tab}}</p>
+        </div>
+        <p class="rate">
+          <span class="text">剩余额度</span>
+          <span
+            :class="['num',{'green':parseInt(item.subAmtPer)>=50},{'red':parseInt(item.subAmtPer)<50&&parseInt(item.subAmtPer)>0}]"
+          >{{(item.subAmtPer?item.subAmtPer:'0')+'%'}}</span>
+        </p>
+      </div>
+    </div>
+    <!-- 封闭式净值产品 -->
+    <div v-if="item.modulCode=='1303'" class="it">
+      <div class="left">
+        <p
+          :class="['rate',{'textOver':item.benchmark.length>6&&item.benchmark.length<=12},{'textOver1':item.benchmark.length>12}]"
+        >
+          <span>{{item.benchmark|parseFloatTwo}}</span>
+        </p>
+        <p class="text">业绩比较基准</p>
+      </div>
+      <div class="right">
+        <p class="productName">{{item.productName}}</p>
+        <p class="gatherTime">
+          <span>筹集期:</span>
+          <span>{{item.raiseStartDate|timeFormat}}</span>
+          <span>-</span>
+          <span>{{item.raiseEndDate|timeFormat}}</span>
+        </p>
+        <div class="tabs">
+          <p v-for="(tab,index) in tabs" :key="index" class="tabItem">{{tab}}</p>
+        </div>
+        <p class="rate">
+          <span class="text">剩余额度</span>
+          <span
+            :class="['num',{'green':parseInt(item.subAmtPer)>=50},{'red':parseInt(item.subAmtPer)<50&&parseInt(item.subAmtPer)>0}]"
+          >{{(item.subAmtPer?item.subAmtPer:'0')+'%'}}</span>
+        </p>
+      </div>
+    </div>
+    <!-- 周期净值 -->
+    <div v-if="item.modulCode=='1306'" class="it">
+      <div class="left">
+        <p
+          :class="['rate',{'textOver':item.benchmark.length>6&&item.benchmark.length<=12},{'textOver1':item.benchmark.length>12}]"
+        >
+          <span>{{item.benchmark|parseFloatTwo}}</span>
+        </p>
+        <p class="text">业绩比较基准</p>
+      </div>
+      <div class="right">
+        <p class="productName">{{item.productName}}</p>
+        <p class="gatherTime">
+          <span>筹集期:</span>
+          <span>{{item.raiseStartDate|timeFormat}}</span>
+          <span>-</span>
+          <span>{{item.raiseEndDate|timeFormat}}</span>
+        </p>
+        <div class="tabs">
+          <p v-for="(tab,index) in tabs" :key="index" class="tabItem">{{tab}}</p>
+        </div>
+        <p class="rate">
+          <span class="text">剩余额度:</span>
+          <span
+            :class="['num',{'green':parseInt(item.subAmtPer)>=50},{'red':parseInt(item.subAmtPer)<50&&parseInt(item.subAmtPer)>0}]"
+          >{{(item.subAmtPer?item.subAmtPer:'0')+'%'}}</span>
+        </p>
+      </div>
+    </div>
+    <!-- 货币净值 -->
+    <div v-if="item.modulCode=='1307'" class="it">
+      <div class="left">
+        <p class='rate'>
+          <span>{{item.yield|parseFloatTwo}}</span>
+        </p>
+        <p class="text">7日年化</p>
+      </div>
+      <div class="right">
+        <p class="productName">{{item.productName}}</p>
+        <p class="gatherTime">
+          <span>筹集期:</span>
+          <span>{{item.raiseStartDate|timeFormat}}</span>
+          <span>-</span>
+          <span>{{item.raiseEndDate|timeFormat}}</span>
+        </p>
+        <div class="tabs">
+          <p v-for="(tab,index) in tabs" :key="index" class="tabItem">{{tab}}</p>
+        </div>
+        <p class="rate">
+          <span class="text">剩余额度</span>
+          <span
+            :class="['num',{'green':parseInt(item.subAmtPer)>=50},{'red':parseInt(item.subAmtPer)<50&&parseInt(item.subAmtPer)>0}]"
+          >{{(item.subAmtPer?item.subAmtPer:'0')+'%'}}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+export default {
+  props: {
+    item: {
+      require: true
+    }
+  },
+  computed: {
+    day() {
+      // console.log(this.item.prodStartDate,this.item.prodEndDate)
+      function getTime(value) {
+        let arr = [];
+        arr.push(value.slice(0, 4));
+        arr.push(value.slice(4, 6));
+        arr.push(value.slice(6));
+        return arr.join("-");
+      }
+      let start =
+        new Date(getTime(this.item.prodStartDate)).getTime() /
+        1000 /
+        60 /
+        60 /
+        24;
+      let end =
+        new Date(getTime(this.item.prodEndDate)).getTime() /
+        1000 /
+        60 /
+        60 /
+        24;
+      let day = end - start;
+      return day + "天";
+    }
+  },
+  data() {
+    return {
+      tabs: []
+    };
+  },
+  mounted() {
+    // let str= this.item.prd_label.replace(/[\,\@\#\$\%\^\&\*\{\}\:\"\L\<\>\?]/,'') //测试
+    // this.tabs = str.trim().split(/\s+/)
+  },
+  created() {
+    this.tabCreate();
+  },
+  methods: {
+    toDetail() {
+      // console.log(this.item)
+      this.$router.push({ name: "detail", params: this.item });
+    },
+    tabCreate() {
+      let day;
+      if (this.item.modulCode == "1102" || this.item.modulCode == "1303") {
+        day = this.item.investerTerm
+          ? this.item.investerTerm + "天"
+          : "0" + "天";
+      } else if (this.item.modulCode == "1306") {
+        if (this.item.termTypeRange) {
+          day = this.cycleDay(this.item.termTypeRange);
+        } else {
+          day = this.item.cycleDays ? this.item.cycleDays + "天" : "0天";
+        }
+      } else {
+        day = "随时申赎";
+      }
+      this.tabs.push(day);
+      this.tabs.push(this.parseMoney(this.item.perFirstAMT));
+      if (this.item.prd_label) {
+        let arr = this.item.prd_label.split(' ');
+        this.tabs.push(arr[0]);
+      }
+    },
+    parseMoney(val){
+      if(val%10000===0){
+        return val/10000+'万元起'
+      }else{
+        return val+'元起'
+      }
+    },
+    cycleDay(val) {
+      // console.log(val);
+      let value = val.replace(/天/g, "");
+      let arr = value.split(",");
+      if (arr.length <= 1) return arr[0] + "天";
+      let max = Math.max.apply(null, arr);
+      let min = Math.min.apply(null, arr);
+      return min + "天-" + max + "天";
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.item {
+  width: 100%;
+  // height: px2vw(231);
+  background: #fff;
+  position: relative;
+}
+.item:not(:last-child)::after {
+  content: " ";
+  height: px2vw(1);
+  width: px2vw(670);
+  position: absolute;
+  right: 0;
+  bottom: px2vw(-0.5);
+  background: rgba(239, 240, 241, 1);
+}
+.it {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  .left {
+    min-width: px2vw(260);
+    max-width: px2vw(260);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    .rate {
+      font-size: px2vw(0);
+      // line-height: px2vw(54);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(247, 90, 80, 1);
+      
+      span {
+        font-size: px2vw(54);
+        word-break: break-word;
+      }
+    }
+    .textOver {
+      span {
+        font-size: px2vw(37);
+        line-height: px2vw(37);
+      }
+    }
+    .textOver1 {
+      padding-right: px2vw(40);
+      span {
+        font-size: px2vw(24);
+        line-height: px2vw(30);
+      }
+    }
+    .text {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      margin-top: px2vw(14);
+    }
+  }
+  .right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: px2vw(30) px2vw(0) px2vw(31) px2vw(0);
+    // height: px2vw(231);
+    box-sizing: border-box;
+    .productName {
+      font-size: px2vw(32);
+      line-height: px2vw(40);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      // margin-top: px2vw(20);
+    }
+    .gatherTime {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      margin-top: px2vw(20);
+    }
+    .tabs {
+      display: flex;
+      flex-direction: row;
+      margin-top: px2vw(20);
+      .tabItem {
+        background: linear-gradient(
+          212deg,
+          rgba(255, 251, 246, 1) 0%,
+          rgba(255, 244, 233, 1) 100%
+        );
+        border-radius: px2vw(4);
+        padding: px2vw(4) px2vw(8);
+        font-size: px2vw(22);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(227, 158, 92, 1);
+      }
+      .tabItem:not(:first-child) {
+        margin-left: px2vw(20);
+      }
+    }
+    .rate {
+      margin-top: px2vw(20);
+      .text {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(168, 168, 168, 1);
+      }
+      .num {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(168, 168, 168, 1);
+        margin-left: px2vw(10);
+      }
+      .green {
+        color: rgba(39, 205, 110, 1);
+      }
+      .red {
+        color: rgba(247, 90, 80, 1);
+      }
+    }
+  }
+}
+</style>

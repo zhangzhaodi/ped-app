@@ -1,0 +1,196 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <div class="card-box" v-if="cardList == 0">
+        <div class="img-box">
+          <img src="@/assets/myAccount/bianzu2@2x.png" alt />
+        </div>
+        <div class="bindCard">暂无绑定卡</div>
+      </div>
+      <div v-else class="outer-box">
+        <div
+          v-for="(item, index) in cardList"
+          :key="index"
+          class="account-box"
+          @click="unbound(item.BundingAcctNo)"
+        >
+          <div class="left">
+            <!-- <img
+              v-if="item.BankId"
+              src="`http://188.177.155.83:8081/zl/bankIcons/${item.BankId}.png`"
+              alt=""
+            />
+            <img v-else src="@/assets/bankIcons/default.png" alt /> -->
+            <!-- <img
+              class="payee-icon"
+              :src="require(`@/assets/bankIcons/default.png`)"
+              v-real-img="
+                `http://188.177.155.83:8081/zl/bankIcons/${item.BankId}.png`
+              "
+              altqshh
+            /> -->
+            <img :src="tools.bankIconImg(item.ClearBankNo)" alt />
+          </div>
+          <div class="right">
+            <p>{{ item.BundingAcctNo | CardHide }}</p>
+            <span>{{ item.BundingBankName }} | {{ bankType }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">
+            <div class="add-box">
+              <div class="add">
+                <img
+                  src="@/assets/myAccount/myAccount/icon_tianjai@2x.png"
+                  alt
+                />
+              </div>
+              <p>绑定本行或者他行账户</p>
+            </div>
+          </van-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      cardNum: "",
+      bankName: "",
+      bankType: "储蓄卡",
+      forbidden: false,
+      acctName: "",
+      cardList: []
+    };
+  },
+  created() {
+    this.cardNum = this.$route.query.cardNum;
+    this.acctName = this.$route.query.acctName;
+    this.TwoTypeBoundAcctQry();
+  },
+  mounted() {},
+  methods: {
+    //跳到解绑
+    unbound(data) {
+      this.$router.push({
+        name: "unbound",
+        query: { cardNum: this.cardNum, bindCard: data }
+      });
+    },
+    next() {
+      this.$router.push({
+        name: "addBindingCard",
+        query: { cardNum: this.cardNum, acctName: this.acctName }
+      });
+    },
+    TwoTypeBoundAcctQry() {
+      this.request("TwoTypeBoundAcctQry", {
+        BankId: "9999",
+        BranchId: "0101",
+        ChnlId: "39",
+        CardNo: this.cardNum
+        // CardNo: "6223380066040010798"
+      })
+        .then(res => {
+          console.log(res);
+          this.cardList = res.List;
+          console.log(this.cardList);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer-box {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(20);
+  background: #fff;
+  .account-box {
+    padding: px2vw(20) 0;
+    display: flex;
+    border-bottom: 1px solid #ebeef0;
+    .left {
+      img {
+        width: px2vw(55);
+      }
+    }
+    .right {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      margin-left: px2vw(24);
+      p {
+        font-size: px2vw(30);
+        font-family: PingFangSC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        letter-spacing: 1px;
+      }
+      span {
+        font-size: px2vw(24);
+        font-family: PingFangSC;
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+      }
+    }
+  }
+  .account-box:last-child {
+    border-bottom: 0;
+  }
+}
+.card-box {
+  .img-box {
+    width: px2vw(300);
+    margin: 0 auto;
+    margin-top: px2vw(168);
+    img {
+      width: 100%;
+    }
+  }
+  .bindCard {
+    margin-top: px2vw(40);
+    font-size: px2vw(28);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(40);
+    text-align: center;
+  }
+}
+.footer-box {
+  .btn-box {
+    padding: 0 px2vw(40);
+    .van-button {
+      background: none;
+      border: 1px solid rgba(62, 143, 255, 1);
+      color: #3e8fff;
+      .add-box {
+        display: flex;
+        justify-content: center;
+        .add {
+          width: px2vw(40);
+          margin-right: px2vw(20);
+          img {
+            width: 100%;
+            padding-top: px2vw(22);
+          }
+        }
+      }
+    }
+  }
+}
+</style>

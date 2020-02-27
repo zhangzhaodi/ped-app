@@ -1,0 +1,351 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <img src="@/assets/riskAssessment/img_fengxianpinggu@2x.png" />
+      <div class="text1" v-if="data.SignFlag=='1'&&data.CustomerRiskGrade=='0'">
+        <p>您尚未进行个人投资风险承受能力评估，为了保障您的权益，请进行风险评估</p>
+        <van-button @click="toAssessment">开始评估</van-button>
+      </div>
+      <div class="text2" v-else>
+        <p v-if="data.CustomerRiskGrade">
+          <span>您的风险评估等级为</span>
+          <!-- <span
+            class="risk"
+          >{{data.CustomerRiskGrade==1||data.CustomerRiskGrade==2?'保守型':data.CustomerRiskGrade==3||data.CustomerRiskGrade==4?'稳健型':data.CustomerRiskGrade==5||data.CustomerRiskGrade==6?'激进型':''}}</span>-->
+          <span class="risk">{{data.RiskGradeName}}</span>
+        </p>
+        <p v-if="data.RiskValDeadline&&show">
+          <span>风险评估到期日为</span>
+          <span class="date">{{data.RiskValDeadline|timeFormat1}}</span>
+        </p>
+        <van-button
+          @click="toAssessment"
+          v-if="(data.CustomerRiskGrade||data.RiskValDeadline)&&show"
+        >重新评估</van-button>
+      </div>
+    </div>
+    <Mydailog
+      :type="dialog.type"
+      :show="dialog.show"
+      @confirm="confirm"
+      @cancel="cancel"
+      :confirmButtonText="dialog.text"
+    ></Mydailog>
+  </div>
+</template>
+<script>
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+import Header from "@/components/Header/Header.vue";
+import { Button, Toast } from "vant";
+import riskDailog from "../components/riskDailog";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button,
+    [Toast.name]: Toast,
+    Mydailog: riskDailog
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false,
+        rightShow: true
+      },
+      data: {},
+      alldata: [],
+      assessmentList: [],
+      start: 0,
+      pageNum: 10,
+      isDownload: true,
+      from: "",
+      isWhite: false,
+      dialog: {
+        type: null,
+        show: false,
+        text: null
+      },
+      show: false //控制用户信息和按钮展示
+    };
+  },
+  beforeRouteEnter(to, from, next) {
+    // console.log(from);
+    next(vm => {
+      vm.$store.state.manageMoney.toRiskRouter = from.name;
+      if (from.name == "signResult") {
+        vm.$store.state.manageMoney.toRiskRouter = "detail";
+      }
+    });
+  },
+  filters: {
+    timeFormat1(value) {
+      if (!value) {
+        return "";
+      } else {
+        let arr = [];
+        arr.push(value.slice(0, 4));
+        arr.push(value.slice(4, 6));
+        arr.push(value.slice(6));
+        return arr.join("-");
+      }
+    }
+  },
+  methods: {
+    ...mapActions("assessment", ["setAssessmentList"]),
+    getList() {
+      //获取试卷列表
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        ProductType: "1",
+        CustomerType: "1",
+        // CustomerType: "1",
+        CustomerGroup: "Z",
+        QuestionType: "0",
+        CustomerIdentify: this.$store.state.userInfo.CifNo,
+        CustomerIdentifyType: "1",
+        // PositionString: this.start * this.pageNum + 1,
+        // QueryRowsNum: this.pageNum,
+        PositionString: 1,
+        QueryRowsNum: 1
+      };
+      this.request("riskTestQry", { ...params }, true)
+        .then(res => {
+          this.$store.state.manageMoney.ExamPaperNum = res.ExamPaperNum;
+          res.RQAnsList.map(item => {
+            // QustionNum题目
+            // console.log(arr.indexOf(item.QustionNum))
+            this.alldata.push(item);
+          });
+          // this.start++;
+          // this.getList();
+          let arr = [];
+          this.alldata.map(item => {
+            // QustionNum题目
+            // console.log(arr.indexOf(item.QustionNum))
+            let obj = {
+              content: null,
+              options: []
+            };
+            if (arr.indexOf(item.QustionNum) == -1) {
+              //把题号放到一个数组
+              arr.push(item.QustionNum);
+              obj.content = item;
+              this.assessmentList[parseInt(item.QustionNum) - 1] = obj;
+            } else {
+              this.assessmentList[parseInt(item.QustionNum) - 1].options.push(
+                item
+              );
+            }
+          });
+          this.setAssessmentList(this.assessmentList);
+          // console.log(this.$store.state.assessment.assessmentList);
+          this.isDownload = false;
+        })
+        .catch(err => {
+          // alert("下载结束");
+          console.log(this.alldata);
+        });
+    },
+    getUserInfo() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        CustomerIdentifyType: "1",
+        CustomerIdentify: this.$store.state.userInfo.UserId,
+        ProductType: "1"
+      };
+      //风险评定
+      this.request("customerInfoQry", { ...params })
+        .then(res => {
+          this.data = res;
+          if (res.SignFlag == "1") {
+            //已签约
+            this.show = true;
+            this.getList();
+          } else {
+            //未签约
+            this.White();
+          }
+        })
+        .catch(err => {
+          if (err._RejCode == "TimeOut") {
+            this.dialog = {
+              type: "6",
+              show: true,
+              text: "登录"
+            };
+          } else {
+            this.$toast(err._RejMessage);
+          }
+        });
+    },
+    White() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        //可能需要改
+        MonilePhne: this.$store.state.userInfo.CifNo
+        // MonilePhne: this.$store.state.userInfo.Id
+      };
+      this.request("whiteListQry", { ...params })
+        .then(res => {
+          console.log(res);
+          if (res.List.length > 0) {
+            //是白名单，去签约
+            this.dialog = {
+              type: "1",
+              show: true,
+              text: "立即签约"
+            };
+          } else {
+            this.dialog = {
+              type: "2",
+              show: true,
+              text: "立即咨询"
+            };
+          }
+        })
+        .catch(err => {
+          let str = err._RejMessage;
+          this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+        });
+    },
+    toAssessment() {
+      // console.log(res)
+      if (!this.isDownload) {
+        this.$router.push({
+          name: "assessment"
+          // params: { ExamPaperNum: this.ExamPaperNum }
+        });
+      } else {
+        this.$toast("试题下载中请稍后");
+      }
+    },
+    login() {
+      if (this.$store.state.userInfo) {
+        this.getUserInfo();
+      } else {
+        // this.dialog = {
+        //   type: "6",
+        //   show: true,
+        //   text: "登录"
+        // };
+        let params = {
+          ios: "DLoginVController",
+          ClassName: "com.example.zlv_master.activity.login.login.LoginActivity"
+        };
+        window.NativeCall.goToNativePage(params);
+      }
+    },
+    confirm() {
+      //点击弹出的确认按钮
+      this.dialog.show = false;
+      if (this.dialog.type == "1") {
+        //去签约
+        this.dialog.show = false;
+        let _this = this;
+        setTimeout(function() {
+          _this.showOther();
+        }, 500);
+      } else if (this.dialog.type == "2") {
+        //拨打电话
+        let params = {
+          phone: "95755"
+        };
+        window.NativeCall.callPhone(params);
+      } else if (this.dialog.type == "6") {
+        //用户未登录
+        let params = {
+          ios: "DLoginVController",
+          ClassName: "com.example.zlv_master.activity.login.login.LoginActivity"
+        };
+        window.NativeCall.goToNativePage(params);
+      } else if (this.dialog.type == "7") {
+        // alert(1);
+        this.$router.push({
+          name: "signInfo"
+        });
+      }
+    },
+    cancel() {
+      this.dialog.show = false;
+      if (this.dialog.type == "7") {
+        this.$toast("请至我行网点办理");
+      }
+    },
+    showOther() {
+      this.dialog = {
+        type: "7",
+        show: true,
+        cancel: "否",
+        text: "是"
+      };
+    }
+  },
+  created() {
+    this.login();
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 px2vw(47);
+    img {
+      width: px2vw(332);
+      height: px2vw(254);
+      margin-top: px2vw(150);
+    }
+    .text1 {
+      margin-bottom: px2vw(80);
+      margin-top: px2vw(48);
+      p {
+        // max-width: px2vw(349);
+        text-align: center;
+        font-size: px2vw(26);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(40);
+      }
+    }
+    .text2 {
+      margin-bottom: px2vw(80);
+      margin-top: px2vw(48);
+      width: 100%;
+      box-sizing: border-box;
+      p {
+        font-size: 0;
+        // max-width: px2vw(349);
+        text-align: center;
+        span {
+          font-size: px2vw(26);
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+          line-height: px2vw(40);
+        }
+        .risk {
+          color: #ffb52b;
+        }
+      }
+    }
+  }
+  .van-button {
+    width: 100%;
+    height: px2vw(90);
+    line-height: px2vw(90);
+    background: linear-gradient(#6babff, #6c8af9);
+    border-radius: px2vw(45);
+    font-size: px2vw(34);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    margin-top: px2vw(80);
+  }
+}
+</style>

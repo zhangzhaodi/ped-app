@@ -1,0 +1,163 @@
+<template>
+  <div class="edit_page">
+    <Myheader title="编辑名册"
+              :params=" { leftShow: false }" />
+    <div class="content">
+      <div class="phone_name">
+        <label> 名称</label>
+        <input type="text"
+               v-model="paymentName"
+               @focus="showIcon = false"
+               @blur="showIcon = true">
+        <img src="@/assets/payImages/icon_bianji.png"
+             v-show="showIcon">
+        <div class="icon_wrong"
+             v-show="!showIcon"
+             @click="paymentName=''">x</div>
+      </div>
+      <div class="phone_name">
+        <label> {{this.$route.query.payType|filterType}}</label>
+        <input type="text"
+               v-model="paymentNo"
+               @focus="showAccount = false"
+               @blur="showAccount = true">
+        <img src="@/assets/payImages/icon_bianji.png"
+             v-show="showAccount">
+        <div class="icon_wrong"
+             v-show="!showAccount"
+             @click="paymentNo = ''">x</div>
+      </div>
+      <button @click="saveEdit">保存</button>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+
+export default {
+  components: {
+    Myheader: Header
+  },
+  data () {
+    return {
+      paymentName: "",
+      paymentNo: "",
+      showIcon: false,
+      showAccount: true
+    }
+  },
+  watch: {
+    showEdit () {
+      this.paymentName = this.content.name
+      this.paymentNo = this.content.mobile
+    },
+    paymentName () {
+      this.showIcon = true
+    }
+  },
+  filters: {
+    filterType (val) {
+      return val === 4 ? "手机号" : "户号"
+    }
+  },
+  mounted () {
+    this.paymentName = this.$route.query.paymentName
+    this.paymentNo = this.$route.query.paymentNo
+  },
+  methods: {
+    // 保存修改信息
+    saveEdit () {
+      if (!this.paymentNo.trim()) {
+        return
+      } else {
+        const { registerId, payType } = this.$route.query
+        this.request("PaymentRegister", {
+          OperationType: 2, // 操作类型  1新增2修改3查询4删除
+          Type: payType, // 1水费，2电费，3燃气费，4电话费操作类型为新增，修改和查询下必输
+          PaymentNo: this.paymentNo, // 户号
+          PaymentName: this.paymentName, // 户名
+          PaymentId: registerId, // 缴费id
+          BankId: "9999",
+          BranchId: "1001",
+          ChnlId: "62",
+        }).then(res => {
+          if (res.ReturnCode === '000000') {
+            this.$router.go(-1)
+          }
+        })
+      }
+    }
+  }
+}
+</script>
+
+<style lang='scss' scoped>
+.edit_page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1002;
+  background-color: #fff;
+}
+.content {
+  padding-top: px2vw(20);
+  background-color: #f5f6f8;
+  height: 100%;
+}
+.phone_name {
+  background-color: #fff;
+  width: px2vw(750);
+  height: px2vw(110);
+  display: flex;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 1);
+  border-bottom: 1px solid #eff0f1;
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  align-items: center;
+  label {
+    font-size: px2vw(30);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+  }
+  input {
+    width: px2vw(410);
+    height: px2vw(109);
+    line-height: px2vw(109);
+    font-size: px2vw(30);
+  }
+  img {
+    width: px2vw(34);
+    height: px2vw(34);
+  }
+}
+button {
+  width: px2vw(670);
+  height: px2vw(90);
+  font-size: px2vw(34);
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+  background: linear-gradient(
+    270deg,
+    rgba(107, 171, 255, 1) 0%,
+    rgba(108, 138, 249, 1) 100%
+  );
+  border-radius: px2vw(45);
+  margin: px2vw(100) px2vw(40);
+}
+.icon_wrong {
+  width: px2vw(28);
+  height: px2vw(28);
+  background-color: #cccccc;
+  font-size: px2vw(24);
+  color: #ffffff;
+  text-align: center;
+  line-height: px2vw(24);
+  border-radius: px2vw(28);
+}
+</style>

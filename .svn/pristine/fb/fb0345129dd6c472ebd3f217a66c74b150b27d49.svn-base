@@ -1,0 +1,121 @@
+<template>
+  <div class="list">
+    <div class="time"
+         v-for="(item,index) in data"
+         :key="index"
+         @click="toArticle(item)">
+      <p class="time_p"
+         v-show="show">{{item.releaseTime|GetDate("yyyy-MM-dd hh:mm:ss")}}</p>
+      <div class="item">
+        <p class="title">{{item.title}}</p>
+        <p class="content">{{item.content}}</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    data: {
+      require: true
+    },
+    show: {
+      default: true
+    }
+  },
+  filters: {
+    GetDate (value, fmt) {
+      let nowDate = new Date().getTime();
+      let oldDate = new Date().getTime();
+      let getDate = new Date(value);
+      let step = nowDate - oldDate;
+      if (step > 1 * 24 * 60 * 60 * 1000) {
+        if (step < 2 * 24 * 60 * 60 * 1000) {
+          fmt = "hh:mm";
+        }
+      } else {
+        fmt = "hh:mm";
+      }
+      let o = {
+        "M+": getDate.getMonth() + 1,
+        "d+": getDate.getDate(),
+        "h+": getDate.getHours(),
+        "m+": getDate.getMinutes(),
+        "s+": getDate.getSeconds(),
+        "q+": Math.floor((getDate.getMonth() + 3) / 3),
+        S: getDate.getMilliseconds()
+      };
+      if (/(y+)/.test(fmt)) {
+        fmt = fmt.replace(
+          RegExp.$1,
+          (getDate.getFullYear() + "").substr(4 - RegExp.$1.length)
+        );
+      }
+      for (let k in o) {
+        if (new RegExp("(" + k + ")").test(fmt)) {
+          fmt = fmt.replace(
+            RegExp.$1,
+            RegExp.$1.length === 1
+              ? o[k]
+              : ("00" + o[k]).substr(("" + o[k]).length)
+          );
+        }
+      }
+      if (step > 1 * 24 * 60 * 60 * 1000) {
+        if (step < 2 * 24 * 60 * 60 * 1000) {
+          return "昨天 " + fmt;
+        } else {
+          return fmt;
+        }
+      } else {
+        return "今天 " + fmt;
+      }
+    }
+  },
+  methods: {
+    toArticle (item) {
+      this.$router.push({ path: "/article", query: { bankAnnoucementId: item.bankAnnoucementId } });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.list {
+  .time {
+    margin: px2vw(50) auto px2vw(30);
+    .time_p {
+      text-align: center;
+    }
+    .item {
+      background: #fff;
+      margin: 0 px2vw(30);
+      padding: px2vw(40) px2vw(40) px2vw(30);
+      box-sizing: border-box;
+      border-radius: px2vw(16);
+      height: px2vw(192);
+      .title {
+        font-size: px2vw(30);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+      }
+      .content {
+        width: 100%;
+        height: px2vw(76);
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFangSC;
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+        line-height: px2vw(38);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: px2vw(16);
+      }
+    }
+    .item:not(frist-child) {
+      margin-top: px2vw(1);
+    }
+  }
+}
+</style>

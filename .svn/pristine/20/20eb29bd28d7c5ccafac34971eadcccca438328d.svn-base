@@ -1,0 +1,313 @@
+  <template>
+  <div class="pickOuter">
+    <Myheader
+      :title="$route.meta.title"
+      :backgroundColor="header.color"
+      :isWhite="header.isWhite"
+      :params="params"
+    >
+      <!-- <template slot="left">
+        <p :class="['iconfont','iconicon_search-',{'isWhite':header.isWhite}]" @click="toSearch" ></p>
+      </template>-->
+    </Myheader>
+    <div class="content">
+      <!-- banner图 -->
+      <div class="top">
+        <van-swipe indicator-color="white" :autoplay="3000">
+          <van-swipe-item>
+            <img src="~@/assets/manageMoney/img_bannner@2x.png" />
+          </van-swipe-item>
+          <van-swipe-item>
+            <img src="~@/assets/manageMoney/img_bannner@2x.png" />
+          </van-swipe-item>
+          <van-swipe-item>
+            <img src="~@/assets/manageMoney/img_bannner@2x.png" />
+          </van-swipe-item>
+          <van-swipe-item>
+            <img src="~@/assets/manageMoney/img_bannner@2x.png" />
+          </van-swipe-item>
+        </van-swipe>
+      </div>
+      <!-- 选择按钮 -->
+      <div class="option">
+        <div class="item" @click="toExpectEarning">
+          <img src="@/assets/manageMoney/icon_yuqishoouyi@2x.png" />
+          <p>预期收益型</p>
+        </div>
+        <div class="item" @click="toNetWorth">
+          <img src="@/assets/manageMoney/icon_jingzhixing@2x.png" />
+          <p>净值型</p>
+        </div>
+        <div class="item" @click="toProdNetWorth">
+          <img src="@/assets/manageMoney/icon_chanpingjingzhi@2x.png" />
+          <p>产品净值</p>
+        </div>
+        <div class="item" @click="toMore">
+          <img src="@/assets/manageMoney/icon_quanbu@2x.png" />
+          <p>全部产品</p>
+        </div>
+      </div>
+      <!-- 通知 -->
+      <div class="info" v-show="tipShow">
+        <img src="@/assets/manageMoney/icon_tongzhi@2x.png" />
+        <p class="text">
+          根据监管部门要求，体验理财产需先进行风险评估
+          <!-- <a>立即前往</a> -->
+          <router-link to="/risk/index">立即前往</router-link>
+        </p>
+        <span class="iconfont iconicon_guanbi-" @click="tipHidden"></span>
+      </div>
+      <div class="line"></div>
+      <!-- 为你精选 -->
+      <div class="handpick" v-if="hotList.length>0">
+        <div class="title">
+          <h2>为你精选</h2>
+        </div>
+        <div class="items">
+          <div class="item" v-for="(item,index) in hotList" :key="index" @click="toDetail(item)">
+            <!-- <p class="name">{{item.title}}</p> -->
+            <p class="name">季度最佳</p>
+            <p
+              class="per"
+              v-if="item.modulCode=='1102'||item.modulCode=='1303'"
+            >{{parseFloat(item.expectProfRateNum)*100?parseFloat(item.expectProfRateNum)*100:'0'}}%</p>
+            <p class="per" v-if="item.modulCode=='1306'">{{item.benchmark|parseFloatTwo}}</p>
+            <p class="per" v-if="item.modulCode=='1307'">{{item.yield|parseFloatTwo}}</p>
+            <p class="expect" v-if="item.modulCode=='1102'||item.modulCode=='1303'">预期收益率</p>
+            <p class="expect" v-if="item.modulCode=='1306'">业界比较基准</p>
+            <p class="expect" v-if="item.modulCode=='1307'">七日年化</p>
+            <p class="detail">{{item.productName}}</p>
+          </div>
+        </div>
+      </div>
+      <!-- 热销理财 -->
+      <div class="hot">
+        <!-- <div class="title">
+          <h2>热销理财</h2>
+          <span class="subTitle">明星产品稳健推荐</span>
+          <span class="iconfont icongengduo-" @click="toMore"></span>
+        </div> -->
+        <Myproduct :data="shareList"></Myproduct>
+        <div class="notice">
+          <p class="centerLine"></p>
+          <p>理财非存款，产品有风险，购买需谨慎</p>
+          <p class="centerLine"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Product from "./product";
+import { Swipe, SwipeItem } from "vant";
+export default {
+  components: {
+    Myproduct: Product,
+    Myheader: Header,
+    [Swipe.name]: Swipe,
+    [SwipeItem.name]: SwipeItem
+  },
+  data() {
+    return {
+      header: {
+        color: "transparent",
+        isWhite: true
+      },
+      allProductList: [],
+      data: [],
+      isLogin: false,
+      tipShow: true,
+      pickList: [],
+      transparentFlag: false,
+      page: 1, //页数
+      pageNum: 10, //每页的数目
+      flag: true,
+      shareList: [],
+      hotList: [],
+      params: {
+        leftShow: false
+      }
+    };
+  },
+  created() {
+    //热销理财
+    // this.financialProductListQry(0);
+    //理财推荐
+    this.financialProductListQry();
+    this.login();
+  },
+  mounted() {
+    window.addEventListener("scroll", this.scroll());
+  },
+  // beforeRouteLeave(to, from, next) {
+  //   window.addEventListener("scroll", this.scroll);
+  // },
+  watch: {
+    transparentFlag: {
+      handler(val) {
+        if (val) {
+          this.header = {
+            isWhite: false,
+            color: "#fff"
+          };
+        } else {
+          this.header = {
+            isWhite: true,
+            color: "transparent"
+          };
+        }
+      }
+    }
+  },
+  methods: {
+    toSearch() {
+      console.log(1);
+    },
+    scroll() {
+      //屏幕滚动时修改header的背景
+      let content = document.getElementsByClassName("content")[0];
+      // console.log(content)
+      let _this = this;
+      content.onscroll = function() {
+        // console.log(content.scrollTop)
+        if (content.scrollTop > 0) {
+          _this.transparentFlag = true;
+        } else {
+          _this.transparentFlag = false;
+        }
+        // if (content.scrollHeight - content.scrollTop === content.clientHeight) {
+        //   // this.page = parseInt(this.page)+1;
+        //   if (_this.flag) {
+        //     _this.page++;
+        //     _this.flag = false;
+        //     _this.financialProductListQry();
+        //   }
+        // }
+      };
+    },
+    toMore() {
+      this.$router.push({ name: "manageMoneyList", params: { val: 0 } });
+    },
+    tipHidden() {
+      this.tipShow = false;
+    },
+    toProdNetWorth() {
+      //跳转到产品净值
+      this.$router.push({ name: "prodNetWorth" });
+    },
+    toNetWorth() {
+      //跳转到净值型
+      this.$router.push({ name: "manageMoneyList", params: { val: 2 } });
+    },
+    toExpectEarning() {
+      //跳转到预期收益率
+      this.$router.push({ name: "manageMoneyList", params: { val: 1 } });
+    },
+    toDetail(item) {
+      this.$router.push({ name: "detail", params: item });
+    },
+    login() {
+      let params = {
+        BankId: "9999",
+        LoginId: "15670538691",
+        Password: "123456asd",
+        EquipmentId: "125657",
+        ChnlId: "62",
+        LoginType: "R",
+        BranchId: "01001",
+        LoginMode: "1",
+        AddrInfo: "郑州"
+        // EquipmentId:'222222'
+      };
+      // let params = {
+      //   BankId: "9999",
+      //   LoginId: "18800113916",
+      //   Password: "111111",
+      //   EquipmentId: "125657",
+      //   ChnlId: "62",
+      //   LoginType: "R",
+      //   BranchId: "01001",
+      //   LoginMode: "1",
+      //   // AddrInfo: "郑州"
+      //   // EquipmentId:'222222'
+      // };
+      // let params = {
+      //   BankId: "9999",
+      //   LoginId: "13264084655",
+      //   Password: "cs135246",
+      //   EquipmentId: "125657",
+      //   ChnlId: "62",
+      //   LoginType: "R",
+      //   BranchId: "01001",
+      //   LoginMode: "1",
+      //   // AddrInfo: "郑州"
+      //   // EquipmentId:'222222'
+      // };
+      // let params = {
+      //   BankId: "9999",
+      //   LoginId: "15555910536",
+      //   Password: "1357qetu",
+      //   EquipmentId: "125657",
+      //   ChnlId: "62",
+      //   LoginType: "R",
+      //   BranchId: "01001",
+      //   LoginMode: "1",
+      //   // AddrInfo: "郑州"
+      //   // EquipmentId:'222222'
+      // };
+      //测试
+      // this.request("login", { ...params }).then(res => {
+      //   this.$store.state.userInfo = res;
+      // });
+      window.NativeCall.getUserInfo(userInfo => {
+        // alert(userInfo)
+        this.$store.state.userInfo = JSON.parse(userInfo);
+      });
+    },
+    financialProductListQry(val) {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        ProductType: "1",
+        // ExpectProfRateNum: "0",
+        // SubAmt: "0",
+        // InvesterTerm: "0",
+        // ModulCode: "",
+        StartPageNum: (this.page - 1) * this.pageNum + 1,
+        EndPageNum: this.page * this.pageNum,
+        // ProLable: val
+      };
+      this.request("financialProductListQry", { ...params }).then(res => {
+        // console.log(res);
+        // this.allProductList = res.ProductInfo;
+        // if (res.ProductInfo.length <= 0) {
+        //   this.flag = false;
+        //   this.$toast('拉到底了')
+        // } else {
+        //   this.flag = true;
+        // }
+        // res.ProductInfo.map(item => {
+        //   // item = { ...obj, ...item };
+        //   // console.log(item)
+        //   this.data.push(item);
+        // });
+        // this.pickList = this.data.slice(0, 3);
+        this.shareList = res.ProductInfo.slice(0,5);
+        // if (val == 0) {
+        //   this.hotList = res.sellWellist;
+        // } else {
+        //   this.shareList = res.ProductInfo;
+        // }
+
+        // console.log(this.data);
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/manageMoney/pick.scss";
+</style>

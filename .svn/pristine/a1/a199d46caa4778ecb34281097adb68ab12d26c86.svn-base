@@ -1,0 +1,139 @@
+<template>
+  <div>
+    <Myheader :title="$route.params.id |filterTitle"
+              :params="params"></Myheader>
+    <div class="content">
+      <div>
+        <div class="project_info">
+          <div class="info">
+            <label>名称</label>
+            <input type="text"
+                   placeholder="请为该缴费号码命名"
+                   v-model="idName">
+          </div>
+          <div class="info">
+            <label>{{$route.params.id == 4?"手机号码":"户号"}}</label>
+            <input type="text"
+                   placeholder="请输入"
+                   v-model="idNum">
+          </div>
+        </div>
+        <button @click="saveProject"
+                :class="{isActive:classBlue}">保存</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+
+export default {
+  components: {
+    Myheader: Header,
+  },
+  data () {
+    return {
+      params: {
+        leftShow: false
+      },
+      idNum: "",
+      idName: "",
+      classBlue: false
+    }
+  },
+  watch: {
+    idNum () {
+      if (this.idNum.trim() != "") {
+        this.classBlue = true
+      } else {
+        this.classBlue = false
+      }
+    }
+
+  },
+  filters: {
+    filterTitle (val) {
+      return { '0': '新建水费缴费', '1': '新建电费缴费', '2': '新建燃气费缴费', '4': '新建手机话费缴费' }[val]
+    }
+  },
+  mounted () {
+    console.log(this.$route.params)
+  },
+  methods: {
+    saveProject () {
+      const { id } = this.$route.params
+      if (this.idNum.trim() != "") {
+        this.request("PaymentRegister", {
+          OperationType: 1, // 操作类型  1新增2修改3查询4删除
+          Type: id, // 1水费，2电费，3燃气费，4电话费操作类型为新增，修改和查询下必输
+          PaymentNo: this.idNum, // 户号
+          PaymentName: this.idName, // 户名
+          BankId: "9999",
+          BranchId: "1001",
+          ChnlId: "62",
+        }).then(response => {
+          if (response.ReturnCode === '000000') {
+            this.$router.go(-1)
+          }
+        }).catch(error => {
+          console.log(error);
+        });
+      }
+
+    }
+  },
+}
+</script>
+
+<style lang='scss' scoped>
+.isActive {
+  background: linear-gradient(
+    270deg,
+    rgba(107, 171, 255, 1) 0%,
+    rgba(108, 138, 249, 1) 100%
+  ) !important;
+}
+.content {
+  background-color: #f5f6f8;
+  height: 91vh;
+  .project_info {
+    background-color: #fff;
+    height: px2vw(220);
+    margin-top: px2vw(20);
+    padding: 0 px2vw(40);
+  }
+  .info {
+    height: px2vw(109);
+    line-height: px2vw(109);
+    border-bottom: 1px solid #f5f6f8;
+    label {
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+    }
+    input {
+      height: px2vw(108);
+      font-size: px2vw(30);
+      margin-left: px2vw(50);
+    }
+  }
+  button {
+    width: px2vw(670);
+    height: px2vw(90);
+    background: linear-gradient(
+      270deg,
+      rgba(181, 213, 255, 1) 0%,
+      rgba(182, 197, 252, 1) 100%
+    );
+    border-radius: px2vw(45);
+    margin-left: px2vw(40);
+    margin-top: px2vw(100);
+    font-size: px2vw(34);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+  }
+}
+</style>

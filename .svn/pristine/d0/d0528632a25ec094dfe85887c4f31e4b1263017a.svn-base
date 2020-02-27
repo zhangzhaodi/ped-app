@@ -1,0 +1,289 @@
+<template>
+  <div class="result">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="top">
+      <div>
+        <img src="@/assets/farmersTreasure/index/icon_xinnongbao111@2x.png" alt="">
+        <p class="msg">鑫农宝</p>
+      </div>
+      <div>
+        <h5>￥1,000.00</h5>
+      </div>
+    </div>
+    <div class="line"></div>
+    <div class="content">
+      <div class="detail">
+        <div class="money">
+          <p class="left">交易说明</p>
+          <p class="center">
+            <span>鑫农宝<i slot="left" class="iconfont little_mark">&#xe62a;</i></span>
+          </p>
+        </div>
+        <div class="money">
+          <p class="left">买入类型</p>
+          <p class="center">
+            <span>存入</span>
+          </p>
+        </div>
+        <div class="money">
+          <p class="left">支付方式</p>
+          <p class="center">
+            <span>基金资金账户(4666)</span>
+          </p>
+        </div>
+        <div class="money">
+          <p class="left">买入金额</p>
+          <p class="center">
+            <span>{{money | Money}}元</span>
+          </p>
+        </div>
+        <div class="money">
+          <p class="left">交易时间</p>
+          <p class="center">2019-08-19 09:30:00</p>
+        </div>
+        <div class="money">
+          <p class="left">订单编号</p>
+          <p class="center">1120868799999112220080</p>
+        </div>
+        <div class="notice">
+          <div class="left">
+            <span>申请日期</span>
+          </div>
+          <div class="center">2019-08-09</div>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="line"></div>
+    <div class="dealline">
+      <div class="img">
+        <img src="@/assets/manageMoney/img_time.png" />
+      </div>
+      <div class="time">
+        <div class="start">
+          <p class="text">提出申请</p>
+          <p class="p1">2019-08-22 周四 15:00:00</p>
+        </div>
+        <div class="end">
+          <p class="text">预计到账时间</p>
+          <p class="p1">2019-08-24 周六</p>
+        </div>
+      </div>
+    </div>
+    <div class="btn">
+      <van-button type="default" class="again" @click="again">完成</van-button>
+      <van-button type="default" class="final" @click="final">完成</van-button>
+    </div>
+
+    <div class="best">
+      <img src="@/assets/manageMoney/img_guanggao@2x.png">
+    </div>-->
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  props: {
+    data: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false,
+      },
+      money:1000,
+    };
+  },
+  methods: {
+    final() {
+      this.$router.push({ name: "index" });
+    },
+    again() {
+      this.$router.push({ path:'/index' });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+h5{
+  margin: 0;
+  padding: 0;
+}
+.top {
+  height: px2vw(348);
+  text-align: center;
+  display: flex;
+  flex-direction:column;
+  align-items: center;
+  justify-content: center;
+  // .img {
+  //   height: px2vw(110);
+  //   width: px2vw(110);
+  //   background: linear-gradient(#27cd6f, #39df8d);
+  //   border-radius: 50%;
+  //   color: #fff;
+  //   line-height: px2vw(110);
+  //   text-align: center;
+  //   margin: 0 auto;
+  //   .iconfont {
+  //     font-size: px2vw(56);
+  //   }
+  // }
+    div:nth-of-type(1){
+    display: flex;
+    img{
+      display: inline-block;
+     width:px2vw(30);
+    height:px2vw(30);
+    }
+  .msg {
+    font-size: px2vw(26);
+    font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    color:rgba(38,38,38,1);
+    text-align: center;
+    line-height: px2vw(26);
+    margin-left: px2vw(10);
+    }
+  }
+  div:nth-of-type(2){
+    height:px2vw(70);
+    font-size:px2vw(70);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(70);
+    margin-top: px2vw(32);
+  }
+}
+.content {
+  font-family: PingFangSC;
+  padding: px2vw(50) 0;
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer,
+    .money,
+    .notice {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        width: px2vw(152);
+        flex: none;
+        color: #7d7d7d;
+      }
+      .center {
+
+        color:rgba(38,38,38,1);
+        font-weight: 400;
+      }
+      .little_mark{
+        font-size: px2vw(20);
+        display: inline-block;
+        color:#7d7d7d;
+      }
+    }
+    .payer {
+      margin-top: 0;
+    }
+  }
+}
+.dealline {
+  height: px2vw(320);
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  padding: px2vw(51) px2vw(40) px2vw(70) px2vw(40);
+  .img {
+    box-sizing: border-box;
+    padding: px2vw(20) 0;
+    height: px2vw(178);
+    width: px2vw(30);
+    background: url('~@/assets/manageMoney/img_time.png');
+    background-size: 100% 100%;
+    // img {
+    //   width: px2vw(15);
+    //   height: 100%;
+    // }
+  }
+  .time {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-left: px2vw(14);
+    .text {
+      font-size: px2vw(26);
+      font-weight: 400;
+      color: #262626;
+    }
+    .p1 {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #7d7d7d;
+      margin-top: px2vw(6);
+    }
+  }
+}
+.btn {
+  display: flex;
+  flex-direction: row;
+  // justify-content: space-between;
+  font-size: px2vw(30);
+  font-weight: 400;
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  /deep/ .van-button {
+    height: px2vw(90);
+    width: px2vw(310);
+    border-radius: px2vw(45);
+  }
+  .again {
+    width:100%;
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background-color: #fff;
+    border:1px solid rgba(255,159,8,1);
+    color:rgba(255,159,8,1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  .final {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background: linear-gradient(#ffdfc7, #d69f81);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+  }
+}
+.best{
+  padding: 0 px2vw(40);
+  margin-top: px2vw(80);
+  img{
+    width: 100%;
+  }
+}
+</style>

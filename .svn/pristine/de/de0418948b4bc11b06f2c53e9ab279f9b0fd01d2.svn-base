@@ -1,0 +1,146 @@
+<template>
+  <div class="outer set-card">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div v-if="cardList.length>5">
+      <div class="info">请选择一张您常用的付款卡</div>
+      <van-radio-group v-model="selectItem.id">
+        <van-cell-group>
+          <van-cell class="payee-card__select" v-for="(item,index) in cardList" :key="index" :title="item.name" clickable @click="handleSelect(item)">
+            <template slot="title">
+              <div class="bank-icon_wrap">
+                <img :src="require(`@/assets/bankIcon/icon_${item.bank}.png`)" alt />
+              </div>
+            </template>
+            <template slot="default">
+              <div>
+                <div class="card">{{item.bankname}} | {{item.typeName}}{{item.desc ? `-${item.desc}`:''}}</div>
+              </div>
+            </template>
+            <van-radio slot="right-icon" :name="item.id">
+              <img slot="icon" slot-scope="props" v-show="props.checked" class="check-icon" :src="props.checked ? icon.active : icon.inactive">
+            </van-radio>
+          </van-cell>
+        </van-cell-group>
+      </van-radio-group>
+    </div>
+    <div v-else class="nodata-box">
+        <img :src="require(`@/assets/transferAccounts/img_wufuhezhanghu@2x.png`)" alt />
+        <p class="text">您暂无符合条件的用户</p>
+        <div class="footer-box">
+            <div class="btn-box">
+                <van-button class="ghost" >添加银行卡</van-button>
+            </div>   
+        </div>
+         
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions } from "vuex";
+import { Amount, InputItem } from "mand-mobile";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      form: {
+
+      },
+      cardList: [{
+        bank: 'ABC',
+        bankname: '中旅银行',
+        typeName: "电子账户",
+        cardFourNumber: '2222',
+        desc: '买菜',
+        id: 0,
+      },{
+        bank: 'CMB',
+        bankname: '招商银行',
+        typeName: "电子账户",
+        cardFourNumber: '2222',
+        desc: '',
+        id: 1
+      }],
+      selectItem: {
+
+      },
+      icon: {
+        active: require("@/assets/electronicAccounts/icon_xueli_xuanze@2x.png"),
+        inactive: ""
+      },
+    };
+  },
+  computed: {
+    wrongShow() {
+      let show = false;
+      if (Number(this.form.money) > Number(this.debitCard.balance)) {
+        show = true;
+      }
+      return show
+    }
+  },
+  created() { },
+  mounted() { },
+  methods: {
+    handleSelect(item) {
+      this.selectItem = { ...item };
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+.set-card {
+  .info {
+    font-size: px2vw(24);
+    color: #a8a8a8;
+    padding: px2vw(20) px2vw(40);
+  }
+}
+/deep/ .payee-card__select {
+  padding: 0 px2vw(40);
+  height: px2vw(110);
+  justify-content: center;
+  .van-cell__title {
+    flex: none;
+    align-items: center;
+    display: flex;
+  }
+  .bank-icon_wrap {
+    width: px2vw(64);
+    height: px2vw(64);
+    align-items: center;
+    margin-right: px2vw(20);
+    img {
+      height: 100%;
+    }
+  }
+  .van-cell__value {
+    text-align: left;
+    align-items: center;
+    display: flex;
+    .card {
+      font-size: $font-size;
+      color: $color-text;
+    }
+    .balance {
+      font-size: px2vw(24);
+      color: #7d7d7d;
+    }
+  }
+}
+.have-set {
+  color: $color-text;
+}
+
+</style>

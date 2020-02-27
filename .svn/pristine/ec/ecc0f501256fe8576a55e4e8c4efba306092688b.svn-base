@@ -1,0 +1,365 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <Scroller>
+      <div class="header">
+        <div class="myBank">我的银行卡</div>
+        <van-swipe
+          @change="onChange"
+          :show-indicators="false"
+          :width="swipeWidth"
+        >
+          <van-swipe-item v-for="(item, index) in bankInfo" :key="index">
+            <div
+              class="bankCard"
+              :class="{
+                electronicCard: item.acctType == '2',
+                electronicCardOne:
+                  item.acctTypCd == '3' ||
+                  item.acctTypCd == '4' ||
+                  item.acctTypCd == '5',
+                goldCard: item.name == 'goldCard',
+                platinumCard: item.name == 'platinumCard',
+                diamondCard: item.name == 'diamondCard'
+              }"
+            >
+              <div class="bank-info">
+                <div class="bankCard-l">
+                  <img
+                    src="@/assets/assetsLiabilities/allCard/img_yinhangkalogo@2x.png"
+                    alt
+                  />
+                  <div class="bank-type">
+                    {{ item.acctType == "1" ? "借记卡" : "电子账户" }}
+                  </div>
+                </div>
+              </div>
+              <div class="bank-number">
+                <div v-if="hideCardNum == 1" class="number-l">
+                  <span>{{ item.acctNo.substr(0, 4) }}</span>
+                  <span>****</span>
+                  <span>****</span>
+                  <span>***</span>
+                  <span>{{ item.acctNo.substr(item.acctNo.length - 4) }}</span>
+                </div>
+                <div v-else class="no-protect">
+                  <span>{{ item.acctNo.substr(0, 4) }}</span>
+                  <span>{{ item.acctNo.substr(4, 4) }}</span>
+                  <span>{{ item.acctNo.substr(8, 4) }}</span>
+                  <span>{{ item.acctNo.substr(12, 3) }}</span>
+                  <span>{{ item.acctNo.substr(item.acctNo.length - 4) }}</span>
+                </div>
+              </div>
+            </div>
+          </van-swipe-item>
+        </van-swipe>
+      </div>
+      <div class="content">
+        <div class="bankCard-title">
+          <p>卡内资产</p>
+          <span>{{
+            bankInfo[activeNumber - 1].totalMoney_single | Money
+          }}</span>
+        </div>
+        <div class="bankCard-info">
+          <ul>
+            <li>
+              <p>活期余额</p>
+              <p>{{ bankInfo[activeNumber - 1].demandBal | Money }}</p>
+            </li>
+            <li>
+              <p>定期存款余额</p>
+              <p>
+                {{ bankInfo[activeNumber - 1].timeDepositBal | Money }}
+              </p>
+            </li>
+            <li>
+              <p>智能存款余额</p>
+              <p>{{ bankInfo[activeNumber - 1].smartDepositBal | Money }}</p>
+            </li>
+            <li>
+              <p>理财持仓市值</p>
+              <p>{{ bankInfo[activeNumber - 1].financialVal | Money }}</p>
+            </li>
+            <li>
+              <p>基金持仓市值</p>
+              <p>{{ bankInfo[activeNumber - 1].fundVal | Money }}</p>
+            </li>
+            <li>
+              <p>宝类基金份额</p>
+              <p>{{ bankInfo[activeNumber - 1].treFundVal | Money }}</p>
+            </li>
+          </ul>
+          <div class="more" @click="gotopackage">
+            <p>优选理财，更多推荐</p>
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="bankCard-title">
+          <p>卡内负债</p>
+          <span>{{
+            bankInfo[activeNumber - 1].totalLossMoney_single | Money
+          }}</span>
+        </div>
+        <div class="bankCard-info">
+          <ul>
+            <li>
+              <p>住房按揭贷款</p>
+              <p>
+                {{ bankInfo[activeNumber - 1].housingMortgageLoan | Money }}
+              </p>
+            </li>
+            <li>
+              <p>消费贷款</p>
+              <p>{{ bankInfo[activeNumber - 1].consumptionLoans | Money }}</p>
+            </li>
+            <li>
+              <p>经营贷款</p>
+              <p>{{ bankInfo[activeNumber - 1].businessLoans | Money }}</p>
+            </li>
+            <li>
+              <p>信用消费贷款</p>
+              <p>{{ bankInfo[activeNumber - 1].creditConsumerLoan | Money }}</p>
+            </li>
+          </ul>
+          <div class="more">
+            <p>优惠贷款，立即开始</p>
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+      </div>
+    </Scroller>
+    <Footer :show="false"></Footer>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import Footer from "../components/Footer";
+import { Swipe, SwipeItem } from "vant";
+
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    Footer,
+    [Swipe.name]: Swipe,
+    [SwipeItem.name]: SwipeItem
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      bankNumber: "4",
+      activeNumber: "1",
+      bankInfo: [
+        // {
+        //   property: "", //卡内资产
+        //   currentBalance: "", //活期余额
+        //   fixedDeposit: "", //定期存款余额
+        //   IntelligentDeposit: "", //智能存款余额
+        //   moneyPosition: "", //理财持仓市值
+        //   fundsPosition: "", //基金持仓市值
+        //   gemFunds: "", //宝石基金份额
+        //   liabilities: "", //卡内负债
+        //   housingMortgageLoan: "", //住房按揭贷款
+        //   consumptionLoans: "", //消费贷款
+        //   businessLoans: "", //经营贷款
+        //   creditConsumerLoan: "" //信用消费贷款
+        // }
+      ],
+      hideCardNum: "1"
+    };
+  },
+  computed: {},
+  methods: {
+    onChange(index) {
+      console.log("当前 Swipe 索引：" + index);
+      this.activeNumber = index + 1;
+    },
+    //跳到理财
+    gotopackage() {
+      let params = {
+        package: "manageMoney",
+        router: "",
+        routerDic: ""
+      };
+      window.NativeCall.goToPackage(params);
+    }
+  },
+  created() {
+    this.bankInfo = this.$route.query.info;
+    console.log(this.bankInfo);
+    let clientWidth = document.body.clientWidth;
+    this.swipeWidth = (345 / 375) * clientWidth;
+    window.NativeCall.hideCardNum(value => {
+      this.hideCardNum = value;
+    });
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  .scrollerBox {
+    background: rgba(245, 246, 248, 1);
+  }
+}
+
+.header {
+  padding-bottom: px2vw(30);
+  background: #fff;
+  .myBank {
+    padding: 0 px2vw(40);
+    font-size: px2vw(28);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(70);
+  }
+  .van-swipe {
+    padding: 0 px2vw(40);
+  }
+  .bankCard {
+    width: px2vw(670);
+    height: px2vw(230);
+    background: url("~@/assets/assetsLiabilities/allCard/newCards/img_yinhangka@2x(3).png")
+      no-repeat;
+    background-size: px2vw(670) px2vw(230);
+    .bank-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      .bankCard-l {
+        display: flex;
+        align-items: center;
+        img {
+          width: px2vw(236);
+          margin: px2vw(26) px2vw(20) 0 px2vw(40);
+        }
+        .bank-type {
+          margin-top: px2vw(26);
+          font-size: px2vw(24);
+          font-family: PingFangSC;
+          font-weight: 300;
+          color: rgba(255, 255, 255, 1);
+          line-height: px2vw(36);
+        }
+      }
+      img {
+        width: px2vw(136);
+      }
+    }
+    .bank-number {
+      padding: px2vw(45) px2vw(40) px2vw(30) px2vw(40);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: px2vw(36);
+      font-family: PingFangSC;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 1);
+      line-height: px2vw(40);
+      .number-l {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+      }
+      .no-protect {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+      }
+    }
+  }
+  .goldCard {
+    background: url("~@/assets/assetsLiabilities/allCard/newCards/img_yinhangka@2x.png")
+      no-repeat;
+    background-size: px2vw(670) px2vw(230);
+  }
+  .platinumCard {
+    background: url("~@/assets/assetsLiabilities/allCard/newCards/img_yinhangka@2x(1).png")
+      no-repeat;
+    background-size: px2vw(670) px2vw(230);
+  }
+  .diamondCard {
+    background: url("~@/assets/assetsLiabilities/allCard/newCards/img_yinhangka@2x(2).png")
+      no-repeat;
+    background-size: px2vw(670) px2vw(230);
+  }
+  .electronicCard {
+    background: url("~@/assets/assetsLiabilities/allCard/newCards/img_yinhangkaIIlei@2x.png")
+      no-repeat;
+    background-size: px2vw(670) px2vw(230);
+  }
+  .electronicCardOne {
+    background: url("~@/assets/assetsLiabilities/allCard/newCards/img_yinhangkaIlei@2x.png")
+      no-repeat;
+    background-size: px2vw(670) px2vw(230);
+  }
+}
+.content {
+  margin-top: px2vw(20);
+  padding: 0 px2vw(40);
+  background: #fff;
+  .bankCard-title {
+    font-size: px2vw(36);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(125, 125, 125, 1);
+    padding: px2vw(38) 0 px2vw(32);
+    p {
+      margin-bottom: px2vw(20);
+    }
+    span {
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(235, 238, 240, 1);
+    li {
+      width: 50%;
+      height: px2vw(158);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-sizing: border-box;
+      border-bottom: 1px solid rgba(235, 238, 240, 1);
+      font-size: px2vw(26);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(125, 125, 125, 1);
+      p:last-child {
+        font-size: px2vw(32);
+        color: rgba(38, 38, 38, 1);
+        margin-top: px2vw(20);
+        font-weight: 500;
+      }
+    }
+    li:nth-child(2n + 0) {
+      border-left: 1px solid rgba(235, 238, 240, 1);
+      text-indent: px2vw(32);
+    }
+  }
+  .more {
+    display: flex;
+    justify-content: center;
+    height: px2vw(80);
+    font-size: px2vw(26);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(0, 139, 255, 1);
+    line-height: px2vw(80);
+    span {
+      font-size: px2vw(18);
+      color: rgba(0, 139, 255, 1);
+      line-height: px2vw(80);
+    }
+  }
+}
+</style>

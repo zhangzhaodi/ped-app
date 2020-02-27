@@ -1,0 +1,189 @@
+<template>
+  <div class="popup">
+    <van-popup
+      v-model="popupFlag"
+      get-container="body"
+      round
+      position="bottom"
+      :close-on-click-overlay="false"
+      :style="{height:'62.29vh'}"
+    >
+      <div class="pupupTop">
+        <img src="~@/assets/electronicAccounts/icon_guanbi@2x.png" @click="close" />
+        <p>确认转账</p>
+      </div>
+      <div class="dealInfo">
+        <p class="top">
+          <span class="name">{{form.name}}</span>
+          <span>|</span>
+          <span class="bank">{{form.bank}}</span>
+        </p>
+        <p class="money">
+          <span class="icon">￥</span>
+          <span>{{form.money | Money}}</span>
+        </p>
+      </div>
+      <!-- <div class="orderInfo">
+        <van-cell value="转账" title="订单信息" :center="true"></van-cell>
+      </div> -->
+      <div class="line"></div>
+      <div class="safeTool">
+        <van-cell value="手机验证码" title="安全工具" :center="true">
+          <template slot="right-icon">
+            <img src="~@/assets/LifePay/arrow.png" class="rightIcon" />
+          </template>
+        </van-cell>
+      </div>
+      <div class="line"></div>
+      <div class="btn">
+        <van-button type="default">确认转账</van-button>
+      </div>
+    </van-popup>
+  </div>
+</template>
+
+<script>
+import { Popup, Icon} from "vant";
+export default {
+  components: {
+    [Popup.name]: Popup,
+    [Icon.name]: Icon,
+  },
+  props: {
+    popupFlag: {
+      require: true,
+      default: false
+    },
+    form: {
+      require: true
+    }
+  },
+  methods: {
+    close() {
+      this.$parent.popupFlag = false;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "vant/lib/icon/local.css";
+* {
+  font-family: PingFangSC;
+}
+.pupupTop {
+  display: flex;
+  height: px2vw(100);
+  padding: 0 px2vw(40);
+  flex-direction: row;
+  align-items: center;
+  img {
+    width: px2vw(44);
+    height: px2vw(44);
+  }
+  p {
+    flex: 1;
+    text-align: center;
+    color: #262626;
+    font-size: px2vw(34);
+    font-weight: 400;
+  }
+}
+.dealInfo {
+  height: px2vw(227);
+  padding: 0 px2vw(40);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .top {
+    font-size: px2vw(30);
+    line-height: px2vw(30);
+    letter-spacing: px2vw(1);
+    margin-top: px2vw(30);
+  }
+  .money {
+    color: #000;
+    .icon {
+      font-size: px2vw(40);
+      font-weight: 500;
+      line-height: px2vw(56);
+    }
+    span {
+      font-size: px2vw(70);
+      font-weight: 500;
+      line-height: px2vw(98);
+    }
+  }
+}
+.orderInfo {
+  height: px2vw(100);
+  padding: 0 px2vw(40);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: px2vw(28);
+  /deep/ .van-cell__title {
+    color: #7d7d7d;
+  }
+  /deep/ .van-cell__value {
+    color: #000;
+    font-size: px2vw(28);
+  }
+}
+.safeTool {
+  height: px2vw(100);
+  padding: 0 px2vw(40);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: px2vw(28);
+  .rightIcon {
+    width: px2vw(12);
+    height: px2vw(22);
+  }
+  /deep/ .van-cell {
+    justify-content: space-between;
+    color: #7d7d7d;
+  }
+  /deep/ .van-cell__title {
+    margin-right: px2vw(40);
+    flex: none;
+  }
+  /deep/ .van-cell__value {
+    width: px2vw(200);
+    padding-right: px2vw(300);
+    flex: none;
+    text-align: left;
+    font-size: px2vw(28);
+    color: #000;
+  }
+}
+.line {
+  position: relative;
+}
+.line::after {
+  content: " ";
+  width: px2vw(670);
+  height: 0.5px;
+  position: absolute;
+  top: -0.25px;
+  left: px2vw(40);
+  background-color: #eff0f1;
+  z-index: 100;
+}
+.btn {
+  padding: 0 px2vw(40);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: px2vw(19);
+}
+/deep/ .van-button {
+  width: 100%;
+  height: px2vw(90);
+  color: #fff;
+  background:linear-gradient(270deg,rgba(107,171,255,1) 0%,rgba(108,138,249,1) 100%);
+  font-size: px2vw(34);
+  border-radius: px2vw(45);
+}
+</style>

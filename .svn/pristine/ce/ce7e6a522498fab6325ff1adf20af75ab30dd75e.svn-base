@@ -1,0 +1,389 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div class="select-date">
+      <van-dropdown-menu active-color="#3E8FFF">
+        <van-dropdown-item v-model="payerAcctNbr" :options="cardList" @change="changeValue1" />
+        <van-dropdown-item :title="selectDate" ref="dateDropDown">
+          <van-datetime-picker v-model="currentDate" type="year-month" :max-date="maxDate" :formatter="formatter" />
+          <footer class="footer-btn">
+            <button class="cancel-btn" @click="cancelDate">取消</button>
+            <button class="confirm-btn" @click="confirmDate">确认</button>
+          </footer>
+        </van-dropdown-item>
+      </van-dropdown-menu>
+    </div>
+    <div class="record-header" v-show="tradingRecord.length > 0">
+      <div class="date">{{selectDate == '本月' ? nowMonth : selectDate}}</div>
+      <div class="totalAmt">-{{totalAmt | Money}}</div>
+    </div>
+    <div v-show="tradingRecord.length > 0" class="record">
+      <Scroller>
+        <div v-for="(item,index) in tradingRecord" :key="index" @click="goDetail(item)" class="item-wrap">
+          <div class="record-detail" >
+            <div class="detail-left">
+              <p>{{getType(item.exTransTypCd)}} - {{item.payeeAcctName}}</p>
+              <span>{{item.transDate}} {{item.payeeBankName}}({{item.payeeAcctNbr | cardNoFour}})</span>
+            </div>
+            <!-- <div class="detail-income">+{{item.income}}</div> -->
+            <div class="detail-expend">
+              -{{item.transAmt |Money}}
+              <p class="status success" v-if="item.transStatus == 0">成功</p>
+              <p class="status failure" v-if="item.transStatus == 1">失败</p>
+              <p class="status warning" v-if="item.transStatus != 0 && item.transStatus != 1">{{getStatus(item.transStatus)}}</p>
+            </div>
+            </div>
+        </div>
+      </Scroller>
+    </div>
+    <div v-show="tradingRecord.length == 0" class="empty">
+      <div class="img-box">
+        <img :src="emptyRecord" alt />
+        <p>暂无转账记录</p>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import PopupRound from "@/components/PopupRound";
+import { DropdownMenu, DropdownItem, DatetimePicker } from "vant";
+import dayjs from 'dayjs';
+import Scroller from "@/components/Scroller.vue";
+export default {
+  components: {
+    Myheader: Header,
+    PopupRound,
+    [DropdownMenu.name]: DropdownMenu,
+    [DropdownItem.name]: DropdownItem,
+    [DatetimePicker.name]: DatetimePicker,
+    Scroller
+  },
+  data() {
+    return {
+      // option1: [
+      //   { text: "全部账户", value: "0" },
+      //   { text: "62222222344", value: "62222222344" },
+      //   { text: "62255522344", value: "622555222344" }
+      // ],
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter:{},
+      cardList: [{
+        text: "全部账户",
+        value: '',
+      }],
+      payerAcctNbr: '',
+
+      totalAmt: 0,
+      //是否显示提示信息
+      isShow: false,
+      //快捷选择查询时间
+      weekly: true,
+      threeMonth: false,
+      sixMonth: false,
+      selectDate: '本月',
+      currentDate: new Date(),
+      maxDate: new Date(),
+      //默认查询记录时间
+      //交易记录
+      tradingRecord: [],
+      emptyRecord: require(`@/assets/myAccount/removeLimited/img_kongzhuangtai@2x.png`)
+
+    };
+  },
+  created() {
+    // this.value1 = this.$route.query.cardNum;    // this.option1[0].text = this.$route.query.cardNum;
+    // this.option1[0].value = this.$route.query.cardNum;
+    //发送网络请求拿到数据
+    console.log(this.$store.state.common.userInfo.QueryAddAccount)
+    this.initData();
+    this.getData();
+  },
+  computed: {
+    nowMonth() {
+      return dayjs().format('YYYY-MM')
+    }
+  },
+  methods: {
+    initData() {
+      let cardList = this.$store.state.common.userInfo.QueryAddAccount;
+      for (let card of cardList) {
+        if (card.vouId) {
+          card.value = card.vouId;
+          let cardNum = String(card.vouId);
+          card.text = `${cardNum.substr(0, 4)} ****** ${cardNum.substr(cardNum.length - 4)} ${card.aliasName ? '(' : ''} ${card.aliasName || ''}${card.aliasName ? ')' : ''}`
+          this.cardList.push(card);
+        }
+
+      }
+    },
+    getData() {
+      let params = {
+        PayerAcctNbr: this.payerAcctNbr,
+        ChooseDate: dayjs(this.currentDate).format('YYYY-MM'),
+        //branchId: '2336',
+        ChnlId: '62'
+      }
+      this.request('QueryTransRecordList',
+        params
+      ).then((res) => {
+        console.log("查询转账记录", res)
+        this.tradingRecord = res.DetailList;
+        this.totalAmt = 0;
+        for (let item of this.tradingRecord) {
+          if (item.transStatus == '0') {
+            this.totalAmt += Number(item.transAmt);
+          }
+        }
+        this.totalAmt = this.totalAmt.toFixed(2)
+      }).catch((error) => {
+        console.log(error)
+        this.payee.IBPSFlag = 0;
+      })
+    },
+    getStatus(status) {
+      return this.tools.getTransStatus(status);
+    },
+    formatter(type, value) {
+      if (type === 'year') {
+        return `${value}年`;
+      } else if (type === 'month') {
+        return `${value}月`
+      }
+      return value;
+    },
+    //下拉菜单选中的数据
+    changeValue1() {
+      this.getData();
+    },
+    cancelDate() {
+      this.$refs.dateDropDown.toggle();
+    },
+    confirmDate() {
+      this.$refs.dateDropDown.toggle();
+      this.selectDate = dayjs(this.currentDate).format('YYYY-MM');
+      let nowDate = dayjs().format('YYYY-MM')
+      if (this.selectDate == nowDate) {
+        this.selectDate = '本月'
+      }
+      // this.currentDate = dayjs(this.currentDate).format('YYYY-MM');
+      this.getData();
+    },
+    getType(extTransTypcd) {
+      let text = '';
+      switch (extTransTypcd) {
+        case "1102":
+          text = '银行账户转账';
+          break;
+        case "1103":
+          text = '手机号转账';
+          break
+        case "1103":
+          text = '手机号转账';
+          break
+        case "1221":
+          text = '预约转账';
+          break
+        case "1222":
+          text = '预约转账';
+          break
+        default:
+          text = "银行账户转账"
+      }
+      return text
+    },
+    goDetail(data) {
+      this.$router.push({ name: 'recordDetail', params: { data: data } })
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/ .outer .content .van-dropdown-menu .van-hairline--top-bottom::after {
+  border-width: 2px !important;
+}
+/deep/ .select-date {
+  width: 100%;
+  display: flex;
+  .van-dropdown-menu {
+    width: 100%;
+    height: px2vw(90);
+  }
+  .van-dropdown-item__option--active {
+    background: #f9fafb;
+  }
+  .van-dropdown-menu__item {
+    height: px2vw(90);
+  }
+  .van-dropdown-item__content {
+    .van-overlay {
+      background: rgba(0, 0, 0, 1);
+      opacity: 0.5;
+    }
+    .van-cell--clickable {
+      .van-cell__title {
+        padding-left: px2vw(40);
+        color: inherit;
+      }
+      .van-cell__value {
+        padding-right: px2vw(40);
+        flex: none;
+      }
+    }
+  }
+  .van-popup .van-cell:not(:last-child)::after {
+    border-bottom: 2px solid #ebeef0;
+    left: px2vw(40);
+    width: px2vw(670);
+  }
+}
+.record-header {
+  padding: 0 px2vw(40);
+  background: #f5f6f8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: px2vw(80);
+  .date {
+    font-size: px2vw(26);
+    color: #7d7d7d;
+    font-family: $font-family;
+  }
+  .totalAmt {
+    font-size: px2vw(26);
+    color: #262626;
+    font-family: $font-family;
+  }
+}
+.record {
+  background: #fff;
+  height: 100%;
+  display: flex;
+  flex: 1;
+  .scrollerBox {
+    height: 100%;
+    background: #f5f6f8;
+  }
+  //   padding: 0 px2vw(40);
+  .item-wrap{
+    background:#fff;
+  }
+  .record-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 px2vw(40);
+    height: px2vw(128);
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    .detail-left {
+      p {
+        font-size: px2vw(30);
+        font-family: $font-family;
+        font-weight: 400;
+        color: rgba(51, 51, 51, 1);
+        margin-bottom: px2vw(16);
+      }
+      span {
+        font-size: px2vw(24);
+        font-family: $font-family;
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+      }
+    }
+    .detail-income {
+      font-size: px2vw(30);
+      font-family: $font-family;
+      font-weight: 400;
+      color: rgba(249, 97, 89, 1);
+    }
+    .detail-expend {
+      font-size: px2vw(30);
+      font-family: $font-family;
+      font-weight: 400;
+      color: #262626;
+      text-align: right;
+      .status {
+        margin-top: px2vw(16);
+        font-size: px2vw(24);
+        font-family: $font-family;
+        font-weight: 300;
+        color: #282828;
+        text-align: right;
+        &.success {
+          color: #7d7d7d;
+        }
+        &.failure {
+          color: rgba(249, 97, 89, 1);
+        }
+        &.warning {
+          color: #ffb52b;
+        }
+      }
+    }
+  }
+  .record-detail:last-child {
+    border-bottom: 0;
+  }
+}
+.empty {
+  .img-box {
+    width: px2vw(300);
+    margin: px2vw(86) auto 0;
+    img {
+      width: 100%;
+    }
+    p {
+      font-size: px2vw(28);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(40);
+      text-align: center;
+      margin-top: px2vw(26);
+    }
+  }
+}
+
+.footer-btn {
+  display: flex;
+  box-shadow: px2vw(-5) px2vw(-5) px2vw(20) 0px rgba(69, 69, 83, 0.5);
+  button {
+    height: px2vw(90);
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    &.cancel-btn {
+      color: #262626;
+      font-size: px2vw(30);
+      background: #fff;
+    }
+    &.confirm-btn {
+      color: #fff;
+      font-size: px2vw(30);
+      background: linear-gradient(
+        270deg,
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+    }
+  }
+}
+
+/deep/ .van-picker {
+  .van-picker__toolbar {
+    display: none;
+  }
+  .van-picker__columns {
+    .van-hairline--top-bottom::after {
+      border-width: 0;
+    }
+  }
+  .van-picker__frame {
+    border-top: 1px solid rgba(229, 229, 229, 1);
+    border-bottom: 1px solid rgba(229, 229, 229, 1);
+  }
+}
+</style>

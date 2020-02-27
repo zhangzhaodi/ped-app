@@ -1,0 +1,44 @@
+/**
+ * Created by Administrator on 2019/7/23.
+ */
+import Vue from 'vue'
+import App from './App'
+import router from './router'
+import vuex from 'vuex'
+
+import echarts from 'echarts'
+Vue.prototype.$echarts = echarts
+import "@/lib/commend/WVJSBridge"
+import "@/lib/commend/nativecall"
+
+import store from '@/store/store.js'
+Vue.use(vuex);
+import request from '@/axios/http.js'
+import '@/filter/filter'
+import '@/tools/tools'
+import '@/tools/directive'
+import 'mand-mobile/lib-vw/mand-mobile.css'
+import 'vant/lib/icon/local.css';
+import '@/assets/IconFont/iconfont.css'
+import "normalize.css"
+import 'mint-ui/lib/style.css'
+import { Dialog, RadioGroup, Radio ,Button, Checkbox, CheckboxGroup,Collapse, CollapseItem,
+  DropdownMenu, DropdownItem,DatetimePicker,Switch,Popup} from "vant"
+import { Amount } from 'mand-mobile';
+Vue.use(Dialog).use(RadioGroup).use(Radio).use(Button).use(Checkbox).use(CheckboxGroup).use(Collapse).use(CollapseItem)
+.use(DropdownMenu).use(DropdownItem).use(DatetimePicker).use(Switch).use(Popup);
+Vue.use(Amount);
+Vue.use(echarts)
+// import "../../styles/global.scss"
+window.version = 'v20190626-16:40'
+Vue.use(request)
+
+Vue.config.productionTip = false
+
+/* eslint-disable no-new */
+new Vue({
+  el: '#app',
+  router,
+  store,
+  render: h => h(App)
+})

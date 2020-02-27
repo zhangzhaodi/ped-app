@@ -1,0 +1,103 @@
+<template>
+  <div class="item">
+    <div class="top">
+      <div class="left">
+        <div class="name">{{data.name}}</div>
+        <div class="netWorth" v-if="data.netWorth">{{"当前净值:"+data.netWorth}}</div>
+      </div>
+      <p class="method" v-if="data.method">{{data.method}}</p>
+    </div>
+    <div class="bottom">
+      <div class="left">
+        <p class="text">持有金额(元)</p>
+        <p class="money">{{data.money|Money}}</p>
+      </div>
+      <div class="center">
+        <p class="text">{{data.rate.text}}</p>
+        <p class="rate">{{data.rate.num+'%'}}</p>
+      </div>
+      <div class="right">
+        <p class="text">{{data.dueDate.text}}</p>
+        <p class="rate">{{data.dueDate.date}}</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    data: {
+      require: true
+    }
+  },
+  methods: {
+    toDetail() {
+      this.$router.push({ name: "pocketDetail", params: this.data });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.item {
+  background: #fff;
+  height: px2vw(265);
+  padding: px2vw(43) px2vw(40) px2vw(40) px2vw(42);
+  box-sizing: border-box;
+  .top {
+    height: px2vw(68);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      .name {
+        font-size: px2vw(26);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+      }
+      .netWorth {
+        font-size: px2vw(22);
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+        margin-top: px2vw(18);
+      }
+    }
+    .method {
+      padding: px2vw(9) px2vw(14);
+      background: #ebf3ff;
+      text-align: center;
+      border: px2vw(4);
+      color: #3e8fff;
+    //   flex: 1;
+    }
+  }
+  .bottom {
+    margin-top: px2vw(40);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    .text {
+      font-size: px2vw(22);
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+    }
+    .money,
+    .rate,
+    .date {
+      margin-top: px2vw(20);
+      color: #f75a50;
+      font-weight: 500;
+      font-size: px2vw(30);
+    }
+    .date {
+      color: #262626;
+    }
+  }
+}
+</style>

@@ -1,0 +1,39 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content"></div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      }
+    };
+  },
+  components: {
+    Myheader: Header
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .content {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+}
+</style>

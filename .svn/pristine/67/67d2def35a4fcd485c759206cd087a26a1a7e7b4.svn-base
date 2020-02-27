@@ -1,0 +1,385 @@
+<template>
+  <div class="outer remittance">
+    <Myheader :title="$route.meta.title" :params="headerParams" :isSet="true" @set="goSet" :backRouter="headerBackRouter" backgroundColor="transparent" :isWhite="true"></Myheader>
+    <!-- 顶部card区域 -->
+    <div class="transfer-card">
+      <div class="top">
+        <router-link :to="{ name: 'cardTransfer' }" class="route-btn">
+          <div class="icon-warpper">
+            <img src="@/assets/transferAccounts/icon_zhuanzhang_yinhangka@2x.png" alt />
+          </div>
+
+          <p class="transfer-type">银行账户转账</p>
+        </router-link>
+        <router-link :to="{ name: 'phoneTransfer' }" class="route-btn">
+          <div class="icon-warpper">
+            <img src="@/assets/transferAccounts/icon_zhuanzhang_shoujihao@2x.png" alt />
+          </div>
+          <p class="transfer-type">手机号转账</p>
+        </router-link>
+        <router-link :to="{ name: 'orderList' }" class="route-btn">
+          <div class="icon-warpper">
+            <img class="btm-img" src="@/assets/transferAccounts/icon_zhuanzhang_yuyue@2x.png" alt />
+          </div>
+          <p class="transfer-type">预约转账</p>
+        </router-link>
+      </div>
+      <div class="bottom">
+        <div class="btn" @click="toRecord">
+          <img class="btm-img" src="@/assets/transferAccounts/icon_zhuanzhang_jilu@2x.png" alt />
+          <span>转账记录</span>
+        </div>
+        <div class="mid-line"></div>
+
+        <div class="btn" @click="toBatch">
+          <img class="btm-img" src="@/assets/transferAccounts/icon_zhuanzhang_piliang@2x.png" alt />
+          <span>批量转账</span>
+        </div>
+      </div>
+    </div>
+    <van-cell class="receivers-row" title="常用收款人" is-link :value="`全部(${payeesNum})`" @click='goToAllPayee' />
+    <Scroller class="scroll-body">
+      <van-collapse v-model="activeNames">
+        <div>
+          <!-- 本人卡为折叠面板 -->
+          <van-collapse-item v-if="topContactsLists[0].ower.length>0"  class="collapse-cell">
+            <template slot="title">
+              <div slot="title" class="payee-col">
+                <div class="payee-icon user-head">
+                  <img :src="require(`@/assets/img_touxiang_normal@2x.png`)" v-real-img="`${userInfo.FullHeadImg}`" alt />
+                </div>
+                <div class="payee-right">
+                  <div class="flex-center username">{{userInfo.Name}}<span class="dot">{{topContactsLists[0].ower.length}}</span></div>
+                </div>
+              </div>
+            </template>
+
+            <template>
+              <van-cell v-for="(owerCard,index) in topContactsLists[0].ower" :key="index" class="payee-card" @click="toContactTransfer(owerCard)">
+                <template slot="title">
+                  <div slot="title" class="payee-col">
+                    <div class="payee-icon">
+                      <img :src="tools.bankIconImg(owerCard.bankNbr)"  alt />
+                    </div>
+                    <div class="payee-right">
+                      <div>{{owerCard.bankName}}</div>
+                      <div class="info">
+                        {{owerCard.payeeAcctNbr | CardProtect}}
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </van-cell>
+            </template>
+          </van-collapse-item>
+
+          <div class="flex-row" v-for="(card,index) in topContactsLists[1].other">
+            <van-cell @click="toContactTransfer(card)">
+              <template slot="title">
+                <div slot="title" class="payee-col">
+                  <div class="payee-icon">
+                    <img :src="tools.bankIconImg(card.bankNbr)"  alt />
+                  </div>
+                  <div class="payee-right">
+                    <div>{{card.payeeName}}</div>
+                    <div class="info">
+                      {{card.payeeAcctNbr | CardProtect}}
+                      <span v-if="card.bankName">&nbsp;|&nbsp;</span>{{card.bankName}}
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </van-cell>
+          </div>
+        </div>
+
+      </van-collapse>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState } from "vuex";
+import { Collapse, CollapseItem, Toast } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Collapse.name]: Collapse,
+    [CollapseItem.name]: CollapseItem,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      activeNames: [],
+    };
+  },
+  computed: {
+    ...mapState('common', ['userInfo']),
+    ...mapState('transferAccounts', ['linkManLists', 'topContactsLists']),
+    payeesNum(val) {
+      return this.linkManLists.length || 0
+    },
+  },
+  created() {
+    this.initData();
+  },
+  mounted() {
+  },
+  methods: {
+    ...mapActions('common', ['getUserInfo']),
+    ...mapActions('transferAccounts', ['getLinkManLists', 'getTopContactsLists']),
+    async initData() {
+      await this.getUserInfo();
+      this.getLinkManLists();
+      await this.getTopContactsLists();
+      // this.getBankList();
+    },
+    goToAllPayee() {
+      this.$router.push({ name: "allPayee" });
+    },
+    toContactTransfer(data) {
+      this.$router.push({ name: "linkmanTransfer", params: { payee: data } });
+    },
+    goSet() {
+      this.$router.push({ name: 'config' })
+    },
+    toRecord() {
+      this.$router.push({ name: 'record' })
+    },
+    toBatch() {
+      Toast("该功能暂不可用")
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  &.remittance {
+    background: url("~@/assets/transferAccounts/bg_zhuanzhang@2x.png") top
+      center no-repeat;
+    background-size: 100% px2vw(270);
+    background-color: #fff;
+  }
+  .transfer-card {
+    background: #fff;
+    margin: px2vw(20) px2vw(30) px2vw(43) px2vw(30);
+    border-radius: 10px;
+    box-shadow: 0px 8px 56px 0px rgba(146, 154, 196, 0.2);
+    display: flex;
+    flex-direction: column;
+    border:1px solid rgba(245,245,245,1);
+    // height: px2vw(260);
+    padding: px2vw(40) px2vw(0) px2vw(0) px2vw(0);
+    .top {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      padding-bottom: px2vw(30);
+      padding-left:px2vw(15);
+      padding-right:px2vw(15);
+      justify-content: space-around;
+      border-bottom: 1px solid #dedede;
+      .route-btn {
+        .transfer-type {
+          width: 100%;
+          text-align: center;
+          color: rgba(38, 38, 38, 1);
+          font-family: PingFangSC;
+          font-weight: 400;
+          font-size: px2vw(28);
+        }
+        .icon-warpper {
+          height: px2vw(72);
+          // width: px2vw(72);
+          justify-content: center;
+          text-align: center;
+          align-items: center;
+          display: flex;
+          flex-direction: column;
+          margin-bottom: px2vw(32);
+          img {
+            height: 100%;
+          }
+        }
+      }
+    }
+    .bottom {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      height: 100%;
+      .mid-line {
+        height: px2vw(30);
+        // background:#CFDDFC;
+        position: relative;
+        &::after {
+          position: absolute;
+          box-sizing: border-box;
+          content: " ";
+          pointer-events: none;
+          top: -50%;
+          right: -50%;
+          bottom: -50%;
+          left: -50%;
+          border: 0 solid #cfddfc;
+          border-right-width: 1px;
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+        }
+      }
+      .btn {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        padding-top: px2vw(8);
+        padding-bottom: px2vw(8);
+        font-size: px2vw(26);
+        font-family: PingFangSC;
+        color: #262626;
+        font-weight: 400;
+        .btm-img {
+          height: px2vw(80);
+          margin-right: px2vw(18);
+        }
+      }
+    }
+  }
+  .receivers-row {
+    color: rgba(38, 38, 38, 1);
+    font-size: px2vw(30);
+    padding: px2vw(38) px2vw(40);
+    background: initial;
+    .van-cell__value {
+      color: #262626;
+    }
+    /deep/ .van-cell:not(:last-child)::after {
+      border: none;
+    }
+  }
+
+  /deep/ .scroll-body {
+    .van-hairline--top::after {
+      border: none;
+    }
+    .van-hairline--top-bottom::after {
+      border: none;
+    }
+    // 折叠区域
+    .collapse-cell {
+      margin: 0 px2vw(40);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      .payee-card {
+        padding-left: px2vw(108);
+      }
+      .van-cell {
+        &.van-collapse-item__title--expanded {
+          border-bottom: $border-bottom;
+        }
+      }
+      .van-cell:not(:last-child)::after {
+        border: none;
+      }
+      .van-collapse-item__wrapper {
+        width: 100%;
+        .van-collapse-item__content {
+          width: 100%;
+          padding: 0;
+          .van-cell {
+            margin: 0;
+          }
+        }
+      }
+    }
+    .van-cell {
+      margin: 0 px2vw(40);
+      height: px2vw(110);
+      padding: 0;
+      display: flex;
+      align-items: center;
+      border-bottom: $border-bottom;
+    }
+    .payee-col {
+      display: flex;
+      align-items: center;
+      .payee-icon {
+        width: px2vw(64);
+        max-height: px2vw(64);
+        // height: px2vw(64);
+        margin-right: px2vw(20);
+        display:flex;
+        &.user-head{
+          img{
+            border-radius: 50%;
+            width:100%;
+          }
+        }
+        img{
+          width:100%;
+        }
+      }
+      .payee-right {
+        color: #262626;
+        font-weight: 400;
+        font-size: px2vw(30);
+        font-family: PingFangSC;
+        letter-spacing: px2vw(1);
+        div {
+          line-height: 1.5;
+        }
+        .info {
+          color: #7d7d7d;
+          font-size: px2vw(24);
+        }
+        
+        //徽标
+        .dot{
+          margin-left: px2vw(8);
+          width: px2vw(30);
+          height: px2vw(30);
+          padding-top:px2vw(2);
+          background: url("~@/assets/transferAccounts/icon_hongdian@2x.png") center no-repeat;
+          background-size: contain;
+          font-size: px2vw(20);
+          font-family: $font-family;
+          font-weight: 400;
+          color: #fff;
+          display:flex;
+          justify-content: center;
+          align-items: center;
+          text-align:center;
+        }
+        // .dot {
+        //   display: inline-block;
+        //   text-align: center;
+        //   line-height: px2vw(30);
+        //   border-radius: 50%;
+        //   width: px2vw(30);
+        //   height: px2vw(30);
+        //   font-size: px2vw(20);
+        //   font-family: $font-size;
+        //   font-weight: 400;
+        //   color: #fff;
+        //   background: linear-gradient(
+        //     204deg,
+        //     rgba(253, 77, 69, 1) 0%,
+        //     rgba(248, 123, 62, 1) 100%
+        //   );
+        // }
+      }
+    }
+  }
+}
+</style>

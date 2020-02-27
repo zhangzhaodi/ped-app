@@ -1,0 +1,133 @@
+<template>
+  <div class="listContent" v-if="show">
+    <div class="lists" v-if="detailData.TransList.length>=1">
+      <!-- 有记录的情况 -->
+      <div class="nextTime">{{'下次自动转账时间：'+nextTime}}</div>
+      <div class="list" v-for="(item,index) in recordList" :key="index">
+        <div class="left">
+          <p class="time">{{item.time}}</p>
+          <p class="type">{{item.type}}</p>
+        </div>
+        <div class="money">{{item.money}}</div>
+      </div>
+    </div>
+    <div class="noRecord" v-else>
+      <!-- 没有记录 -->
+      <div class="info">
+        <div class="line"></div>
+        <p>当前暂无转账记录</p>
+        <div class="line"></div>
+      </div>
+      <div class="nextTime">
+        <span>下次自动转账时间：</span>
+        <span>{{detailData.NextDateMap.planDate}}</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      show: false
+    };
+  },
+  props: {
+    detailData: {
+      //详情信息
+      require: true,
+    },
+    data: {
+      //列表返回数据
+      require: true
+    }
+  },
+  watch:{
+    'detailData.NextDateMap.planDate':{
+      handler(val){
+        this.show = true
+      }
+    }
+  },
+  created() {
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.listContent{
+  flex:1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.noRecord {
+  font-size: px2vw(22);
+  font-weight: 300;
+  color: #7d7d7d;
+  margin-top: px2vw(70);
+  .info {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    p {
+      padding: 0 px2vw(20);
+    }
+    .line {
+      height: px2vw(1);
+      width: px2vw(80);
+      background-color: #7d7d7d;
+    }
+  }
+  .nextTime {
+    margin-top: px2vw(12);
+    text-align: center;
+  }
+}
+.lists {
+  font-size: px2vw(24);
+  font-weight: 400;
+
+  .nextTime {
+    height: px2vw(74);
+    line-height: px2vw(74);
+    color: #a8a8a8;
+    padding: 0 px2vw(40);
+  }
+  .list {
+    padding: 0 px2vw(40);
+    height: px2vw(130);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    position: relative;
+    .time {
+      font-size: px2vw(30);
+      color: #333333;
+    }
+    .type {
+      font-weight: 300;
+      color: #7d7d7d;
+      font-size: px2vw(22);
+      margin-top: px2vw(17);
+    }
+    .money {
+      color: #f96159;
+      font-size: px2vw(30);
+    }
+  }
+  .list:not(:first-child):after{
+      content: " ";
+      position: absolute;
+      height: px2vw(1);
+      left: px2vw(40);
+      right: px2vw(40);
+      top: 0;
+      background-color: #EBEEF0;
+      z-index: 100;
+  }
+}
+</style>

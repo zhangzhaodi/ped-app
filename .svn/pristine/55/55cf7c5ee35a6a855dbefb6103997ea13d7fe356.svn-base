@@ -1,0 +1,237 @@
+<template>
+  <van-popup
+    :overlay-style="{ background: '#fff', opacity: 0 }"
+    v-if="visible"
+    v-model="visible"
+    :style="{ height: '100%', width: '100%' }"
+    position="right"
+  >
+    <div class="outer">
+      <van-nav-bar title="选择开户网点" left-arrow @click-left="onClickLeft" />
+      <search :placeholder="`请输入`"></search>
+      <Scroller>
+        <van-index-bar
+          :z-index="1"
+          :sticky-offset-top="98"
+          :index-list="indexAnchor"
+        >
+          <div v-for="(item, index) in indexListData" :key="index">
+            <van-index-anchor
+              style="visibility: hidden;height: 0;"
+              :index="item.anchor"
+              >{{ item.anchor }}</van-index-anchor
+            >
+            <div class="paddingLR40">
+              <van-cell
+                v-for="(child, index) in item.children"
+                :key="index"
+                :clickable="true"
+                @click="handleSelect(child)"
+              >
+                <template slot="title">
+                  <div slot="title" class="payee-col">
+                    <div class="payee-right">
+                      <div>{{ child.bankname }}</div>
+                    </div>
+                  </div>
+                </template>
+              </van-cell>
+            </div>
+          </div>
+        </van-index-bar>
+      </Scroller>
+    </div>
+  </van-popup>
+</template>
+<script>
+import { IndexBar, IndexAnchor, Popup, Toast, NavBar, Cell } from "vant";
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import Search from "@/components/Search";
+export default {
+  components: {
+    Search,
+    Myheader: Header,
+    [IndexBar.name]: IndexBar,
+    [IndexAnchor.name]: IndexAnchor,
+    [Toast.name]: Toast,
+    [NavBar.name]: NavBar,
+    [Popup.name]: Popup,
+    [Cell.name]: Cell,
+    Scroller
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    bankId: {
+      type: String,
+      default: ""
+    },
+    cityCode: {
+      type: String,
+      default: ""
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      visible: this.show,
+      //右侧锚点列表
+      indexAnchor: [],
+      //带锚点的数据列表
+      indexListData: [],
+      selectItem: {},
+      data: []
+    };
+  },
+  created() {
+    // this.getIndexList();
+    // this.getData();
+  },
+  methods: {
+    getData() {
+      let params = {
+        BranchId: "2336",
+        ChnlId: "62",
+        NodeCity: this.cityCode, //cityCode '9024'
+        BankCataLog: this.bankId //'bankId'  '102'
+      };
+      this.request("QryOpenBankNetworkPoint", params, true)
+        .then(res => {
+          this.data = res.NetworkList;
+          this.getIndexList();
+          console.log("查询开户网点", res);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    // 字母索引排序 获得新数据
+    getIndexList() {
+      const Pinyin = require("@/tools/pinyin.js").Pinyin;
+
+      let data = [...this.data];
+      console.log(data, "数组");
+      //第一轮生成带有26个字母的锚点列表
+      let arrList = [];
+      for (let i = 0; i < 26; i++) {
+        let item = {
+          anchor: String.fromCharCode(65 + i),
+          children: []
+        };
+        arrList.push(item);
+      }
+      // console.log('arrList', arrList);
+      //将对应字母数据插入到indexList里
+      data.map(item => {
+        let name = item.bankname; //后台返回名字字段
+        let PinYin = Pinyin.parse(name)[0];
+        let firstStr = PinYin.target.substring(0, 1).toUpperCase();
+        for (let child of arrList) {
+          //可以加入其他判断 比如 我的账户（使用id作对比）
+          //字母索引插入
+          if (child.anchor === firstStr) {
+            child.children.push(item);
+          }
+        }
+      });
+      // 第三轮遍历arrList过滤掉无内容素的item,避免空占位
+      let indexList = [],
+        indexAnchor = [];
+      for (let item of arrList) {
+        if (item.children.length > 0) {
+          indexList.push(item);
+          indexAnchor.push(item.anchor);
+        }
+      }
+      this.indexListData = indexList;
+      this.indexAnchor = indexAnchor;
+      console.log("indexLLLL", indexList);
+    },
+    onClickLeft() {
+      this.visible = false;
+      this.$emit("close");
+    },
+    handleSelect(item) {
+      this.selectItem = item;
+      this.visible = false;
+      this.$emit("select", this.selectItem);
+    }
+  },
+  watch: {
+    //监听父组件变化，并赋值
+    show: {
+      handler(val) {
+        this.visible = this.show;
+        if (val) {
+          // if (this.indexListData.length === 0) {
+          this.getData();
+          // }
+        }
+      }
+    },
+    visible: {
+      handler(val) {
+        this.$emit("update:show", val);
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/ .outer {
+  .van-nav-bar {
+    z-index: 5 !important;
+    &.van-hairline--bottom::after {
+      border-bottom-width: 0;
+    }
+  }
+  .van-index-bar__sidebar {
+    margin-right: px2vw(16);
+  }
+  .van-nav-bar .van-icon {
+    color: #333;
+  }
+  .van-index-bar__index--active {
+    color: #333 !important;
+  }
+  .van-index-bar__index {
+    color: #0085ff;
+    line-height: px2vw(36);
+  }
+  .scrollerBox {
+    .van-cell {
+      margin: 0;
+      height: px2vw(110);
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+    .van-index-anchor {
+      background: #f5f6f8;
+      height: px2vw(61);
+      font-size: px2vw(24);
+      color: $color-text;
+      font-weight: 500;
+    }
+
+    .payee-col {
+      display: flex;
+      align-items: center;
+      .payee-right {
+        color: #262626;
+        font-weight: 400;
+        font-size: px2vw(30);
+        font-family: PingFangSC;
+        letter-spacing: px2vw(1);
+      }
+    }
+  }
+}
+</style>

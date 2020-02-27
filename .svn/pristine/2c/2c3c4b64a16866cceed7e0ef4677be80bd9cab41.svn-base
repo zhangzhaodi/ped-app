@@ -1,0 +1,205 @@
+<template>
+  <div class="dialogOuter">
+    <van-dialog
+      v-model="isShow"
+      :show-cancel-button="showCancel"
+      :close-on-click-overlay="false"
+      :confirmButtonText="confirmButtonText"
+      :cancelButtonText="cancelButtonText"
+      @confirm="con"
+      @cancel="cancel"
+    >
+      <!-- 不为白名单 -->
+      <div class="content" v-if="type==1">
+        <p class="title">提示</p>
+        <p class="content">您尚未签约我行理财产品，可点击立即签约</p>
+      </div>
+      <!-- 未签约 -->
+      <div class="content" v-if="type==2">
+        <p class="title">提示</p>
+        <p class="content">
+         “该账号尚未签约”，请至我行营业网点办理，详情咨询
+          <a href="tel:95755">95755</a>
+        </p>
+      </div>
+      <!-- 没有进行风险评估 -->
+      <div class="content" v-if="type==3">
+        <p class="title">提示</p>
+        <p class="content">根据监管部门要求，体验理财产品需先进行风险评估</p>
+      </div>
+      <!-- 风险评估过期 -->
+      <div class="content" v-if="type==4">
+        <p class="title">风险评估过期</p>
+        <p class="content">您的风险评估已过期，是否重新评估</p>
+      </div>
+      <!-- 风险等级不匹配 -->
+      <div class="content" v-if="type==5">
+        <p class="title">提示</p>
+        <p class="content">“您的风险评估结果与产品风险不匹配”是否重新评估</p>
+      </div>
+      <!-- 未登录去登陆 -->
+      <div class="content" v-if="type==6">
+        <p class="title">提示</p>
+        <p class="content">当前用户未登录，请登录</p>
+      </div>
+      <div class="content" v-if="type==7">
+        <p class="title">提示</p>
+        <p class="content">您是否购买过任意一家银行的理财产品</p>
+      </div>
+    </van-dialog>
+  </div>
+</template>
+
+<script>
+import { Dialog, Popup } from "vant";
+export default {
+  components: {
+    [Dialog.name]: Dialog,
+    [Popup.name]: Popup
+  },
+  props: {
+    //是否展示取消
+    showCancel: {
+      type: Boolean,
+      default: true
+    },
+    //提示类型
+    infoType: {
+      type: Number,
+      default: null
+    },
+    //是否展示
+    show: {
+      type: Boolean
+    },
+    //确认的按钮文案
+    confirmButtonText: {
+      type: String,
+      default: "确认"
+    },
+    //取消的按钮文案
+    cancelButtonText: {
+      type: String,
+      default: "取消"
+    },
+    type: {
+      type: String
+    }
+  },
+  watch: {
+    //监听父组件中show变化
+    show: {
+      handler(val) {
+        this.isShow = val;
+      }
+    }
+  },
+  created() {
+    this.isShow = this.show;
+  },
+  data() {
+    return {
+      isShow: false,
+      tit: ""
+    };
+  },
+  methods: {
+    //暴露的close接口
+    close() {
+      this.isShow = false;
+      this.$emit("close");
+    },
+    //暴露的cancel接口
+    cancel() {
+      this.isShow = false;
+      this.$emit("cancel");
+    },
+    //暴露的con接口
+    con() {
+      this.$emit("confirm");
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/ .van-button {
+  border-radius: px2vw(36);
+  box-sizing: border-box;
+}
+/deep/ .van-dialog {
+  width: 73.6%;
+  width: px2vw(552);
+  border-radius: px2vw(16);
+  box-sizing: border-box;
+}
+
+.dialogOuter {
+  font-family: PingFangSC;
+
+  /deep/ .van-dialog__footer,
+  /deep/.van-dialog__footer--buttons,
+  /deep/ .van-hairline--top {
+    padding: 0 px2vw(40);
+    display: flex;
+    flex-direction: row;
+    margin-bottom: px2vw(40);
+    .van-button {
+      width: px2vw(218);
+      height: px2vw(72);
+      line-height: px2vw(72);
+      font-size: px2vw(30);
+      box-sizing: border-box;
+      flex: 1;
+    }
+    .van-dialog__cancel {
+      border: px2vw(1) solid rgba(107, 171, 255, 1);
+      color: rgba(107, 171, 255, 1);
+      background: #fff;
+      margin-right: px2vw(36);
+    }
+    .van-dialog__confirm {
+      background: linear-gradient(
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+      color: #fff;
+    }
+    .van-hairline--top::after {
+      border-top-width: 0px;
+    }
+    .van-hairline--left::after {
+      border-left-width: 0px;
+    }
+  }
+  /deep/ .van-dialog__content {
+    padding: 0 px2vw(30);
+    .img img {
+      width: px2vw(22);
+      height: px2vw(22);
+    }
+    .title {
+      text-align: center;
+      font-size: px2vw(34);
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(34);
+      letter-spacing: px2vw(1);
+      margin-top: px2vw(46);
+    }
+    .content {
+      text-align: center;
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(30);
+      margin-top: px2vw(30);
+      margin-bottom: px2vw(30);
+      line-height: px2vw(36);
+    }
+  }
+  /deep/ .van-hairline--top::after {
+    border-top-width: 0;
+  }
+}
+</style>      

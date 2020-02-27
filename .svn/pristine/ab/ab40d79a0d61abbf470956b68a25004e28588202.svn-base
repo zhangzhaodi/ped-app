@@ -1,0 +1,389 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :isWhite="header.isWhite"
+      :backgroundColor="header.color"
+      :params="params"
+    ></Myheader>
+    <div class="content">
+      <div class="product" v-if="data.ModulCode=='1102'">
+        <div class="title">
+          <p>{{data.ProductName}}</p>
+          <!-- <span class="iconfont icongengduo-"></span> -->
+        </div>
+        <div :class="['center',{'active':packUp}]">
+          <p class="text">当前净值</p>
+          <p class="num">{{data.ProdValue}}</p>
+        </div>
+        <div class="top_detail">
+          <div class="left">
+            <p class="top">产品份额(份)</p>
+            <p class="bottom">{{data.FrmVol|Money}}</p>
+          </div>
+          <div class="center">
+            <p class="top">认购金额(元)</p>
+            <p class="bottom">{{data.Amt|Money}}</p>
+          </div>
+          <div class="right">
+            <p class="top">预期收益率</p>
+            <p
+              :class="['bottom',{'textOver':productInfo.expectProfRat.length>6&&productInfo.expectProfRat.length<=12},{'textOver1':productInfo.expectProfRat.length>12}]"
+            >{{productInfo.expectProfRate?productInfo.expectProfRate.indexOf('%')==-1?productInfo.expectProfRate+'%':productInfo.expectProfRate:'0'}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="product" v-if="data.ModulCode=='1303'">
+        <div class="title">
+          <p>{{data.ProductName}}</p>
+          <!-- <span class="iconfont icongengduo-"></span> -->
+        </div>
+        <div :class="['center',{'active':packUp}]">
+          <p class="text">当前净值</p>
+          <p class="num">{{data.ProdValue}}</p>
+        </div>
+        <div class="top_detail">
+          <div class="left">
+            <p class="top">产品份额(份)</p>
+            <p class="bottom">{{data.FrmVol|Money}}</p>
+          </div>
+          <div class="center">
+            <p class="top">认购金额(元)</p>
+            <p class="bottom">{{data.Amt|Money}}</p>
+          </div>
+          <div class="right">
+            <p class="top">份额净值</p>
+            <p class="bottom">{{data.ProdValue}}</p>
+          </div>
+        </div>
+        <!-- <div :class="['triangle',{'act':packUp}]" @click="close" v-if="data.type!=1">
+          <div></div>
+        </div>-->
+      </div>
+      <div class="product" v-if="data.ModulCode=='1306'">
+        <div class="title">
+          <p>{{data.ProductName}}</p>
+          <!-- <span class="iconfont icongengduo-"></span> -->
+        </div>
+        <div :class="['center',{'active':packUp}]">
+          <p class="text">当前净值</p>
+          <p class="num">{{data.ProdValue}}</p>
+        </div>
+        <div class="top_detail">
+          <div class="left">
+            <p class="top">产品份额(份)</p>
+            <!-- <p class="bottom">{{productInfo.tolValue}}</p> -->
+            <p class="bottom">{{data.FrmVol|Money}}</p>
+          </div>
+          <div class="center">
+            <p class="top">认购金额(元)</p>
+            <p class="bottom">{{data.Amt|Money}}</p>
+          </div>
+          <div class="right">
+            <p class="top">份额净值</p>
+            <p class="bottom">{{data.ProdValue}}</p>
+          </div>
+        </div>
+        <!-- <div :class="['triangle',{'act':packUp}]" @click="close" v-if="data.type!=1">
+          <div></div>
+        </div>-->
+      </div>
+      <div class="product" v-if="data.ModulCode=='1307'">
+        <div class="title">
+          <p>{{data.ProductName}}</p>
+          <!-- <span class="iconfont icongengduo-"></span> -->
+        </div>
+        <!-- <div :class="['center',{'active':packUp}]">
+          <p class="text">当前净值</p>
+          <p class="num">{{data.ProdValue}}</p>
+        </div>-->
+        <div class="top_detail">
+          <div class="left">
+            <p class="top">产品份额(份)</p>
+            <!-- <p class="bottom">{{productInfo.tolValue}}</p> -->
+            <p class="bottom">{{data.FrmVol|Money}}</p>
+          </div>
+          <div class="center">
+            <p class="top">认购金额(元)</p>
+            <p class="bottom">{{data.Amt|Money}}</p>
+          </div>
+          <div class="right">
+            <p class="top">份额净值</p>
+            <p class="bottom">{{data.ProdValue}}</p>
+          </div>
+        </div>
+        <!-- <div :class="['triangle',{'act':packUp}]" @click="close" v-if="data.type!=1">
+          <div></div>
+        </div>-->
+      </div>
+      <div class="addUp" v-if="data.ModulCode!='1102'">
+        <p class="label">
+          <span>份额累计净值:</span>
+          <!-- <span class="number">{{productInfo.TolNetValue}}</span> -->
+          <span class="number">{{data.ProdTolValue}}</span>
+        </p>
+        <!-- <p class="label" v-if="productInfo.NetValue">
+          <span>产品资产净值:</span>
+          <span class="number">{{productInfo.NetValue}}</span>
+        </p>-->
+      </div>
+      <!-- 交易信息 -->
+      <TradeInfo :data="data"></TradeInfo>
+      <!-- 交易记录 -->
+      <TradingRecord :data="data"></TradingRecord>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import TradeInfo from "../../components/TradeInfo";
+import TradingRecord from "../../components/tradingRecord";
+export default {
+  components: {
+    Myheader: Header,
+    TradingRecord,
+    TradeInfo
+  },
+  data() {
+    return {
+      header: {
+        color: "transparent",
+        isWhite: true
+      },
+      data: null,
+      params: {
+        leftShow: false
+      },
+      packUp: false,
+      productInfo: {}
+    };
+  },
+  created() {
+    this.data = this.$route.params;
+    this.itemDetail();
+    this.CustomerHolProdListQry();
+    // console.log(this.data);
+  },
+  methods: {
+    close() {
+      //点击三角下面内容显示或隐藏
+      this.packUp = !this.packUp;
+    },
+    itemDetail() {
+      let ProductNo = this.data.ProductNo
+        ? this.data.ProductNo
+        : this.data.PrdCode;
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        ProductType: "1",
+        ProductNo: ProductNo
+      };
+      this.request("financialProMsgQry", { ...params })
+        .then(res => {
+          // console.log(res);
+          this.productInfo = { ...this.productInfo, ...res.ProductInfo[0] };
+        })
+        .catch(err => {
+          let str = err._RejMessage;
+          this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+          let _this = this;
+          setTimeout(function() {
+            _this.$toast.clear();
+            _this.$route.go(-1);
+          }, 2000);
+        });
+    },
+    //累计净值，产品资产净值
+    CustomerHolProdListQry() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        ProductType: "1",
+        PositionString: "1",
+        QueryRowsNum: "10",
+        CustomerIdentifyType: "1",
+        CustomerIdentify: this.$store.state.userInfo.CifNo,
+        ProductNo: this.data.ProductNo
+      };
+      this.request("CustomerHolProdListQry", { ...params })
+        .then(res => {
+          // console.log(res)
+          this.productInfo = { ...this.productInfo, ...res.FProPortAMTList[0] };
+          console.log(this.productInfo);
+        })
+        .catch(err => {
+          let str = err._RejMessage;
+          this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+          let _this = this;
+          setTimeout(function() {
+            _this.$toast.clear();
+            _this.$route.go(-1);
+          }, 2000);
+        });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/.headerBox {
+  position: absolute;
+}
+.content {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+.product {
+  // height: px2vw(374);
+  background: linear-gradient(
+    270deg,
+    rgba(248, 204, 173, 1) 0%,
+    rgba(218, 154, 120, 1) 100%
+  );
+  overflow: hidden;
+  padding: 0 px2vw(40);
+  position: relative;
+  z-index: 1000;
+  .title {
+    font-size: px2vw(34);
+    font-weight: 500;
+    color: #fff;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: px2vw(138);
+    padding-bottom: px2vw(30);
+    .iconfont {
+      font-size: px2vw(22);
+      color: #fff;
+    }
+  }
+  .center {
+    margin-top: px2vw(10);
+    transition: all 1s ease;
+    .text {
+      font-size: px2vw(24);
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+    }
+    .num {
+      font-size: px2vw(50);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+  .active {
+    // height: 0;
+    display: none;
+  }
+  .top_detail {
+    display: flex;
+    flex-direction: row;
+    margin-top: px2vw(30);
+    margin-bottom: px2vw(30);
+    justify-content: space-between;
+    color: #fff;
+    .center {
+      position: relative;
+      text-align: center;
+      margin-top: 0;
+    }
+    .left,
+    .center,
+    .right {
+      flex: 1;
+      position: relative;
+    }
+    .right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      .top,
+      .bottom {
+        width: px2vw(110);
+      }
+      .textOver {
+        font-size: px2vw(37);
+      }
+      .textOver1 {
+        font-size: px2vw(24);
+      }
+    }
+    .center::after {
+      position: absolute;
+      content: " ";
+      height: px2vw(50);
+      top: px2vw(8);
+      left: 0;
+      border-left: px2vw(1) solid #ffffff;
+    }
+    .right::after {
+      position: absolute;
+      content: " ";
+      height: px2vw(50);
+      top: px2vw(8);
+      left: 0;
+      border-left: px2vw(1) solid #ffffff;
+    }
+    // .center::before {
+    //   position: absolute;
+    //   content: " ";
+    //   height: px2vw(50);
+    //   top: px2vw(8);
+    //   right: 0;
+    //   border-left: px2vw(1) solid #ffffff;
+    // }
+    .top {
+      font-size: px2vw(22);
+      font-weight: 300;
+    }
+    .bottom {
+      margin-top: px2vw(10);
+      font-size: px2vw(34);
+      font-weight: 500;
+    }
+  }
+  .triangle {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 px2vw(16) px2vw(16);
+    border-color: transparent transparent rgba(255, 255, 255, 0.59);
+    margin: 0px auto;
+    // position: absolute;
+    // left: 0;
+    // right: 0;
+    // bottom: px2vw(20);
+    margin-bottom: px2vw(20);
+  }
+  .act {
+    border-width: px2vw(16) px2vw(16) 0;
+    border-color: rgba(255, 255, 255, 0.59) transparent transparent;
+  }
+}
+.addUp {
+  height: px2vw(102);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 px2vw(40);
+  background: #fff;
+  span {
+    font-size: px2vw(22);
+    font-weight: 300;
+    color: rgba(125, 125, 125, 1);
+  }
+  .number {
+    font-size: px2vw(26);
+    color: #262626;
+    margin-left: px2vw(20);
+  }
+}
+</style>

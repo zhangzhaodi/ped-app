@@ -1,0 +1,443 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <van-tabs v-model="active" class="my-tabs" :line-width="`4.27vw`">
+      <van-tab title="单次" name="once">
+        <div class="field-section first">
+          <van-cell-group class="filed_cell picker">
+            <van-cell is-link @click="datePicker = true">
+              <template slot="title">
+                <span class="custom-title">转账日期</span>
+              </template>
+              <template>
+                <div style="color:#262626;" v-if="createDate">{{createDate | dateFormatDot}}</div>
+                <div class="placeholder" v-else>请选择执行日期</div>
+              </template>
+            </van-cell>
+          </van-cell-group>
+        </div>
+
+        <section class="field-section">
+          <div class="filed_cell">
+            <div class="label">用途</div>
+            <div class="filed">
+              <v-input :maxlength="16" v-model="TransUsage" :value="TransUsage" placeholder="备注预约转账的目的"></v-input>
+            </div>
+          </div>
+        </section>
+
+      </van-tab>
+      <van-tab title="每周" name="week">
+        <div class="field-section first">
+          <div class="filed_cell week_radio">
+            <div class="week-label">星期</div>
+            <van-radio-group v-model="selectDay">
+              <van-radio v-for="(item,index) in weekList" :name="item.value" :key="index">
+                <div :class="{active: selectDay == item.value , inactive : !selectDay == item.value}">{{item.name}}</div>
+                <div slot="icon"></div>
+              </van-radio>
+            </van-radio-group>
+          </div>
+        </div>
+        <section class="field-section">
+          <van-cell-group class="filed_cell picker">
+            <van-cell is-link @click="dateRangePicker=true">
+              <template slot="title">
+                <span class="custom-title">执行日期</span>
+              </template>
+              <template>
+                <div style="color:#262626;" v-if="createDate && endDate">{{createDate | dateFormatDot}} - {{endDate | dateFormatDot}}</div>
+                <div class="placeholder" v-else>请选择执行日期</div>
+              </template>
+            </van-cell>
+          </van-cell-group>
+        </section>
+
+        <section class="field-section">
+          <div class="filed_cell">
+            <div class="label">用途</div>
+            <div class="filed">
+              <v-input :maxlength="16" v-model="TransUsage" :value="TransUsage" placeholder="备注预约转账的目的"></v-input>
+            </div>
+          </div>
+        </section>
+
+      </van-tab>
+      <van-tab title="每月" name="month">
+        <div class="field-section first">
+          <van-cell-group class="filed_cell picker">
+            <van-cell is-link @click="dayPicker = true">
+              <template slot="title">
+                <span class="custom-title">转账日期</span>
+              </template>
+              <template>
+                <div style="color:#262626;" v-if="selectDay">{{selectDay==32 ? '月末':selectDay+'日'}}</div>
+                <div class="placeholder" v-else>请选择日期</div>
+              </template>
+            </van-cell>
+          </van-cell-group>
+        </div>
+
+        <div class="field-section">
+          <van-cell-group class="filed_cell picker">
+            <van-cell is-link @click="dateRangePicker=true">
+              <template slot="title">
+                <span class="custom-title">执行日期</span>
+              </template>
+              <template>
+                <!-- <span >{{selectDay}}</span> -->
+                <div style="color:#262626;" v-if="createDate && endDate">{{createDate | dateFormatDot}} - {{endDate | dateFormatDot}}</div>
+                <div class="placeholder" v-else>请选择执行日期</div>
+              </template>
+            </van-cell>
+          </van-cell-group>
+        </div>
+
+        <section class="field-section">
+          <div class="filed_cell">
+            <div class="label">用途</div>
+            <div class="filed">
+              <v-input :maxlength="16" v-model="TransUsage" :value="TransUsage" placeholder="备注预约转账的目的"></v-input>
+            </div>
+          </div>
+        </section>
+      </van-tab>
+    </van-tabs>
+
+    <div class="footer-box">
+      <div class="btn-box">
+        <van-button :disabled="disabled" class="marginLR40" @click="next">下一步</van-button>
+      </div>
+    </div>
+
+    <!-- 选择日期 -->
+    <van-popup class="popup-round" v-model="datePicker" round position="bottom">
+      <!-- <van-picker show-toolbar title="选择时间" confirm-button-text="完成" :columns="dayList" @cancel="dayPicker = false" @confirm="handleSelect" /> -->
+      <van-datetime-picker title="选择时间" v-model="currentDate" type="date" :formatter="formatter" :min-date="minDate" @cancel="datePicker = false" @confirm="selectDate" />
+    </van-popup>
+    <!-- 选择日期 -->
+    <van-popup class="popup-round" v-model="dayPicker" round position="bottom">
+      <van-picker show-toolbar title="定投周期" confirm-button-text="完成" :columns="dayList" @cancel="dayPicker = false" @confirm="handleSelect" />
+    </van-popup>
+    <!-- 选择执行日期 -->
+    <DateRange :visible.sync="dateRangePicker" :startDate="startTime1" :endDate="endTime1" :minDate="minDate" @select="selectDateRange"></DateRange>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions } from "vuex";
+import { Amount, InputItem } from "mand-mobile";
+import { Tab, Tabs, Picker, Popup, DatetimePicker, Toast } from "vant";
+import { mapMutations, mapState } from 'vuex'
+import vInput from "@/components/Input/v-input/";
+import DateRange from "@/components/Popup/DateRange.vue";
+import dayjs from 'dayjs';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Tab.name]: Tab,
+    [Tabs.name]: Tabs,
+    [Popup.name]: Popup,
+    [Picker.name]: Picker,
+    [Toast.name]: Toast,
+    [DatetimePicker.name]: DatetimePicker,
+    vInput,
+    DateRange
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      TransUsage: "",//转账用途
+      active: 'once',
+      selectDay: 1,
+      week: '',
+      weekList: [{
+        value: '1',
+        name: '一',
+      }, {
+        value: '2',
+        name: '二',
+      }, {
+        value: '3',
+        name: '三',
+      }, {
+        value: '4',
+        name: '四',
+      }, {
+        value: '5',
+        name: '五',
+      }, {
+        value: '6',
+        name: '六',
+      }, {
+        value: '7',
+        name: '七',
+      }],
+      dayPicker: false,
+      dayList: [],
+      dateRangePicker: false,
+      datePicker: false,
+      currentDate: dayjs().format('YYYY-MM-DD'),
+      minDate: new Date(dayjs().add(1,"d")),
+      startTime1: dayjs().add(1,'d').format('YYYY-MM-DD'),
+      endTime1: dayjs().add(2,'d').format('YYYY-MM-DD'),
+      createDate: "",
+      endDate: '',
+      execData: '',
+      nextTransDate: '',
+    };
+  },
+  computed: {
+    ...mapState('transferAccounts', ['yuyue']),
+    disabled() {
+      let disabled = true;
+      if (this.active == 'once' && !this.createDate) {
+        disabled = true;
+      } else if (this.active == 'week' && !this.endDate) {
+        disabled = true;
+      } else if (this.active == 'month' && !this.endDate) {
+        disabled = true;
+      } else {
+        disabled = false;
+      }
+
+      return disabled
+    },
+    AppointmentType() { //预约标识 Once：一次 Period 周期
+      if (this.active == "once") {
+        return 'Once'
+      } else {
+        return "Period"
+      }
+    },
+    PeriodTyp() {
+      if (this.active == "once") {
+        return 1
+      } else if (this.active == 'week') {
+        return 2
+      } else if (this.active == 'month') {
+        return 3
+      }
+    }
+  },
+  created() {
+    this.createDayList();
+  },
+  mounted() { },
+  filters: {
+    dateFormatDot(val) {
+      return dayjs(val).format('YYYY.MM.DD')
+    }
+  },
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      if (from.name == 'cardTransfer') {
+        // 伪缓存效果，只有上个页面是银行卡转账时触发
+        vm.active = vm.yuyue.active;
+        vm.createDate = vm.yuyue.CreateDate;
+        vm.endDate = vm.yuyue.EndDate;
+        vm.TransUsage = vm.yuyue.TransUsage;
+        vm.selectDay = vm.yuyue.PeriodVal;
+      }
+    });
+  },
+  methods: {
+    ...mapMutations('transferAccounts', ['YUYUE']),
+    handleSelect(item) {
+      this.selectItem = { ...item };
+    },
+    // 选择每月时，选择月份某一天的列表，组成为 1-28 + 当月最后一天
+    createDayList() {
+      let date = new Date();
+      let year = date.getFullYear();
+      let month = date.getMonth() + 1;
+      let d = new Date(year, month, 0);
+      // console.log(d.getDate(), "当月有多少天");
+      let lastDay = d.getDate();
+      let dayList = [];
+      for (let i = 1; i <= 28; i++) {
+        let item = {
+          text: i + '日',
+          value: i
+        }
+        dayList.push(item);
+      }
+      if (lastDay > 28) {
+        let item = {
+          text: '月末',
+          value: 32
+        }
+        dayList.push(item)
+      }
+      this.dayList = dayList;
+    },
+    next() {
+      // this.getNextTransDate();
+      // let isBefore = dayjs(this.nextTransDate).isBefore(this.endDate) || dayjs(this.nextTransDate).isSame(this.endDate);
+      // let isAfter = dayjs(this.nextTransDate).isAfter(this.createDate) || dayjs(this.nextTransDate).isSame(this.createDate);
+      // // console.log(this.nextTransDate, this.createDate, this.endDate, isBefore, isAfter)
+      // if (this.active != 'once') {
+      //   if(!isAfter || !isBefore){
+      //     Toast("下次转账日期不在执行日期内,请重设")
+      //     return
+      //   }
+      // }
+      let yuyue = {
+        PeriodVal: this.selectDay,
+        PeriodTyp: this.PeriodTyp,
+        AppointmentType: this.AppointmentType,
+        CreateDate: this.createDate,
+        EndDate: this.endDate,
+        TransUsage: this.TransUsage,
+        active: this.active
+      }
+      this.YUYUE(yuyue);
+      console.log(this.yuyue, "预约？？？！")
+      this.$router.push({ name: "cardTransfer", query: { yuyue: true } })
+    },
+    handleSelect(data) {
+      this.selectDay = data.value;
+      this.dayPicker = false;
+    },
+    // 周期时选择执行日期（开始结束时间）
+    selectDate(data) {
+      // execData
+      if (this.PeriodTyp == 1 && (dayjs(data).format('YYYY-MM-DD') == dayjs().format('YYYY-MM-DD'))) {
+        this.$toast("单次预约不能预约至今日")
+        return
+      }
+      this.createDate = dayjs(data).format('YYYY-MM-DD');
+      this.datePicker = false;
+    },
+    // 周期时选择执行日期（开始结束时间）
+    selectDateRange(data) {
+      this.createDate = data.startTime;
+      this.endDate = data.endTime;
+    },
+    //时间选择器数据的过滤
+    formatter(type, value) {
+      if (type === "year") {
+        return `${value}年`;
+      } else if (type === "month") {
+        return `${value}月`;
+      } else if (type === "day") {
+        return `${value}日`;
+      }
+      return value;
+    },
+    // 获取下次转账时间
+    getNextTransDate() {
+      // AppointmentType, Period周期   PeriodTyp 2：周 3月
+      let today = dayjs();
+      if (this.active == 'week') {
+        let weekDay = dayjs().day(this.selectDay).format('YYYY-MM-DD'); //获取每周时选择的时间
+        if (dayjs(weekDay).isBefore(today)) { // 如果选取的时间已过去，则顺延至下周这个星期几
+          this.nextTransDate = dayjs().day(this.selectDay).add(1, 'w').format('YYYY-MM-DD')
+        } else {
+          this.nextTransDate = weekDay;
+        }
+
+      } else if (this.active == "month") {
+        if (this.selectDay != 32) {
+          let monthDay = dayjs().date(this.selectDay).format('YYYY-MM-DD');
+          // console.log(monthDay,dayjs(monthDay).isBefore(dayjs()))
+          if (dayjs(monthDay).isBefore(today)) { //顺延
+            this.nextTransDate = dayjs().date(this.selectDay).add(1, 'M').format('YYYY-MM-DD')
+          } else {
+            this.nextTransDate = monthDay;
+          }
+        } else { //selectDay 月末
+          let endDay = dayjs().endOf('month').format('YYYY-MM-DD');
+          if (dayjs(endDay).isBefore(today)) {
+            this.nextTransDate = dayjs().endOf('month').add(1, 'M').format('YYYY-MM-DD')
+          } else {
+            this.nextTransDate = endDay;
+          }
+        }
+        console.log(this.nextTransDate)
+      }
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/ .my-tabs {
+  .van-tabs__wrap {
+    height: px2vw(130);
+  }
+  .van-tab {
+    font-size: px2vw(30);
+    font-family: $font-family;
+    color: #7d7d7d;
+    font-weight: 500;
+    line-height: px2vw(130);
+    &.van-tab--active {
+      color: $color-text;
+    }
+  }
+  .van-tabs__line {
+    background: $color-text;
+    bottom: 27px;
+  }
+  .van-hairline--top-bottom::after {
+    border-width: 0;
+  }
+}
+.week_radio {
+  background: #fff;
+  .week-label {
+    width: auto;
+  }
+  /deep/ .van-radio-group {
+    display: flex;
+    justify-content: space-around;
+    height: 100%;
+    align-items: center;
+    .van-radio__label {
+      height: px2vw(50);
+      width: px2vw(50);
+      margin-left: px2vw(32);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      div {
+        // height: px2vw(34);
+        // width: px2vw(34);
+        padding: px2vw(4) px2vw(7) px2vw(3);
+        font-size:px2vw(20);
+        font-family: $font-family;
+        color: #a8a8a8;
+        transition: all 0.2s;
+        background: url("~@/assets/transferAccounts/icon_weixuanzhong@2x.png")
+          no-repeat center center;
+        border: none;
+        background-size: contain;
+        &.active {
+          // padding: px2vw(12);
+          // height: px2vw(50);
+          // width: px2vw(50);
+          // padding: px2vw(15) px2vw(11);
+          padding: px2vw(16) px2vw(11) px2vw(15);
+          color: #fff;
+          background: url("~@/assets/transferAccounts/icon_bg_xinqi@2x.png")
+            no-repeat center center;
+          border: none;
+          background-size: contain;
+        }
+      }
+    }
+  }
+}
+
+.footer-box {
+  margin-top: px2vw(101);
+}
+</style>

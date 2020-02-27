@@ -1,0 +1,44 @@
+<template>
+  <div class="items">
+    <item v-for="(item,index) in data" :key="index" :item="item"></item>
+    <p class="lookMore" @click="lookMore">查看更多</p>
+  </div>
+</template>
+
+<script>
+import item from "./item";
+export default {
+  components: {
+    item
+  },
+  props: {
+    data: {
+      require: true
+    }
+  },
+  methods:{
+    lookMore(){
+      this.$router.push({ name: "manageMoneyList", params: { val: 0 } });
+    }
+  }
+
+};
+</script>
+<style lang="scss" scoped>
+.items {
+  .item{
+    margin-top: px2vw(20);
+  }
+  // .item:not(:last-child) {
+  //   border-bottom: px2vw(1) solid #eff0f1;
+  // }
+  .lookMore{
+    font-size: px2vw(24);
+    font-weight: 400;
+    margin-top: px2vw(20);
+    color:rgba(38,38,38,1);
+    font-family:PingFangSC-Regular,PingFang SC;
+    text-align: center;
+  }
+}
+</style>

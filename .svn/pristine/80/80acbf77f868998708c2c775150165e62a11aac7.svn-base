@@ -1,0 +1,85 @@
+<template>
+  <div class="warm-tips"
+       :class="{'no-fixed-tips':!isOpen && !isShowBtn}">
+    <p class="warm-title">{{title}}</p>
+    <ul class="warm-content"
+        :class="{
+          'open':isOpen || !isShowBtn,
+          'fold':!isOpen && isShowBtn
+        }">
+      <li v-for="(item,index) in data"
+          :key="index">{{index+1}}、{{item}}；</li>
+    </ul>
+    <p class="warm-more"
+       v-if="isShowBtn"
+       :class="{'no-fixed':!isOpen}"
+       @click="isOpen=!isOpen">{{isOpen?'收起':'展开'}}</p>
+  </div>
+</template>
+<script>
+export default {
+  data () {
+    return {
+      isOpen: false
+    }
+  },
+  props: {
+    data: {
+      default: () => [],
+      type: Array
+    },
+    isShowBtn: {
+      default: true,
+      type: Boolean
+    },
+    title: {
+      default: '温馨提示',
+      type: String
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.warm-tips {
+  position: relative;
+  margin: px2vw(40);
+  padding-top: px2vw(35);
+  line-height: px2vw(40);
+  font-size: px2vw(22);
+  color: #7d7d7d;
+  background-color: #fff;
+  &.no-fixed-tips {
+    padding-bottom: px2vw(35);
+  }
+  .warm-title {
+    padding: 0 px2vw(35);
+  }
+  .warm-content {
+    padding: 0 px2vw(35);
+    &.open {
+      height: 100%;
+    }
+    &.fold {
+      height: px2vw(150);
+      overflow: hidden;
+    }
+  }
+  .warm-more {
+    width: 100%;
+    height: px2vw(60);
+    line-height: px2vw(60);
+    text-align: center;
+    box-sizing: border-box;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 1) 30%,
+      rgba(255, 255, 255, 1) 100%
+    );
+    &.no-fixed {
+      position: absolute;
+      bottom: 0;
+    }
+  }
+}
+</style>

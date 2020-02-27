@@ -1,0 +1,670 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="group">
+        <div class="title">基本信息</div>
+        <van-field
+          label="姓名"
+          disabled
+          v-model="form.CustomerName"
+          :class="{'active':form.CustomerName}"
+        ></van-field>
+        <van-field disabled label="性别" :value="form.Sex=='1'?'男':'女'" :class="{'active':form.Sex}"></van-field>
+        <van-field
+          label="证件类型"
+          disabled
+          :value="form.PapersType|idCardType"
+          :class="{'active':form.PapersType}"
+        ></van-field>
+        <van-field
+          label="证件号码"
+          disabled
+          v-model="form.PapersNum"
+          :class="{'active':form.PapersNum}"
+        ></van-field>
+        <!-- right-icon="arrow" -->
+        <van-field
+          label="出生日期"
+          placeholder="请选择出生日期"
+          disabled
+          v-model="form.Birthday"
+          :class="{'active':form.Birthday}"
+          @click="selectBirth"
+        ></van-field>
+        <van-field
+          label="年龄"
+          disabled
+          placeholder="请填写用户年龄"
+          type="number"
+          maxlength="2"
+          :class="{'active':form.age}"
+          :value="form.age"
+        ></van-field>
+        <van-field
+          label="职业"
+          placeholder="请选择您的职业"
+          :value="form.Vocation?form.Vocation.text:''"
+          right-icon="arrow"
+          @click="selectProfession"
+          :class="{'active':form.Vocation}"
+        ></van-field>
+        <van-field
+          label="职务"
+          placeholder="请选择您的职务"
+          :value="form.Position?form.Position.text:''"
+          right-icon="arrow"
+          @click="selectPosition"
+          :class="{'active':form.Position}"
+        ></van-field>
+      </div>
+      <div class="group">
+        <div class="title">联系方式</div>
+        <van-field
+          label="手机号码"
+          type="phone"
+          maxlength="11"
+          placeholder="请填写您的常用联系号码"
+          v-model="form.TelNo"
+        ></van-field>
+        <van-field label="邮箱" placeholder="请填写您的常用邮箱" v-model="form.EmailAddress" @input="pass"></van-field>
+        <van-field
+          label="邮编"
+          placeholder="请填写通讯地址邮编"
+          v-model="form.PostCode"
+          maxlength="6"
+          type="number"
+        ></van-field>
+        <!-- @input="pass" -->
+        <van-field label="通讯地址" placeholder="请填写通讯地址" v-model="form.ComAddress" maxlength="50"></van-field>
+      </div>
+      <div class="group signInfo">
+        <div class="title">签约信息</div>
+        <div class="cell">
+          <p class="label">交易实际收益人</p>
+          <div class="tab">
+            <p :class="{'active':form.IsBenefit=='1'}" @click="changeIsBenefit">本人</p>
+            <p :class="{'active':form.IsBenefit!='1'}" @click="changeIsBenefit">非本人</p>
+          </div>
+        </div>
+        <div class="cell">
+          <p class="label">是否有不良诚信记录</p>
+          <div class="tab">
+            <p :class="{'active':form.IsBadRecord=='1'}" @click="changeIsBadRecord">有</p>
+            <p :class="{'active':form.IsBadRecord!='1'}" @click="changeIsBadRecord">无</p>
+          </div>
+        </div>
+        <div class="cell">
+          <p class="label">是否存在实际控制关系</p>
+          <div class="tab">
+            <p :class="{'active':form.IsControl=='1'}" @click="changeIsControl">有</p>
+            <p :class="{'active':form.IsControl!='1'}" @click="changeIsControl">无</p>
+          </div>
+        </div>
+        <van-field
+          label="理财签约账户"
+          placeholder="请选择签约账户"
+          :value="form.BankAcct?form.BankAcct.bankName+'('+form.BankAcct.vouId.slice(-4)+')':''"
+          right-icon="arrow"
+          :class="{'active':form.BankAcct}"
+          @click="selectAccount"
+        ></van-field>
+        <van-field
+          label="购买理财银行"
+          placeholder="请选择曾购买过理财产品银行"
+          :value="form.CardInst?form.CardInst.bankName:''"
+          right-icon="arrow"
+          @click="selectBank"
+          :class="{'active':form.CardInst}"
+        ></van-field>
+      </div>
+      <div class="agree">
+        <div class="check" @click="changeCheck">
+          <span :class="['iconfont',{'iconcheck-':check}]"></span>
+        </div>
+        <div class="text">
+          <span>我已阅读并愿意承担投资风险</span>
+          <span class="agreement">《焦作中旅银行理财产品客户权益须知》、</span>
+          <span class="agreement">《焦作中旅银行理财产品销售协议》、</span>
+          <span class="agreement">《焦作中旅银行理财产品说明书》</span>
+        </div>
+      </div>
+      <div class="btn">
+        <!-- <van-button :disabled="allTrue" @click="buttonConfirm">提交</van-button> -->
+        <van-button @click="buttonConfirm">提交</van-button>
+      </div>
+    </div>
+    <SelectBirth :selectBirthFlag="selectBirthFlag"></SelectBirth>
+    <SelectProfession :selectProfessionFlag="selectProfessionFlag"></SelectProfession>
+    <SelectPosition :selectPositionFlag="selectPositionFlag"></SelectPosition>
+    <SelectAccount :selectAccountFlag="selectAccountFlag"></SelectAccount>
+    <SelectBank :selectBankFlag="selectBankFlag"></SelectBank>
+    <!-- <Mydailog
+      :type="dialog.type"
+      :show="dialog.show"
+      @confirm="confirm"
+      @cancel="cancel"
+      :cancelButtonText="dialog.cancel"
+      :confirmButtonText="dialog.confirm"
+    ></Mydailog>-->
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import SelectBirth from "./selectBirth";
+import SelectProfession from "./selectProfession";
+import SelectPosition from "./selectPosition";
+import SelectBank from "./selectBank";
+import SelectAccount from "./selectAccount";
+// import detailDailog from "../../components/detailDialog";
+import { Field, Button } from "vant";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+export default {
+  components: {
+    Myheader: Header,
+    [Field.name]: Field,
+    [Button.name]: Button,
+    SelectBirth,
+    SelectProfession,
+    SelectBank,
+    SelectAccount,
+    SelectPosition
+    // Mydailog: detailDailog
+  },
+  data() {
+    return {
+      data: null,
+      check: false,
+      allTrue: false, //调试
+      sex: "",
+      form: {
+        CustomerName: "",
+        PapersNum: "",
+        PapersType: "",
+        Birthday: null,
+        age: null,
+        Vocation: null, //职业
+        Position: null, //职务
+        TelNo: null,
+        EmailAddress: null,
+        PostCode: null,
+        ComAddress: null,
+        BankAcct: null, //理财签约账户
+        CardInst: null, //购买过理财产品银行
+        IsBenefit: 0, //是否有受益人
+        IsBadRecord: 0, //是否有不良诚信记录
+        IsControl: 0, //是否存在控制关系
+        Sex: 1
+        //测试
+        // PapersType: '0',
+        // Birthday:'19930402' ,
+        // age: 24,
+        // Vocation: '金融', //职业
+        // Position: null, //职务
+        // TelNo: 15670538691,
+        // EmailAddress: 's8752212@126.com',
+        // PostCode: 453007,
+        // ComAddress: '河南省郑州市金水区商务外环路23号商务外环路23号',
+        // BankAcct: '6223380011080772022', //理财签约账户
+        // CardInst: '中旅银行', //购买过理财产品银行
+        // IsBenefit: 0, //是否有受益人
+        // IsBadRecord: 0, //是否有不良诚信记录
+        // IsControl: 0 //是否存在控制关系
+      },
+      params: {
+        leftShow: false
+      },
+      selectBirthFlag: false, //选择出生日期
+      selectProfessionFlag: false, //选择职业
+      selectAccountFlag: false, //选择签约账户
+      selectBankFlag: false, //选择银行
+      selectPositionFlag: false, //选择职务
+      nowTotal: 0
+      // dialog: {
+      //   type: "7",
+      //   show: true,
+      //   cancel: "否",
+      //   confirm: "是"
+      // }
+    };
+  },
+  computed:{
+    ...mapState('common', ['userInfo']),
+  },
+  created() {
+    console.log(this.userInfo)
+    if(this.userInfo.UserId){
+      let {Name,Identity} = this.userInfo;
+      this.form.CustomerName = Name;
+      this.form.PapersNum = Identity.no;
+      this.form.PapersType = Identity.type;
+      this.userSex(Identity.no);
+      this.age(Identity.no);
+    }
+    // this.userInfo();
+    // console.log(this.userInfo)
+    // console.log(this.$route.params.goBackRouter)
+
+    // this.userSex(this.userInfo.Identity.no);
+    // this.age(this.userInfo.Identity.no);
+  },
+
+  methods: {
+    changeCheck() {
+      this.check = !this.check;
+    },
+    age(card) {
+      var len = card.length;
+      //身份证15位时，次序为省（3位）市（3位）年（2位）月（2位）日（2位）校验位（3位），皆为数字
+      if (len == "15") {
+        var re_fifteen = /^(\d{6})(\d{2})(\d{2})(\d{2})(\d{3})$/;
+        var arr_data = card.match(re_fifteen);
+        var year = arr_data[2];
+        this.form.Birthday =arr_data[2] + "-" + arr_data[3] + "-" + arr_data[4];
+        var nowYear = new Date().getFullYear();
+        this.form.age = nowYear - year;
+        // console.log(this.form.age)
+      }
+      //身份证18位时，次序为省（3位）市（3位）年（4位）月（2位）日（2位）校验位（4位），校验位末尾可能为X
+      if (len == "18") {
+        var re_eighteen = /^(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X|x)$/;
+        var arr_data = card.match(re_eighteen);
+        var year = arr_data[2];
+        var nowYear = new Date().getFullYear();
+        this.form.age = nowYear - year;
+        this.form.Birthday =
+          arr_data[2] + "-" + arr_data[3] + "-" + arr_data[4];
+        // console.log(this.form.age)
+      }
+      return false;
+    },
+    userSex(card) {
+      console.log(card);
+      if(card){
+        console.log(card.slice(-2, -1));
+        if (card.slice(-2, -1) % 2 == 1) {
+          this.form.Sex = "1";
+        } else {
+          this.form.Sex = "0";
+        }
+      }else{
+        this.form.Sex = "1";
+      }
+    
+    },
+    changeIsBenefit() {
+      //改变是否有交易实际收益人tab
+      // this.form.IsBenefit = !this.form.IsBenefit;
+      if (this.form.IsBenefit == "1") {
+        this.form.IsBenefit = "0";
+      } else {
+        this.form.IsBenefit = "1";
+      }
+    },
+    sexChange() {
+      if (this.sex != "男" && this.sex != "女") {
+        this.$toast("请正确输入性别");
+      } else {
+        if (this.sex == "男") {
+          this.form.Sex = "1";
+        } else {
+          this.form.Sex = "0";
+        }
+      }
+    },
+    // userInfo() {
+    //   let params = {
+    //     BankId: "9999",
+    //     BranchId: "1699",
+    //     ChnlId: "39",
+    //     QueryMode: "6"
+    //   };
+    //   this.request("PersonBaseInfoQry", { ...params }).then(res => {
+    //     // this.form.Sex = res.UserIden.userIdenSex;
+    //   });
+    // },
+    changeIsBadRecord() {
+      // 是否有不良诚信记录
+      // this.form.IsBadRecord = !this.form.IsBadRecord;
+      if (this.form.IsBadRecord == "1") {
+        this.form.IsBadRecord = "0";
+      } else {
+        this.form.IsBadRecord = "1";
+      }
+    },
+    changeIsControl() {
+      // 是否存在实际控制关系
+      if (this.form.IsControl == "1") {
+        this.form.IsControl = "0";
+      } else {
+        this.form.IsControl = "1";
+      }
+      // this.form.IsControl = !this.form.IsControl;
+    },
+    selectBirth() {
+      //选择出生日期
+      this.selectBirthFlag = true;
+    },
+    selectProfession() {
+      //选择职业
+      this.selectProfessionFlag = true;
+    },
+    selectPosition() {
+      //选择职业
+      this.selectPositionFlag = true;
+    },
+    selectAccount() {
+      //选择签约账户
+      this.selectAccountFlag = true;
+    },
+    selectBank() {
+      //选择银行
+      this.selectBankFlag = true;
+    },
+    pass() {
+      //验证必输项是否输入
+      let total = 0;
+      this.nowTotal = 0;
+      for (let key in this.form) {
+        total++;
+        if (this.form[key] || this.form[key] === 0) {
+          this.nowTotal++;
+          // console.log(key)
+        } else {
+          break;
+        }
+      }
+      if (this.nowTotal == 17 && this.check) {
+        this.allTrue = true;
+      }
+    },
+    buttonConfirm() {
+      console.log(this.form);
+      this.pass();
+      if (this.allTrue) {
+        console.log(this.form)
+        this.$store.state.fund.signInfo = this.form;
+        // let signInfo = this.form;
+        // signInfo.Birthday = this.form.Birthday.split("-").join("");
+        // signInfo.BankAcct = this.form.BankAcct.vouId;
+        // signInfo.Vocation = this.form.Vocation.id;
+        // signInfo.Position = this.form.Position.id;
+        // signInfo.CardInst = "70010";
+        let params = {
+          // ...signInfo,
+          CustomerName: this.userInfo.Name,
+          PapersNum: this.userInfo.Identity.no,
+          // PapersType: this.userInfo.Identity.type,
+          Birthday: this.form.Birthday.split("-").join(""),
+          age: this.form.age,
+          Vocation: this.form.Vocation.id, //职业
+          Position: this.form.Position.id, //职务
+          TelNo: this.form.TelNo,
+          EmailAddress: this.form.EmailAddress,
+          PostCode: this.form.PostCode,
+          ComAddress: this.form.ComAddress,
+          BankAcct: this.form.BankAcct.vouId, //理财签约账户
+          CardInst: "70010", //购买过理财产品银行
+          IsBenefit: this.form.IsBenefit, //是否有受益人
+          IsBadRecord: this.form.IsBadRecord, //是否有不良诚信记录
+          IsControl: this.form.IsControl, //是否存在控制关系
+          Sex: this.form.Sex,
+          BranchId: "PHNE",
+          ChnlId: "62",
+          // RiskGrade: this.$route.params.RiskGrade,
+          ProductType: "1",
+          CustomerType: "1",
+          CustomerNo: this.userInfo.CifNo,
+          CustomerIdentify: this.userInfo.CifNo,
+          // CustomerName: this.userInfo.UserName,
+          CustomerIdentifyType: "1",
+          PapersType: "0",
+          CustomerGroup: "0"
+          // CustomerInst:'70010'
+        };
+        this.request("FinancialContractConfirm", { ...params })
+          .then(res1 => {
+            this.request("financialContract", {
+              ...params,
+              _tokenName: res1._tokenName
+            }, false, true)
+              .then(res => {
+                this.$router.push({ name: "signResult", query: "1" });
+                // this.$store.state.signInfo = null;
+              })
+              .catch(err => {
+                this.$router.push({
+                  name: "signResult",
+                  query: "2",
+                  params: err
+                });
+              });
+            //测试
+            // .then(res => {
+            //   this.$router.push({ name: "signResult", query: "1" });
+            //   this.$store.state.signInfo = null;
+            // })
+            // .catch(err => {
+            //   this.$router.push({ name: "signResult", query: "1" });
+            // });
+          })
+          .catch(err => {
+            console.log(this.form);
+            let str = err._RejMessage;
+            this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+          });
+      } else {
+        // if (!this.form.BankAcct) {
+        //   this.$toast("请选择理财签约账户");
+        // } else if (!this.form.CardInst) {
+        //   this.$toast("请选择购买过理财产品银行");
+        // } else
+        if (this.nowTotal != 17) {
+          console.log(this.nowTotal);
+          this.$toast("请确认信息填写完整");
+        } else if (!this.check) {
+          this.$toast("请勾选");
+        }
+      }
+    },
+    confirm() {
+      //点击弹出的确认按钮
+      this.dialog.show = false;
+      // console.log(1111);
+    },
+    checkPhone() {
+      if (!/^1[3456789]\d{9}$/.test(this.form.TelNo)) {
+        this.$toast("手机号码有误，请重填");
+        return false;
+      }
+    },
+
+    isPhoneAvailable(phonevalue) {
+      let phoneReg = /^1[3-578]\d{9}$/;
+      if (phoneReg.test(this.form.EmailAddress)) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    cancel() {
+      this.dialog.show = false;
+      if (this.dialog.type == "7") {
+        this.$toast("请至我行网点办理");
+        let _this = this;
+        setTimeout(function() {
+          _this.$router.go(-1);
+        }, 3000);
+      }
+    }
+  },
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      if (from.name == "signResult") {
+        vm.form = vm.$store.state.manageMoney.signInfo;
+        console.log(vm.form);
+      }
+    });
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  .group {
+    background: #fff;
+    .title {
+      font-size: px2vw(32);
+      font-weight: 500;
+      color: #262626;
+      height: px2vw(110);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 0 px2vw(40);
+    }
+  }
+  .group:not(:first-child) {
+    margin-top: px2vw(20);
+  }
+}
+.content::-webkit-scrollbar {
+  display: none; /*隐藏滚动条*/
+}
+/deep/ .van-cell,
+.cell {
+  height: px2vw(110);
+  padding: 0 px2vw(40);
+}
+/deep/ .van-field__control {
+  font-size: px2vw(30);
+}
+// 控制placeholder颜色
+input::-webkit-input-placeholder {
+  /* WebKit browsers */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input:-moz-placeholder {
+  /* Mozilla Firefox 4 to 18 */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input::-moz-placeholder {
+  /* Mozilla Firefox 19+ */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input:-ms-input-placeholder {
+  /* Internet Explorer 10+ */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+/deep/ .van-field__control[disabled] {
+  color: #a8a8a8;
+  font-size: px2vw(30);
+}
+.active {
+  /deep/ .van-field__control[disabled] {
+    color: #262626;
+    margin-top: px2vw(-6);
+    font-size: px2vw(30);
+  }
+}
+/deep/ .van-field__label {
+  min-width: px2vw(130);
+  margin-right: px2vw(30);
+}
+.signInfo /deep/ .van-field__label {
+  width: px2vw(180);
+}
+/deep/ .van-cell__title,
+/deep/ .van-cell__value {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.cell {
+  padding: 0 px2vw(40);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  .label {
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+  }
+  .tab {
+    display: flex;
+    flex-direction: row;
+    width: px2vw(244);
+    justify-content: space-between;
+    p {
+      height: px2vw(46);
+      line-height: px2vw(46);
+      width: px2vw(112);
+      font-size: px2vw(30);
+      border-radius: px2vw(10);
+      text-align: center;
+      color: #262626;
+      border: px2vw(2) solid #7d7d7d;
+    }
+    .active {
+      color: #3e8fff;
+      border: px2vw(2) solid #3e8fff;
+    }
+  }
+}
+.agree {
+  display: flex;
+  flex-direction: row;
+  padding: 0 px2vw(40);
+  padding-bottom: px2vw(92);
+  margin-top: px2vw(30);
+  .check {
+    width: px2vw(24);
+    height: px2vw(24);
+    background: url("~@/assets/fundCollection/icon_gouxuan_nor@2x.png")
+      no-repeat;
+    background-size: 100% 100%;
+
+    .iconfont {
+      color: #008bff;
+      font-size: px2vw(24);
+    }
+  }
+  .text {
+    margin-left: px2vw(10);
+    flex: 1;
+    font-size: 0;
+    line-height: px2vw(30);
+    font-weight: 300;
+    color: #7d7d7d;
+    span {
+      font-size: px2vw(22);
+    }
+    .agreement {
+      color: #008bff;
+    }
+  }
+}
+.btn {
+  padding: 0 px2vw(40);
+  padding-bottom: px2vw(40);
+  .van-button {
+    width: 100%;
+    height: px2vw(90);
+    font-size: px2vw(34);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    background: linear-gradient(#ffdfc7, #d69f81);
+    border-radius: px2vw(45);
+  }
+}
+</style>

@@ -1,0 +1,66 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue");
+const Assessment = () => import("../pages/assessment.vue");
+const Result = () => import("../pages/result.vue")
+const SignInfo = () => import('../pages/signInfo.vue');
+const SignResult = () => import('../pages/signResult.vue');
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "风险评估",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/assessment",
+      name: "assessment",
+      component: Assessment,
+      meta: {
+        title: "问卷",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/result",
+      name: "result",
+      component: Result,
+      meta: {
+        title: "风险评估",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/signInfo",
+      name: "signInfo",
+      component: SignInfo,
+      meta: {
+        title: "签约信息",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/signResult",
+      name: "signResult",
+      component: SignResult,
+      meta: {
+        title: "签约结果",
+        keepAlive: true,
+        goToNative: false
+      }
+    },
+  ]
+});

@@ -1,0 +1,285 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content statement">
+      <div class="item" v-for="(item,index) in productList" :key="index" @click="toSADetail(item)">
+        <p class="name">{{item.ProductName}}</p>
+        <p class="prdValue" v-if="item.PrdTemplate!='1102'">当前净值:{{item.ProdValue}}</p>
+        <div class="bottom">
+          <div class="left">
+            <p class="text">持有金额(元)</p>
+            <p class="money">{{item.Amt|Money}}</p>
+          </div>
+          <div class="center" v-if="item.PrdTemplate=='1102'">
+            <p class="text">预期收益率</p>
+            <p
+              :class="['rate',{'textOver':item.ExpectProfRate.length>6&&item.ExpectProfRate.length<12},{'textOver1':item.ExpectProfRate.length>12}]"
+            >{{item.ExpectProfRate.indexOf('%')==-1?item.ExpectProfRate+'%':item.ExpectProfRate}}</p>
+          </div>
+          <div class="center" v-if="item.PrdTemplate=='1306'||item.PrdTemplate=='1303'">
+            <p class="text">业绩比较基准</p>
+            <p
+              :class="['rate',{'textOver':item.Benchmark.length>6&&item.Benchmark.length<12},{'textOver1':item.Benchmark.length>12}]"
+            >{{item.Benchmark|parseFloatTwo}}</p>
+          </div>
+          <div class="center" v-if="item.PrdTemplate=='1307'">
+            <p class="text">7日年化</p>
+            <p class="rate">{{item.Yield|parseFloatTwo}}</p>
+          </div>
+          <div class="right">
+            <p class="text" v-if="item.PrdTemplate=='1102'||item.PrdTemplate=='1303'">预计到期日</p>
+            <p class="text" v-else-if="item.PrdTemplate=='1306'">周期到期日</p>
+            <p class="text" v-else>收益分配日</p>
+            <p class="date">{{item.ProdEndDate|timeFormat1}}</p>
+          </div>
+        </div>
+        <!-- <div class="top">
+          <div class="left">
+            <p class="text">持有金额(元)</p>
+            <p class="money">{{item.Amt|Money}}</p>
+          </div>
+          <div class="right">
+            <p class="name">{{item.ProductName}}</p>
+            <p
+              :class="['type',{'active':item.PrdTemplate=='1306'}]"
+            >{{item.PrdTemplate=="1102"?'封闭式':item.PrdTemplate=="1306"?'周期-净值':item.PrdTemplate=="1307"?'货币-净值':'封闭-净值'}}</p>
+          </div>
+        </div>
+        <div class="cent"></div>
+        <div class="bottom">
+          <div class="left">
+            <p
+              class="text"
+            >{{item.PrdTemplate=="1102"?'预期收益率':item.PrdTemplate=="1306"?'业绩比较基准':item.PrdTemplate=="1307"?'当前净值':'业绩比较基准'}}</p>
+            <div class="netWorth" v-if="item.PrdTemplate=='1307'">{{item.ProdValue}}</div>
+            <div
+              class="netWorth"
+              v-else
+            >{{item.ExpectProfRate.indexOf('%')==-1?item.ExpectProfRate+'%':item.ExpectProfRate}}</div>
+          </div>
+          <div class="center" v-if="item.PrdTemplate!='1102'">
+            <p class="text">{{item.PrdTemplate=="1306"||item.PrdTemplate=="1303"?'当前净值':'7日年化'}}</p>
+            <p class="rate" v-if="item.PrdTemplate=='1307'">{{item.Yield+'%'}}</p>
+            <p class="rate" v-else>{{item.ProdValue}}</p>
+          </div>
+          <div class="right">
+            <p class="text">{{item.PrdTemplate=="1306"||item.PrdTemplate=="1307"?'预计到期日':'收益分配日'}}</p>
+            <p class="rate">{{item.ProdEndDate|timeFormat1}}</p>
+          </div>
+        </div>-->
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  components: {
+    Myheader: Header
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      productList: [],
+      page: 1,
+      pageNum: 7,
+      scrollFlag: true
+    };
+  },
+  created() {
+    this.getList();
+  },
+  mounted() {
+    this.scrollBottom();
+  },
+  filters: {
+    timeFormat1(value) {
+      if (value) {
+        let arr = [];
+        arr.push(value.slice(0, 4));
+        arr.push(value.slice(4, 6));
+        arr.push(value.slice(6));
+        return arr.join("-");
+      } else {
+        return "";
+      }
+    }
+  },
+  methods: {
+    toSADetail(val) {
+      this.$router.push({ name: "sADetail", params: val });
+    },
+    scrollBottom() {
+      //滚动加载
+      let content = document.getElementsByClassName("statement")[0];
+      let _this = this;
+      content.onscroll = function() {
+        // console.log(
+        //   content.scrollHeight,
+        //   content.scrollTop,
+        //   content.clientHeight
+        // );
+        if (
+          Math.ceil(content.scrollHeight - content.scrollTop) -
+            Math.ceil(content.clientHeight) <=
+            1 &&
+          content.scrollTop != 0
+        ) {
+          // this.page = parseInt(this.page)+1;
+          _this.page++;
+          _this.getList();
+        }
+      };
+    },
+    getList() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        CustomerIdentifyType: "1",
+        ProductType: "1",
+        // CustomerIdentify: "10122047", //测试
+        CustomerIdentify: this.$store.state.userInfo.CifNo,
+        PositionString: (this.page - 1) * this.pageNum + 1,
+        QueryRowsNum: this.pageNum,
+        OrderMark: "1"
+      };
+      if (this.scrollFlag) {
+        this.request("fundHistoryTrsQry", { ...params })
+          .then(res => {
+            res.CurCommisList.map(item => {
+              this.productList.push(item);
+            });
+            if (res.CurCommisList.length < this.pageNum) {
+              this.scrollFlag = false;
+            }
+          })
+          .catch(err => {
+            this.scrollFlag = false;
+            let str = err._RejMessage;
+            let length;
+            if (str.indexOf(":") != -1 || str.indexOf("：") != -1) {
+              if (str.indexOf(":") != -1) {
+                length = str.indexOf(":");
+              } else {
+                length = str.indexOf("：");
+              }
+              this.$toast(str.slice(length + 1).trim());
+            } else {
+              this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+            }
+          });
+      } else {
+        this.$toast("拉到底了");
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  height: 100%;
+}
+.content {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  .item {
+    background: #fff;
+    // height: px2vw(256);
+    padding: px2vw(30) px2vw(40);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    .name {
+      font-size: px2vw(28);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    .prdValue {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Light, PingFang SC;
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+      margin-top: px2vw(24);
+    }
+    .bottom {
+      margin-top: px2vw(36);
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      .left,
+      .center,
+      .right {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: px2vw(72);
+      }
+      .text {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+      }
+      .money {
+        font-size: px2vw(30);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(247, 90, 80, 1);
+      }
+      .rate {
+        font-size: px2vw(30);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+      }
+      .textOver1 {
+          font-size: px2vw(24);
+          line-height: px2vw(24);
+          max-width: px2vw(280);
+      }
+      .center .text{
+        text-align: center;
+      }
+      .date {
+        font-size: px2vw(28);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(125, 125, 125, 1);
+      }
+      .right .text {
+        text-align: right;
+      }
+      .center .rate {
+        text-align: center;
+      }
+    }
+  }
+  .item:first-child {
+    margin-top: px2vw(20);
+  }
+  .item {
+    position: relative;
+  }
+  .item::after {
+    content: " ";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: px2vw(670);
+    height: px2vw(1);
+    background: #eff0f1;
+    margin: 0 auto;
+  }
+}
+.content::-webkit-scrollbar {
+  display: none; /*隐藏滚动条*/
+}
+</style>

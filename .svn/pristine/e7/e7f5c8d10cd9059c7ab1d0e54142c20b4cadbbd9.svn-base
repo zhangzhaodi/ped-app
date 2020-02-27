@@ -1,0 +1,64 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+
+//路由懒加载 
+Vue.use(Router);
+
+export default new Router({
+  linkActiveClass: 'active',
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: () => import("../pages/index.vue"),
+      meta: {
+        keepAlive: true
+      }
+    },
+    {
+      path: "/electricityCharge",
+      name: "electricityCharge",
+      component: () => import("../pages/electricityCharge.vue"),
+    },
+    {
+      path: "/CommonContacts",
+      name: "CommonContacts",
+      component: () => import("../pages/CommonContacts.vue"),
+    },
+    {
+      path: "/compilePage",
+      name: "compilePage",
+      component: () => import("../pages/compilePage.vue"),
+    },
+    {
+      path: "/billPayment",
+      name: "billPayment",
+      component: () => import("../pages/billPayment.vue"),
+    },
+    {
+      path: "/completePay",
+      name: "completePay",
+      component: () => import("../pages/completePay.vue"),
+    },
+    {
+      path: '/newPayType/:id',
+      name: "newPayType",
+      component: () => import("../pages/newPayType.vue"),
+    },
+    {
+      path: "/paymentRecord",
+      name: "paymentRecord",
+      component: () => import("../pages/paymentRecord.vue"),
+    },
+    {
+      path: "/paymentRecordDetail",
+      name: "paymentRecordDetail",
+      component: () => import("../pages/paymentRecordDetail.vue"),
+    }
+  ]
+});

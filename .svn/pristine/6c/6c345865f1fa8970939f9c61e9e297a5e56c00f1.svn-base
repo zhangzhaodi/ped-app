@@ -1,0 +1,66 @@
+<template>
+  <van-popup v-model="show" position="bottom">
+    <van-picker
+      show-toolbar
+      :columns="day"
+      title="请选择每月发起日"
+      confirm-button-text="完成"
+      @cancel="onCancel"
+      @confirm="onConfirm"
+    />
+  </van-popup>
+</template>
+
+<script>
+import { Picker, Popup } from "vant";
+export default {
+  components: {
+    [Picker.name]: Picker,
+    [Popup.name]: Popup
+  },
+  props: {
+    selectMonth: {
+      require: true,
+      default: false
+    }
+  },
+  watch: {
+    selectMonth: {
+      handler(val) {
+        this.show = val;
+        // this.$emit('update:show', val)
+      }
+    }
+  },
+  data() {
+    return {
+      day: [],
+      show: false
+    };
+  },
+  created() {
+    for (let i = 1; i < 29; i++) {
+      this.day.push(i);
+    }
+    this.day.push('月末')
+  },
+  methods: {
+    onCancel() {
+      this.show = false;
+    },
+    onConfirm(picker, value) {
+    //   console.log(picker, value);
+      if(picker==='月末'){
+        this.$parent.eachMonth = '32' ;
+      }else{
+        this.$parent.eachMonth = picker ;
+      }
+      
+      this.$parent.selectMonth = false;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+</style>

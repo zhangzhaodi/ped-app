@@ -1,0 +1,113 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <ListContent :letterLists="letter" :backRouter="'index'" :isAdd = 'false'>
+    </ListContent>
+    <!-- <van-index-bar>
+      <template v-for="(letter,index) in letter">
+        <van-index-anchor :index="letter" />
+        <template v-for="(item,i) in $store.state.linkmanList[letter]">
+          <van-swipe-cell>
+            <template slot="left">
+              <van-button square type="primary" text="选择" />
+            </template>
+            <van-cell :title="item.source" @click="addSuccess" />
+            <template slot="right">
+              <van-button square type="danger" text="删除" />
+            </template>
+          </van-swipe-cell>
+        </template>
+      </template>
+    </van-index-bar>-->
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Cell, SwipeCell } from "vant";
+import ListContent from "@/components/List/ListContent.vue";
+export default {
+  components: {
+    Myheader: Header,
+    ListContent,
+    [Cell.name]: Cell,
+    [SwipeCell.name]: SwipeCell
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      },
+      headerBackRouter: {
+        name: "index"
+      },
+      letter: [
+        "我",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "U",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z"
+      ]
+    };
+  },
+  created() {
+    let name = require("../name");
+    const Pinyin = require("@/tools/pinyin.js").Pinyin;
+    let nameList = [];
+    name.split("").map(item => {
+      nameList.push(Pinyin.parse(item)[0]);
+    });
+    console.log(nameList)
+    let sortNameList = {};
+    nameList.map(item => {
+      if (!sortNameList[item.target.slice(0, 1)]) {
+        sortNameList[item.target.slice(0, 1)] = [];
+        sortNameList[item.target.slice(0, 1)].push(item);
+      } else {
+        sortNameList[item.target.slice(0, 1)].push(item);
+      }
+    });
+    this.$store.state.linkmanList = sortNameList;
+    // console.log(this.$store.state.linkmanList);
+  },
+  methods: {}
+};
+</script>
+<style lang="scss" scoped>
+.side {
+  position: fixed;
+  display: flex;
+  right: px2vw(20);
+  top: px2vw(400);
+  flex-direction: column;
+}
+.side a:link {
+  color: #000;
+}
+.side a:active {
+  color: #000;
+}
+</style>

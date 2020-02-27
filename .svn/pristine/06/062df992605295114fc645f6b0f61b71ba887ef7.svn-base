@@ -1,0 +1,320 @@
+<template>
+  <div class="viewport">
+    <Header title="存款计算器"
+            :params="{ leftShow: false, rightShow: false}" />
+    <div class="content">
+      <md-field>
+        <md-field-item title="币种"
+                       solid
+                       :content="currency"
+                       @click="showPopup('currency')">
+          <i slot="right"
+             class="iconfont icongengduo-"></i>
+        </md-field-item>
+        <md-field-item title="存款类型"
+                       solid
+                       :content="loanType"
+                       @click="showPopup('loanType')">
+          <i slot="right"
+             class="iconfont icongengduo-"></i>
+        </md-field-item>
+        <md-field-item title="利率"
+                       solid
+                       :content="interestType"
+                       @click="showPopup('interestRate')">
+          <i slot="right"
+             class="iconfont icongengduo-"></i>
+        </md-field-item>
+      </md-field>
+      <div class="ruler">
+        <p>存多少(元)<i class="iconfont iconicon_bianji-"></i></p>
+        <md-input-item size="large"
+                       class="price"
+                       type="money"
+                       v-model.number="amount"
+                       maxlength="8"
+                       align="center">
+        </md-input-item>
+        <md-ruler :scope="scope"
+                  :step="1000"
+                  :unit="100"
+                  :max="100000"
+                  :min="100"
+                  v-model="amount"></md-ruler>
+      </div>
+      <div class="date"
+           v-if="loanType!=='整存整取'">
+        <p>买多久</p>
+        <div class="interval">
+          <span @click="showPopup('datePicker');currencyDate='startDate'">{{startDate || '存入日期'}}</span>
+          <a>至</a>
+          <span @click="showPopup('datePicker');currencyDate='endDate'">{{endDate || '取出日期'}}</span></div>
+      </div>
+      <div class="total">
+        <p class="title">合计利息(元)</p>
+        <p class="total-rate"
+           :class="{'no-rate':!totalRate}">{{totalRate | Money | fixed }}</p>
+        <p class="tips">计算收益不代表未来实际收益，市场有风险，投资需谨慎。</p>
+      </div>
+      <button class="save"
+              @click="save">立即存入</button>
+    </div>
+    <md-picker ref="currency"
+               v-model="isPopupShow.currency"
+               :data="currencyList"
+               :invalid-index="[[1, 2]]"
+               large-radius
+               title="币种选择"
+               @confirm="onPickerCurrency"></md-picker>
+    <md-picker ref="loanType"
+               v-model="isPopupShow.loanType"
+               :data="loanTypeList"
+               large-radius
+               title="存款类型"
+               @confirm="onPickerLoanType"></md-picker>
+    <md-picker ref="interestRate"
+               v-model="isPopupShow.interestRate"
+               :data="interestRateList"
+               large-radius
+               title="利率选择"
+               @confirm="onPickerInterestRate">
+    </md-picker>
+    <md-date-picker ref="datePicker"
+                    v-model="isPopupShow.datePicker"
+                    title="请选择日期"
+                    large-radius
+                    :min-date="new Date()"
+                    @confirm="onDatePickerConfirm"></md-date-picker>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header"
+import { Picker, Field, FieldItem, Ruler, InputItem, DatePicker, Toast } from 'mand-mobile'
+export default {
+  data () {
+    return {
+      rateObj: {},
+      currency: '人民币',
+      currencyList: [
+        [
+          { value: '1', label: '人民币' },
+          // { value: '2', label: '美元' },
+          // { value: '3', label: '欧元' }
+        ]
+      ],
+      loanType: '活期存款',
+      loanTypeList: [
+        [
+          { value: 'currentRate', label: '活期存款' },
+          { value: 'noticeRate', label: '通知存款' },
+          { value: 'wholeStorageRate', label: '整存整取' }
+        ]
+      ],
+      interestRate: '',
+      interestType: '',
+      interestRateList: [],
+      amount: 5000,
+      scope: [0, 100000],
+      startDate: '',
+      endDate: '',
+      currencyDate: '',
+      calcDays: 0,
+      isPopupShow: {}
+    }
+  },
+  components: {
+    Header,
+    [Picker.name]: Picker,
+    [Field.name]: Field,
+    [FieldItem.name]: FieldItem,
+    [Ruler.name]: Ruler,
+    [InputItem.name]: InputItem,
+    [DatePicker.name]: DatePicker
+  },
+  computed: {
+    totalRate () {
+      if (isNaN(this.calcDays) || this.calcDays < 1) {
+        return 0
+      }
+      return parseFloat(this.interestRate) / 100 * this.amount * this.calcDays / 360
+    }
+  },
+  filters: {
+    fixed (val) {
+      return val === '0.00' ? '一一' : val
+    }
+  },
+  mounted () {
+    this.initRate()
+  },
+  methods: {
+    initRate () {
+      this.request("DepositRateQry", {
+        BankId: '9999',
+        BranchId: '1699',
+        ChnlId: '39'
+      }, true).then(response => {
+        this.rateObj = {
+          currentRate: response.currentRate,
+          noticeRate: response.noticeRate,
+          wholeStorageRate: response.wholeStorageRate
+        }
+        // 初始化为活期利率
+        this.$set(this.interestRateList, 0, this.rateObj.currentRate.map(item => ({ value: item.execution_rate, label: `${item.activity}(${item.execution_rate}%)` })))
+        this.interestRate = this.interestRateList[0][0].value
+        this.interestType = this.interestRateList[0][0].label
+        this.$refs.interestRate.refresh(null, 0)
+      })
+    },
+    showPopup (type) {
+      this.$set(this.isPopupShow, type, true)
+    },
+    // 币种选择
+    onPickerCurrency (index) {
+      const values = this.$refs.currency.getColumnValues()
+      console.log(values)
+    },
+    onPickerLoanType () {
+      const { value, label } = this.$refs.loanType.getColumnValues()[0]
+      if (value === 'wholeStorageRate') {
+        this.$set(this.interestRateList, 0, this.rateObj[value].map(item => ({ value: item.execution_rate, label: `${item.activity}(${item.execution_rate}%)`, days: item.days })))
+        this.calcDays = this.interestRateList[0][0].days
+      } else {
+        this.$set(this.interestRateList, 0, this.rateObj[value].map(item => ({ value: item.execution_rate, label: `${item.activity}(${item.execution_rate}%)` })))
+        this.calcDays = (new Date(this.endDate).getTime() - new Date(this.startDate).getTime()) / (24 * 60 * 60 * 1000)
+      }
+      this.interestRate = this.interestRateList[0][0].value
+      this.interestType = this.interestRateList[0][0].label
+      this.loanType = label
+      this.$refs.interestRate.refresh(null, 0)
+    },
+    onPickerInterestRate () {
+      const { value, label, days } = this.$refs.interestRate.getColumnValues()[0]
+      this.interestRate = value
+      this.interestType = label
+      if (days) {
+        this.calcDays = days
+      }
+    },
+    onDatePickerConfirm () {
+      this[this.currencyDate] = this.$refs.datePicker.getFormatDate('yyyy-MM-dd')
+      this.calcDays = (new Date(this.endDate).getTime() - new Date(this.startDate).getTime()) / (24 * 60 * 60 * 1000)
+      if (this.calcDays < 1) {
+        this[this.currencyDate] = ''
+        Toast.info('取出时间必须大于存入时间！')
+      }
+    },
+    save () {
+      let params = {
+        package: "deposit",
+        router: "",
+        routerDic: ""
+      };
+      window.NativeCall.goToPackage(params);
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.viewport {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: PingFangSC-Light, PingFang SC;
+  font-weight: 400;
+  touch-action: none;
+  .content {
+    margin-top: px2vw(20);
+    flex: 1;
+    background-color: #ffffff;
+    overflow-y: scroll;
+    /deep/ .md-field {
+      padding-top: 0;
+      padding-bottom: 0;
+      font-family: PingFangSC-Light, PingFang SC;
+      font-weight: 400;
+    }
+    .ruler {
+      padding: px2vw(40);
+      /deep/ .md-field-item-content:before {
+        display: none;
+      }
+      /deep/ .md-input-item-input {
+        color: rgba(214, 159, 129, 1);
+      }
+      /deep/ .md-ruler-cursor {
+        top: 40%;
+        background: rgba(214, 159, 129, 1);
+        box-shadow: none;
+      }
+      /deep/ .md-ruler-arrow {
+        display: none;
+      }
+      p {
+        text-align: center;
+        font-size: px2vw(26);
+      }
+    }
+    .date {
+      margin-bottom: px2vw(60);
+      font-size: px2vw(30);
+      p {
+        flex: 1;
+        text-align: center;
+        font-size: px2vw(26);
+      }
+      .interval {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        span {
+          width: px2vw(200);
+          height: px2vw(80);
+          line-height: px2vw(80);
+          text-align: center;
+          color: #a8a8a8;
+          border-bottom: px2vw(1) solid #a8a8a8;
+        }
+        a {
+          margin: 0 px2vw(30);
+        }
+      }
+    }
+    .total {
+      text-align: center;
+      .title {
+        margin-bottom: px2vw(30);
+        font-size: px2vw(26);
+      }
+      .total-rate {
+        margin-bottom: px2vw(30);
+        font-size: px2vw(60);
+        &.no-rate {
+          font-weight: bold;
+          color: #7d7d7d;
+        }
+      }
+      .tips {
+        font-size: px2vw(20);
+        color: #a8a8a8;
+      }
+    }
+    .save {
+      display: block;
+      margin: px2vw(90) auto px2vw(20) auto;
+      width: px2vw(670);
+      height: px2vw(90);
+      background: linear-gradient(
+        270deg,
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+      border-radius: px2vw(45);
+      text-align: center;
+      line-height: px2vw(90);
+      font-size: px2vw(34);
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+}
+</style>

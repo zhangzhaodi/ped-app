@@ -1,0 +1,77 @@
+
+// 首页
+const FarmersTreasureIndex = ()=>import("../pages//farmersTreasure/farmersTreasureindex.vue")
+// 买入
+const Rollin = ()=>import("../pages/farmersTreasure/rollin.vue")
+// 买出
+const Rollout =()=>import("../pages/farmersTreasure/Rollout.vue")
+// 买入结果
+const RollinResult =()=>import("../pages/farmersTreasure/rollinResult.vue")
+// 买出结果
+const Rolloutresult =()=>import("../pages/farmersTreasure/rolloutresult.vue")
+// 等到页面
+const Waitrollresult =()=>import("../pages/farmersTreasure/waitrollresult.vue")
+
+export default
+      [
+    // {
+    //   path: "",
+    //   redirect: "/farmersTreasureindex"
+    // },
+    {
+      path: "/farmersTreasureindex",
+      name: "farmersTreasureindex",
+      component: FarmersTreasureIndex,
+      meta: {
+        title: "鑫农宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/farmersTreasurerollin",
+      name: "farmersTreasurerollin",
+      component: Rollin,
+      meta: {
+        title: "",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/farmersTreasurerollout",
+      name: "rollout",
+      component: Rollout,
+      meta: {
+        title: "转出鑫农宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/farmersTreasureRollinResult",
+      name: "RollinResult",
+      component: RollinResult,
+      meta: {
+        title: "转入结果",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/farmersTreasurerolloutresult",
+      name: "rolloutresult",
+      component: Rolloutresult,
+      meta: {
+        title: "转出结果",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/farmersTreasurewaitrollresult",
+      name: "waitrollresult",
+      component: Waitrollresult,
+      meta: {
+        title: "账单",
+        keepAlive: false
+      }
+    },
+  ]
+;

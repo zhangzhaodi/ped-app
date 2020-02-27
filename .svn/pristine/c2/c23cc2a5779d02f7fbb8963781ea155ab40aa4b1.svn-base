@@ -1,0 +1,76 @@
+// 首页
+const ExpensiveTreasureIndex = ()=>import("../pages//expensiveTreasure/expensiveTreasureindex.vue")
+// 买入
+const expensiveTreasureRollin = ()=>import("../pages/expensiveTreasure/expensiveTreasurerollin.vue")
+// 买出
+const expensiveTreasureRollout =()=>import("../pages/expensiveTreasure/expensiveTreasureRollout.vue")
+// 买入结果
+const expensiveTreasureRollinResult =()=>import("../pages/expensiveTreasure/expensiveTreasurerollinResult.vue")
+// 买出结果
+const expensiveTreasureRolloutresult =()=>import("../pages/expensiveTreasure/expensiveTreasurerolloutresult.vue")
+// 等到页面
+const expensiveTreasureWaitrollresult =()=>import("../pages/expensiveTreasure/expensiveTreasurewaitrollresult.vue")
+
+export default
+      [
+    // {
+    //   path: "",
+    //   redirect: "/expensiveTreasureindex"
+    // },
+    {
+      path: "/expensiveTreasureindex",
+      name: "expensiveTreasureindex",
+      component: ExpensiveTreasureIndex,
+      meta: {
+        title: "鑫贵宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/expensiveTreasurerollin",
+      name: "expensiveTreasurerollin",
+      component: expensiveTreasureRollin,
+      meta: {
+        title: "",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/expensiveTreasurerollout",
+      name: "expensiveTreasurerollout",
+      component: expensiveTreasureRollout,
+      meta: {
+        title: "转出游小宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/expensiveTreasureRollinResult",
+      name: "expensiveTreasureRollinResult",
+      component: expensiveTreasureRollinResult,
+      meta: {
+        title: "转入结果",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/expensiveTreasurerolloutresult",
+      name: "expensiveTreasurerolloutresult",
+      component: expensiveTreasureRolloutresult,
+      meta: {
+        title: "转出结果",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/expensiveTreasurewaitrollresult",
+      name: "expensiveTreasurewaitrollresult",
+      component: expensiveTreasureWaitrollresult,
+      meta: {
+        title: "账单",
+        keepAlive: false
+      }
+    },
+  ]
+;

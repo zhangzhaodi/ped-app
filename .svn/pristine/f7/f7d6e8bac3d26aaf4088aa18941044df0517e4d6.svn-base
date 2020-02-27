@@ -1,0 +1,358 @@
+<template>
+    <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader
+      :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'#fff'"
+    >
+    </Myheader>
+    <div class="content">
+      <div class="top">
+        <p>
+        <img class="img" src="@/assets/deposit/index/icon_yinhangka_44@2x.png" alt />
+        <span>银行卡({{  CardData.CardNo ||  bigData.PayerAcNo | CardNoFour}})</span>
+        </p>
+        <!-- <p>卡号</p>
+        <p >中旅银行&nbsp;|&nbsp;{{ CardData.CardNo ||  bigData.PayerAcNo | CardProtect }}</p> -->
+      </div>
+      <div class="article">
+        <div class="list">
+          <p v-if="bigDatashow">{{bigData.PrdName}}</p>
+          <p v-else>{{CardData.DebtType  | depositDateType }}{{CardData.TermCode | depositDateChange}}</p>
+          <p v-if="bigDatashow">年利率{{ bigData.PrdInt | toFixedNumBer}}%&nbsp;|&nbsp;{{bigData.DepositTerm}}<span v-if="bigData.TermType == 'M'" >个月</span>
+            <span v-else="bigData.TermType == 'Y'" >年</span>
+          </p>
+          <p v-else>年利率{{CardData.Rate | toFixedNum }}%&nbsp;|&nbsp;{{CardData.TermCode | depositDateChange}}</p>
+        </div>
+        <div class="price">
+          <p>本金(人民币)</p>
+          <p v-if="bigDatashow">{{ bigData.PayerAmt || CardData.Balance | Money}}</p>
+          <!-- <p v-else-if="this.$route.query.i == 1">{{  CardData.TransAmt | Money}}</p> -->
+          <p v-else-if="this.$route.query.i == 1">0.00</p>
+          <p v-else>{{ CardData.Balance || CardData.TransAmt | Money }}</p>
+        </div>
+        <div class="date">
+          <div v-if="ShoW" class="date_left">
+              <p v-if="specialshow">预估到期收益</p>
+              <p v-if="bigDatashow== true && this.bigData.PayInterest == '2' ">每月预估到期收益</p>
+              <p>计息日期</p>
+              <p>到期日期</p>
+          </div>
+          <div v-if="!ShoW" class="date_left">
+              <p>计息日期</p>
+              <!-- <p>到期日期</p> -->
+          </div>
+          <div  v-if="ShoW" class="date_middle">
+              <p v-if="bigDatashow">{{this.$route.query.InterestAmt | Money}}</p>
+              <!-- <p v-else-if="this.$route.query.i == 1">{{  CardData.CloseacctInt | Money}}</p> -->
+              <p v-else-if="this.$route.query.i == 1">0.00</p>
+              <p v-else-if="Cardshow">{{Cardprice | toFixedNum}}</p>
+              <p v-if="bigDatashow== true && this.bigData.PayInterest == '2' ">{{ CardpriceMounth | Money }}</p>
+              <p v-if="bigDatashow">{{bigData.OpenDate | DateChange}}</p>
+              <p v-else>{{CardData.StartDate  || CardData.OpenDate | DateChange}}</p>
+              <p v-if="bigDatashow">{{bigData.EndDate | DateChange}}</p>
+              <p v-else>{{CardData.DueDt | DateChange}}</p>
+          </div>
+          <div  v-if="!ShoW" class="date_middle">
+              <p v-if="bigDatashow">{{bigData.OpenDate | DateChange}}</p>
+              <p v-else>{{CardData.OpenDate | DateChange}}</p>
+              <!-- <p v-if="bigDatashow">{{bigData.EndDate | DateChange}}</p>
+              <p v-else>{{CardData.DueDt | DateChange}}</p> -->
+          </div>
+        </div>
+      </div>
+    </div>
+     <!-- //支取 -->
+      <div v-if="this.$route.query.i !== 1" class="btn" @click="gotoCurrent">支取</div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+// import {DropMenu} from 'mand-mobile'
+import {DropdownMenu, DropdownItem} from 'vant';
+import { mapActions,mapMutations,mapState, mapGetters,} from 'vuex';
+import Confirm from "../components/confirm";
+import { Field ,Dialog,picker} from "vant";
+export default {
+  components: {
+    Myheader: Header, //头部组件
+    // [DropMenu.name]: DropMenu,
+    Confirm:Confirm,
+  },
+  data(){
+    return{
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      CardData:{},
+      bigData:{},
+      Cardprice:"",
+      CardpriceMounth:'',
+      Noticeprice:"",
+      specialshow:true,//特色显示
+      bigDatashow:false,//大额显示
+      bigDataShowT:false,//大额特殊
+      Cardshow :false,//整取显示
+      Noticeshow:false,//通知显示
+      popupFlag:false,
+      SortId:'',
+      ShoW:true,//预估收益显示
+    }
+  },
+  created(){
+    // console.log(this.userInfo);
+    console.log(this.$route.query);
+    this.CardData= JSON.parse(this.$route.query.item)
+    // console.log(this.CardData)
+    if(this.$route.query.SortId=='0'){
+      if(this.CardData.CloseacctInt == ''){
+        this.specialshow = false
+        this.ShoW = false
+      }
+      this.Cardshow = true
+    }
+    if(this.$route.query.SortId== "1"){
+      if(this.$route.query.i == 1){
+        this.bigDatashow=false
+        this.Cardshow = true
+      }else{
+        this.bigDatashow=true
+        this.bigData= JSON.parse(this.$route.query.item)
+        // console.log(this.bigData);
+      }
+    }
+    if(this.$route.query.SortId=='2'){
+      this.Cardshow = true
+      if(this.CardData.TermCode == "3M"){
+        this.Cardprice = this.CardData.Balance*(this.CardData.Rate/12)*3/100
+      }
+      else if( this.CardData.TermCode == "6M" ){
+        this.Cardprice = this.CardData.Balance*(this.CardData.Rate/12)*6/100
+      }
+      else if( this.CardData.TermCode == "1Y" ){
+        this.Cardprice = this.CardData.Balance*(this.CardData.Rate/12)*12/100
+      }
+      else if( this.CardData.TermCode == "2Y" ){
+        this.Cardprice = this.CardData.Balance*(this.CardData.Rate/12)*24/100
+      }
+      else if( this.CardData.TermCode == "3Y" ){
+        this.Cardprice = this.CardData.Balance*(this.CardData.Rate/12)*36/100
+      }
+      else if( this.CardData.TermCode == "5Y" ){
+        this.Cardprice = this.CardData.Balance*(this.CardData.Rate/12)*60/100
+      }
+      else{
+        this.Cardprice = null
+      }
+    }
+    if(this.$route.query.SortId=='3'){
+      this.Noticeshow = true
+      this.ShoW = false
+      this.Cardprice = this.CardData.Balance*(this.CardData.Rate/360)*(this.CardData.DueDt-this.CardData.OpenDate )/100
+    }
+    if(this.$route.query.Val){
+        console.log('1')
+        this.bigData=JSON.parse(this.$route.query.Val)
+        this.bigDatashow=true
+        this.SortId = 1
+        if(this.bigData.PayInterest == '2'){
+          if(this.bigData.TermType == 'Y'){
+          this.CardpriceMounth = this.$route.query.InterestAmt/(this.bigData.DepositTerm*12)
+        }else{
+          this.CardpriceMounth = this.$route.query.InterestAmt/this.bigData.DepositTerm
+        }
+        }
+      }
+    },
+    mounted(){
+
+    },
+    methods:{
+          ...mapActions("common",['getUserInfo']),
+        gotoCurrent(){
+          var cardata = JSON.stringify(this.CardData)
+          var bigdata = JSON.stringify(this.bigData)
+          var bigdatashow = JSON.stringify(this.bigDatashow)
+          var bigDataShowt = JSON.stringify(this.bigDataShowT)
+            this.$router.push({
+            path:('/Current'),
+          query:{
+            title:"转活期",
+            SortId:this.$route.query.SortId || this.SortId,
+            CardData:cardata,
+            bigData:bigdata,
+            bigDatashow:bigdatashow,
+            bigDataShowT:bigDataShowt,
+          }
+        })
+        }
+  },
+  computed:{
+        ...mapState('common',['userInfo'])
+  },
+  watch:{
+
+  },
+}
+</script>
+
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  height: 100%;
+}
+.top{
+  height:px2vw(110);
+  background:rgba(255,255,255,1);
+  display:flex;
+  padding: 0 px2vw(40) 0;
+  align-content: center;
+  justify-content: space-between;
+  margin-bottom: px2vw(20);
+  p{
+    height:px2vw(110);
+    line-height:px2vw(110);
+    letter-spacing:px2vw(1);
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      display: flex;
+      align-items: center;
+      span{
+        margin-left:px2vw(10);
+      }
+      .img {
+        width: px2vw(32);
+        height: px2vw(32);
+      }
+  }
+}
+.list,.price{
+  padding: 0 px2vw(40) 0;
+  margin-top: px2vw(20);
+  background: #fff;
+  display: flex;
+  flex-direction:column;
+  justify-content: space-around;
+}
+.list{
+  height: px2vw(110);
+  p:nth-of-type(1){
+    height:px2vw(30);
+    font-size:px2vw(30);
+    font-family:PingFangSC-Medium,PingFang SC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(30);
+  }
+  p:nth-of-type(2){
+    height:px2vw(24);
+    font-size:px2vw(24);
+    font-family:PingFangSC-Regular,PingFang SC;
+    font-weight:400;
+    color:rgba(168,168,168,1);
+    line-height:px2vw(24);
+  }
+}
+  .price{
+    height: px2vw(144);
+    p:nth-of-type(1){
+    height:px2vw(22);
+    font-size:px2vw(22);
+    font-family:PingFangSC-Light,PingFang SC;
+    font-weight:300;
+    color:rgba(125,125,125,1);
+    line-height:px2vw(22);
+    };
+    p:nth-of-type(2){
+      height:px2vw(50);
+      font-size:px2vw(50);
+      font-family:PingFangSC-Medium,PingFang SC;
+      font-weight:500;
+      color:rgba(38,38,38,1);
+      line-height:px2vw(50);
+    };
+  }
+.date{
+  padding: 0 px2vw(40) 0;
+  margin-top: px2vw(20);
+  background: #fff;
+  display: flex;
+  // height: px2vw(250);
+  p{
+      // margin-top: px2vw(40);
+      height: px2vw(68);
+      line-height: px2vw(68)
+  }
+  .date_left{
+    // height:px2vw(28);
+    font-size:px2vw(28);
+    font-family:PingFangSC-Light,PingFang SC;
+    font-weight:300;
+    color:rgba(125,125,125,1);
+    line-height:px2vw(35);
+    background: #fff;
+  }
+  .date_middle{
+    // height:px2vw(28);
+    font-size:px2vw(28);
+    font-family:PingFangSC-Light,PingFang SC;
+    font-weight:400;
+    color:rgba(0,0,0,1);
+    line-height:px2vw(35);
+    margin-left: px2vw(30);
+    background: #fff;
+  }
+}
+.btn{
+  height:px2vw(118);
+  background:rgba(255,255,255,1);
+  box-shadow:px2vw(-5) px2vw(-5) px2vw(20) px2vw(0) rgba(69,69,83,0.05);
+  font-size:px2vw(34);
+  font-family:PingFangSC-Regular,PingFang SC;
+  position:fixed;
+  bottom:0;
+  z-index:999;
+  font-weight:400;
+  color:#DA9A78FF;
+  line-height:px2vw(118);
+  text-align: center;
+  width: 100%;
+}
+
+</style>

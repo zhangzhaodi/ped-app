@@ -1,0 +1,326 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :backgroundColor="background"
+      :isWhite="isWhite"
+    ></Myheader>
+    <div class="content">
+      <h1>欢迎下载手机银行</h1>
+      <p class="text">成功下载并注册手机银行后，</p>
+      <p class="text">推荐人及被推荐人均会获得红包奖励，</p>
+      <p class="text">快来领取吧！</p>
+      <div class="input" :style="{visibility:is_weixn()?'hidden':''}">
+        <van-field
+          label="手机号"
+          placeholder="请输入您的手机号"
+          v-model="phone"
+          type="number"
+          maxlength="11"
+          :class="{'active':phone}"
+          @blur="checkPhone"
+        ></van-field>
+      </div>
+      <div class="btn">
+        <van-button type="default" @click="toDownload">立即下载</van-button>
+      </div>
+    </div>
+    <div class="mask" v-if="maskShow">
+      <div class="img">
+        <p class="text">
+          <span>点击</span>
+          <span class="iconfont iconicon_gengduoCopy-"></span>
+          <span>选择在浏览器中打开</span>
+        </p>
+      </div>
+    </div>
+    <a :href="href" style="visibility:hidden" class="jump"></a>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+// import html2canvas from "html2canvas";
+import { Button, Field, Toast } from "vant";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false,
+        rightShow: false,
+        backShow: false
+      },
+      background: "transparent",
+      isWhite: true,
+      phone: null,
+      UpUserId: null,
+      show: false,
+      maskShow: false,
+      href: "",
+      phoneTrue: false,
+      ios: false
+    };
+  },
+  components: {
+    Myheader: Header,
+    [Button.name]: Button,
+    [Field.name]: Field,
+    [Toast.name]: Toast
+  },
+  created() {
+    this.isIos();
+    this.UpUserId = this.GetRequest().userId;
+    this.show = this.is_weixn();
+    // alert(navigator.userAgent)
+  },
+  methods: {
+    checkPhone() {
+      //检验手机号正确性
+      const regPhone = /^1[3456789]\d{9}$/;
+      if (!regPhone.test(this.phone)) {
+        this.$toast("手机号输入错误，请重新输入");
+        this.$children[1].focus();
+      } else {
+        this.phoneTrue = true;
+      }
+    },
+    GetRequest() {
+      //获取url中"?"符后的字串
+      var url = window.location.href;
+      var theRequest = new Object();
+      if (url.indexOf != -1) {
+        let arr = url
+          .substring(window.location.href.indexOf("?") + 1)
+          .split("&");
+        arr.map(item => {
+          let newArr = item.split("=");
+          theRequest[newArr[0]] = unescape(newArr[1]);
+        });
+      }
+      return theRequest;
+    },
+    toDownload() {
+      let params = {
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "39",
+        RecommendedPhone: this.phone,
+        UpUserId: this.UpUserId,
+        OperateType: "1"
+      };
+      this.$toast.clear();
+      let jump = document.getElementsByClassName("jump")[0];
+      // alert(res)
+      if (!this.show) {
+        if (this.phoneTrue) {
+          this.request("RefereesBind", { ...params })
+            .then(res => {
+              if (this.ios) {
+                if (res.Msg) {
+                  this.$toast(res.Msg);
+                  let _this = this;
+                  setTimeout(function() {
+                    jump.href = res.IosUrl;
+                    // window.location.href =
+                    jump.click();
+                    _this.$toast.clear();
+                  }, 1000);
+                } else {
+                  jump.href = res.IosUrl;
+                  // window.location.href =
+                  jump.click();
+                }
+              } else {
+                if (res.Msg) {
+                  this.$toast(res.Msg);
+                  let _this = this;
+                  setTimeout(function() {
+                    jump.href = res.AndroidUrl;
+                    // window.location.href =
+                    jump.click();
+                    _this.$toast.clear();
+                  }, 1000);
+                } else {
+                  jump.href = res.AndroidUrl;
+                  // window.location.href =
+                  jump.click();
+                }
+              }
+            })
+            .catch(err => {
+              // alert(JSON.stringify(err))
+              this.$toast(err._RejMessage);
+            });
+        }
+      } else {
+        this.maskShow = true;
+      }
+    },
+    is_weixn() {
+      var ua = navigator.userAgent.toLowerCase();
+      if (ua.match(/MicroMessenger/i) == "micromessenger") {
+        // alert(1);
+        return true;
+      } else {
+        // alert(2);
+        return false;
+      }
+    },
+    isIos() {
+      var u = navigator.userAgent;
+      if (u.indexOf("Android") > -1 || u.indexOf("Linux") > -1) {
+        //安卓手机
+        // return "Android";
+        this.ios = false;
+      } else if (u.indexOf("iPhone") > -1) {
+        //苹果手机
+        // return "iPhone";
+        this.ios = true;
+      } else if (u.indexOf("iPad") > -1) {
+        //iPad
+        // return "iPad";
+        this.ios = true;
+      } else if (u.indexOf("Windows Phone") > -1) {
+        //winphone手机
+        // return "Windows Phone";
+        this.ios = false;
+      } else {
+        this.ios = false;
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: url("../img/bj@2x.png");
+  background-size: 100% 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  h1 {
+    font-size: px2vw(60);
+    font-family: PingFangSC-Medium, PingFang SC;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    margin-bottom: px2vw(20);
+    text-align: center;
+  }
+  .text {
+    font-size: px2vw(26);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    line-height: px2vw(37);
+    text-align: center;
+  }
+  .input {
+    width: px2vw(670);
+    height: px2vw(140);
+    box-sizing: border-box;
+    padding: px2vw(10);
+    background: rgba(248, 244, 248, 0.4);
+    margin-top: px2vw(396);
+  }
+  .btn {
+    width: px2vw(670);
+    margin-top: px2vw(100);
+    .van-button {
+      width: 100%;
+      height: px2vw(90);
+      border-radius: px2vw(45);
+      background: linear-gradient(#f9c94f, #ffb42a);
+    }
+    .van-button__text {
+      font-size: px2vw(34);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+}
+input::-webkit-input-placeholder {
+  /* WebKit browsers */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input:-moz-placeholder {
+  /* Mozilla Firefox 4 to 18 */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input::-moz-placeholder {
+  /* Mozilla Firefox 19+ */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input:-ms-input-placeholder {
+  /* Internet Explorer 10+ */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+/deep/ .van-field__control:disabled {
+  color: #a8a8a8;
+  font-size: px2vw(30);
+}
+.active {
+  /deep/ .van-field__control:disabled {
+    color: #262626;
+    margin-top: px2vw(-6);
+    font-size: px2vw(30);
+  }
+}
+/deep/ .van-field__label {
+  width: px2vw(150);
+  margin-right: px2vw(40);
+}
+.van-cell {
+  height: 100%;
+  padding: 0 !important;
+  border-radius: px2vw(18);
+}
+/deep/ .van-cell__title {
+  text-align: center;
+  line-height: px2vw(120);
+}
+/deep/ .van-cell__value {
+  line-height: px2vw(120);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.mask {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.49);
+  z-index: 100000;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  .img {
+    width: px2vw(582);
+    height: px2vw(188);
+    background: url("../img/img_dianjifenxiang@2x.png");
+    background-size: 100% 100%;
+    margin-left: px2vw(124);
+    margin-top: px2vw(20);
+    overflow: hidden;
+    .text {
+      font-size: px2vw(30);
+      font-family: SourceHanSansCN-Regular, SourceHanSansCN;
+      font-weight: 400;
+      color: rgba(59, 42, 0, 1);
+      text-align: left;
+      margin-top: px2vw(110);
+      margin-left: px2vw(21);
+      .iconfont {
+        font-size: px2vw(30);
+        font-weight: 400;
+      }
+    }
+  }
+}
+</style>

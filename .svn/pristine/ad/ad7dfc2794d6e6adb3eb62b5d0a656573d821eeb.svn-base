@@ -1,0 +1,77 @@
+<template>
+  <div class="content">
+    <!-- <ul class="tabs">
+      <li><img src="@/assets/interestRateQuery/icon_jisuanqi.png"> 存款计算器</li>
+      <li>储蓄存款 <span class="iconfont iconic_back"></span></li>
+    </ul> -->
+    <SaveTable name="活期存款"
+               :dataList="currentRate" />
+    <SaveTable name="整存整取"
+               :dataList="wholeStorageRate" />
+    <SaveTable name="通知存款"
+               :dataList="noticeRate" />
+  </div>
+</template>
+<script>
+import SaveTable from '../../components/SaveTable'
+export default {
+  data () {
+    return {
+      currentRate: [],
+      wholeStorageRate: [],
+      noticeRate: []
+    }
+  },
+  components: {
+    SaveTable
+  },
+  mounted () {
+    this.init()
+  },
+  methods: {
+    init () {
+      this.request("DepositRateQry", {
+        BankId: '9999',
+        BranchId: '1699',
+        ChnlId: '39'
+      }, true).then(response => {
+        this.currentRate = response.currentRate
+        this.wholeStorageRate = response.wholeStorageRate
+        this.noticeRate = response.noticeRate
+      })
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.content {
+  overflow-y: scroll;
+  background-color: #f5f6f8;
+  .tabs {
+    margin: px2vw(40);
+    padding: px2vw(35);
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    border-radius: px2vw(16);
+    li {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-content: center;
+      font-size: px2vw(30);
+      img {
+        margin-right: px2vw(10);
+        width: px2vw(34);
+        height: px2vw(38);
+      }
+      span {
+        display: block;
+        margin-left: px2vw(10);
+        transform: rotate(180deg);
+        font-size: px2vw(26);
+      }
+    }
+  }
+}
+</style>

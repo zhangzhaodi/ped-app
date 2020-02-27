@@ -1,0 +1,198 @@
+<template>
+  <van-popup v-model="show" position="right" :style="{ width: '100vw',height:'100vh' }">
+    <div class="header">
+      <span class="iconfont iconic_back" @click="goBack"></span>
+      <p class="title">{{title}}</p>
+    </div>
+    <div class="search">
+      <div class="input">
+        <span class="iconfont iconicon_search-"></span>
+        <van-field v-model="value" placeholder="请输入" @input="valChange" />
+      </div>
+    </div>
+    <div class="content" v-if="!this.value">
+      <div class="item" v-for="(item,index) in List" :key="index" @click="choose(item)">
+        <span class="text">{{item.text}}</span>
+        <span class="iconfont iconicon_gengduo-"></span>
+      </div>
+    </div>
+    <div class="content" v-else>
+      <div class="item" v-for="(item,index) in searchList" :key="index" @click="choose(item)">
+        <span class="text">{{item.text}}</span>
+        <span class="iconfont iconicon_gengduo-"></span>
+      </div>
+    </div>
+  </van-popup>
+</template>
+
+<script>
+import { Popup, Field } from "vant";
+export default {
+  components: {
+    [Popup.name]: Popup,
+    [Field.name]: Field
+  },
+  props: {
+    selectPositionFlag: {
+      default: false,
+      required: true
+    }
+  },
+  data() {
+    return {
+      title: "选择职务",
+      show: false,
+      value: null,
+      List: [
+        { id: "01", text: "高层管理职位" },
+        { id: "02", text: "人力资源管理职位" },
+        { id: "03", text: "财务与会计职位" },
+        { id: "04", text: "行政管理职位" },
+        { id: "05", text: "市场营销职位" },
+        { id: "06", text: "销售职位" },
+        { id: "07", text: "生产职位" },
+        { id: "08", text: "物流职位" },
+        { id: "09", text: "技术职位" },
+        { id: "10", text: "其他" }
+      ],
+      searchList: []
+    };
+  },
+  watch: {
+    selectPositionFlag: {
+      handler(val) {
+        this.show = val;
+      }
+    }
+  },
+  methods: {
+    goBack() {
+      this.$parent.selectPositionFlag = false;
+    },
+    choose(val) {
+      console.log(val);
+      this.$parent.selectPositionFlag = false;
+      this.$parent.form.Position = val;
+      // this.$emit("pass");
+    },
+    valChange() {
+      // console.log(this.value);
+      this.searchList = [];
+      this.List.map(item => {
+        let start = item.text.indexOf(this.value);
+        if (start != -1) {
+          let end = start + this.value.length;
+          let obj = { ...item };
+          obj.startStr = item.text.slice(0, start);
+          obj.endStr = item.text.slice(end);
+          obj.centerStr = this.value;
+          this.searchList.push(obj);
+        }
+        console.log(this.searchList);
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.van-popup {
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  font-size: px2vw(36);
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  height: px2vw(88);
+  line-height: px2vw(88);
+  padding: 0 px2vw(40);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+  p {
+    // flex: 1;
+    width: px2vw(180);
+    text-align: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+  }
+  .iconfont {
+    font-size: px2vw(36);
+    font-weight: 500;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(88);
+  }
+}
+.search {
+  height: px2vw(134);
+  padding: px2vw(24) px2vw(40) px2vw(40);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .input {
+    width: 100%;
+    height: px2vw(70);
+    border-radius: px2vw(35);
+    background: #f5f6f8;
+    padding: 0 px2vw(30);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    .iconfont {
+      color: #262626;
+      font-size: px2vw(34);
+      font-weight: bold;
+      margin-right: px2vw(22);
+    }
+    .van-cell {
+      background: transparent;
+    }
+    .van-field__control {
+      font-size: px2vw(24);
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+    }
+  }
+}
+.content {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 px2vw(40);
+  .item {
+    height: px2vw(100);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    .text {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      letter-spacing: px2vw(1);
+    }
+    .iconfont {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #999ca0;
+    }
+  }
+  .item:not(:last-child)::after {
+    content: " ";
+    position: absolute;
+    height: px2vw(1);
+    width: 100%;
+    background: #ebeef0;
+    left: 0;
+    bottom: 0;
+  }
+}
+.content::-webkit-scrollbar {
+  display: none;
+}
+</style>

@@ -1,0 +1,301 @@
+import Vue from "vue";
+import Router from "vue-router";
+//我的银行卡
+import Index from "../pages/index";
+//添加备注名
+import RemarkName from "../pages/remarkName/";
+//查看绑定卡
+import ViewBindingCard from "../pages/viewBindingCard/";
+import AddBindingCard from "../pages/viewBindingCard/addBindingCard";
+//解除受限
+import FindRemoveLimited from "../pages/findRemoveLimited/";
+import RemoveLimited from "../pages/findRemoveLimited/removeLimited";
+import RemoveSuccess from "../pages/findRemoveLimited/removeSuccess";
+//账户加挂
+import AddBankCard from "../pages/addBankCard/";
+import EnterPassword from "../pages/addBankCard/enterPassword";
+//挂失解冻
+import ReportForLoss from "../pages/reportForLoss/";
+//解除挂失
+import CancelLoss from "../pages/cancelLoss/";
+//银行卡详情
+import BankCardDetails from "../pages/bankCardDetails/";
+import DealRecord from "../pages/bankCardDetails/dealRecord";
+import BillDetails from "../pages/bankCardDetails/billDetails";
+//解除绑定
+import Unbound from "../pages/unbound/";
+//实体卡升级
+import AccountUpgrade from "../pages/accountUpgrade/";
+//实体卡申请
+import EntityCardApply from "../pages/entityCardApply/";
+import SubmitSucced from "../pages/entityCardApply/submitSucced";
+import ApplicationProgress from "../pages/entityCardApply/applicationProgress";
+import ActivateCard from "../pages/entityCardApply/activateCard";
+import ActiveteSucced from "../pages/entityCardApply/activeteSucced";
+//充值提现
+import Recharge from "../pages/recharge/";
+import ResultsPage from "../pages/recharge/resultsPage";
+import WithdrawDeposit from "../pages/withdrawDeposit/";
+import ResultsPageD from "../pages/withdrawDeposit/resultsPageD";
+
+Vue.use(Router);
+
+const router = new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "我的银行卡",
+        keepAlive: false
+      }
+    },
+    //银行卡详情
+    {
+      path: "/bankCardDetails",
+      name: "bankCardDetails",
+      component: BankCardDetails,
+      meta: {
+        title: "银行卡管理",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/dealRecord",
+      name: "dealRecord",
+      component: DealRecord,
+      meta: {
+        title: "收支明细",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/billDetails",
+      name: "billDetails",
+      component: BillDetails,
+      meta: {
+        title: "收支明细",
+        keepAlive: false
+      }
+    },
+    //设置备注名
+    {
+      path: "/remarkName",
+      name: "remarkName",
+      component: RemarkName,
+      meta: {
+        title: "设置备注名",
+        keepAlive: false
+      }
+    },
+    //查看绑定卡
+    {
+      path: "/viewBindingCard",
+      name: "viewBindingCard",
+      component: ViewBindingCard,
+      meta: {
+        title: "账户绑定卡",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/addBindingCard",
+      name: "addBindingCard",
+      component: AddBindingCard,
+      meta: {
+        title: "绑定银行卡",
+        keepAlive: false
+      }
+    },
+    //账户加挂
+    {
+      path: "/addBankCard",
+      name: "addBankCard",
+      component: AddBankCard,
+      meta: {
+        title: "添加银行卡",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/enterPassword",
+      name: "enterPassword",
+      component: EnterPassword,
+      meta: {
+        title: "账户绑定卡",
+        keepAlive: false
+      }
+    },
+    //挂失解冻
+    {
+      path: "/reportForLoss",
+      name: "reportForLoss",
+      component: ReportForLoss,
+      meta: {
+        title: "挂失冻结",
+        keepAlive: false
+      }
+    },
+    //解除挂失
+    {
+      path: "/cancelLoss",
+      name: "cancelLoss",
+      component: CancelLoss,
+      meta: {
+        title: "解除挂失",
+        keepAlive: false
+      }
+    },
+    //解除受限
+    {
+      path: "/findRemoveLimited",
+      name: "findRemoveLimited",
+      component: FindRemoveLimited,
+      meta: {
+        title: "选择解除受限",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/removeLimited",
+      name: "removeLimited",
+      component: RemoveLimited,
+      meta: {
+        title: "解除受限",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/removeSuccess",
+      name: "removeSuccess",
+      component: RemoveSuccess,
+      meta: {
+        title: "解除成功",
+        keepAlive: false
+      }
+    },
+    //解除绑定
+    {
+      path: "/unbound",
+      name: "unbound",
+      component: Unbound,
+      meta: {
+        title: "账户绑定卡",
+        keepAlive: false
+      }
+    },
+    //账户升级
+    {
+      path: "/accountUpgrade",
+      name: "accountUpgrade",
+      component: AccountUpgrade,
+      meta: {
+        title: "客户二维码",
+        keepAlive: false
+      }
+    },
+    //实体卡申请
+    {
+      path: "/entityCardApply",
+      name: "entityCardApply",
+      component: EntityCardApply,
+      meta: {
+        title: "填写收卡地址",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/submitSucced",
+      name: "submitSucced",
+      component: SubmitSucced,
+      meta: {
+        title: "提交成功",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/applicationProgress",
+      name: "applicationProgress",
+      component: ApplicationProgress,
+      meta: {
+        title: "申请进度",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/activateCard",
+      name: "activateCard",
+      component: ActivateCard,
+      meta: {
+        title: "激活实体卡",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/activeteSucced",
+      name: "activeteSucced",
+      component: ActiveteSucced,
+      meta: {
+        title: "激活成功",
+        keepAlive: false
+      }
+    },
+    //充值
+    {
+      path: "/recharge",
+      name: "recharge",
+      component: Recharge,
+      meta: {
+        title: "充值",
+        keepAlive: false
+      }
+    },
+    //充值成功
+    {
+      path: "/resultsPage",
+      name: "resultsPage",
+      component: ResultsPage,
+      meta: {
+        title: "充值结果",
+        keepAlive: false
+      }
+    },
+    //提现
+    {
+      path: "/withdrawDeposit",
+      name: "withdrawDeposit",
+      component: WithdrawDeposit,
+      meta: {
+        title: "提现",
+        keepAlive: false
+      }
+    },
+    //提现结果
+    {
+      path: "/resultsPageD",
+      name: "resultsPageD",
+      component: ResultsPageD,
+      meta: {
+        title: "提现结果",
+        keepAlive: false
+      }
+    }
+  ]
+});
+
+router.beforeEach((to, from, next) => {
+  if (from.name == "dealRecord" && to.name == "bankCardDetails") {
+    from.meta.keepAlive = false;
+  }
+  if (from.name == "billDetails" && to.name == "dealRecord") {
+    to.meta.keepAlive = true;
+  }
+  next();
+});
+
+export default router;

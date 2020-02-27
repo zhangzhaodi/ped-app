@@ -1,0 +1,395 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :isWhite="true" backgroundColor="linear-gradient(270deg,rgba(248,204,173,1) 0%,rgba(218,154,120,1) 100%)"></Myheader>
+    <div class="main-wrapper">
+      <div class="top">
+        <div class="tips">
+          <div class="left">
+            <img src="@/assets/fund/icon_goumai@2x.png" alt="">购买
+          </div>
+          <div class="right">
+            流水号:{{data.SerialNum}}
+          </div>
+        </div>
+        <div class="fund-info">
+          <h2 @click="toFundDetail">{{data.ProductName}}【{{data.ProductNo}}】<span class="iconfont">&#xe649;</span></h2>
+          <div class="info">
+            <div class="item">
+              <div class="title">最新净值({{nowaDay}})</div>
+              <div class="num">{{data.ProdValue}}</div>
+            </div>
+            <div class="item">
+              <div class="title">日跌涨幅</div>
+              <div class="num">{{data.dayFloat || "0.00%"}}</div>
+            </div>
+          </div>
+        </div>
+        <div class="expend" @click="expended = !expended">
+          <a class="expend-btn">
+            <img v-if="expended" :src="foldImg">
+            <img v-else :src="expendImg">
+          </a>
+        </div>
+      </div>
+      <div class="expend-box" v-show="expended">
+        <div class="row">
+          <span>购买金额：{{data.AMT | Money}}</span>
+          <span>手续费：{{data.OutFactorage | Money}}</span>
+        </div>
+        <div class="row">
+          <span>交易时间：{{data.TransPhyTime | dateFormat}}</span>
+        </div>
+      </div>
+      <div class="divide">&nbsp;</div>
+      <Scroller class="record">
+        <div class="title">交易信息</div>
+        <div class="cell">
+          <div class="label">交易账户</div>
+          <div class="value">焦作中旅银行({{data.BankAcct | CardNoFour}})</div>
+        </div>
+      </Scroller>
+      <div class="footer-box">
+        <van-button class="reset" @click="preCancel">委托撤单</van-button>
+      </div>
+
+    </div>
+
+    <myDialog class="fund-dialog" :show.sync="repealShow" title="委托撤单" :isClose="false" :confirmButtonText="`确定`" @con="repealConfirm">
+      <p slot="content" class="dialog-content" style="text-align:center;">
+        您正在进行基金撤单交易，委托撤单后将不能恢复
+      </p>
+    </myDialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+// import Footer from "../../components/Footer";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import { Sticky } from "vant";
+import myDialog from '@/components/Dialog/Dialog'
+import dayjs from "dayjs"
+export default {
+  components: {
+    Myheader: Header,
+    [Sticky.name]: Sticky,
+    Scroller,
+    myDialog
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      //是否选中
+      data: {},
+      foldImg: require('@/assets/fund/icon_shouqi@2x.png'),
+      expendImg: require('@/assets/fund/icon_zhankai@2x.png'),
+      expended: false,
+      repealShow: false,
+      params: {},
+    };
+  },
+  created() {
+    console.log(this.$route.params)
+    if (this.$route.params.data) {
+      this.data = this.$route.params.data;
+    }
+    this.getFundDetail();
+    console.log(this.selectPosition,"ddd")
+  },
+  mounted() { },
+  computed: {
+    ...mapState('fund', ['selectPosition',"selectFund"]),
+    ...mapState('common', ['userInfo']),
+    nowaDay() {
+      return dayjs().format("MM-DD")
+    }
+  },
+  methods: {
+    ...mapMutations("fund",["SELECTFUND"]),
+    preCancel(){
+      this.repealShow = true;
+    },
+    getFundDetail(){
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        PositionString: '1',
+        QueryRowsNum: '20',
+        QueryFields: 'prd_serial~serial_periods~prd_label',
+        ProductNo: this.selectPosition.ProductNo,
+      }
+      this.request('FinancialProMsgQry', params).then(res => {
+        let { ProductInfo } = res;
+        if (ProductInfo.length > 0) {
+          this.data = {...this.data,...res.ProductInfo[0]};
+          this.SELECTFUND(this.data);
+          console.log("获取详情后的selectFund",this.selectFund)
+        }
+      })
+    },
+    toFundDetail(){
+      this.$router.push({ name: 'fundDetail'})
+    },
+    repealConfirm() {
+      console.log("执行撤单")
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        OriSerNum: this.selectPosition.SerialNum,
+        CustomerIdentify: this.userInfo.Cif.cifNo,
+        CustomerIdentifyType: "1",
+        BankAcct: this.selectPosition.BankAcct,
+        TrsAcNo: this.selectPosition.BankAcct || '',
+      }
+      this.params = params;
+      this.request('FinancialProdCancelConfirm', params , true ).then(res => {
+        this.params._tokenName = res._tokenName;
+        this.passwordCheck();
+      })
+    },
+    // confirm接口后调用密码组件
+    passwordCheck() {
+      if (process.env.NODE_ENV == "development") {//随时删除
+        this.params.Password = 'MDAwMDAxNDABAgAAAWgAAACkAABjJ7se4jHpWVWyF97Z57ZKF+k3PC8DJs8wZAGNvR/Wha/4L/cVDMdiWS3Z1hU+Ctx9P08z/QjlCo/9MWfNZfhmucVIrPDLhBAuYobdsK+cuc5sgSz08oHraAKRvpf3UzNrJBwqEh8mb/b/Kr5z9GCH7omIiX97+abATsZAiWKxgzAwMDAwMjIzczX1rZcuLPzEnLYa9B0zGcF9sYpYwhAZdqN49WvCLrZA9p6VG/L6vn6sPHRtjnDJvRIrFUARFPCnIJ9M0Sw4kvLRK4g/o4WkYF9FpKqzrz+rNPN3UD3QSxNiP0VPDSfGD28VHHx7YhKOxFcxw6AQAa9X065dAJZ8NMS+x+QrlWlZVxgVUtfh87mxieP60EPHWh/kWPswnMjBeKZLpj+h23zBsqTCMu8vL22iB9YIDDNmEHiavPyHFG+chYdAtkG9EulXh7dzWk1PKoZPYBDWYv7BhbAN/d4WSFSYh3Caow==';//本地测试无法调用密码组件 写死
+        this.submit();
+      } else {
+        window.NativeCall.SecureKeyboard(param => {
+          this.params.Password = param;
+          // this.params.Password = '111111';
+          this.submit();
+        });
+      }
+    },
+    submit(){
+      this.request('FinancialProdCancel', this.params).then(res => {
+        this.$router.push({name: "cancelResult"})
+      })
+    },
+    
+   
+
+  }
+};
+</script>
+<style lang="scss" scoped>
+.main-wrapper {
+  margin-top: px2vw(88);
+  height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  background: #fff;
+}
+.outer {
+  position: relative;
+  .headerBox {
+    top: 0;
+    position: fixed;
+  }
+  .top {
+    background: linear-gradient(
+      270deg,
+      rgba(248, 204, 173, 1) 0%,
+      rgba(218, 154, 120, 1) 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 100% px2vw(341);
+    padding-bottom: px2vw(20);
+    .tips {
+      display: flex;
+      justify-content: space-between;
+      margin: px2vw(20) px2vw(40) px2vw(30) px2vw(40);
+      align-items: center;
+      background: #d28760;
+      padding: px2vw(6) px2vw(20);
+      border-radius: px2vw(6);
+      .left {
+        display: flex;
+        align-items: center;
+        img {
+          width: px2vw(32);
+          margin-right: px2vw(10);
+        }
+      }
+      .left,
+      .right {
+        color: #fff;
+        font-size: px2vw(22);
+        font-weight: 400;
+        font-family: $font-family;
+      }
+    }
+    .fund-info {
+      color: #fff;
+      padding: px2vw(0) px2vw(40) 0 px2vw(40);
+      h2 {
+        font-size: px2vw(30);
+        font-family: $font-family;
+        font-weight: 500;
+        line-height: px2vw(36);
+        .iconfont {
+          float: right;
+          font-size: px2vw(12);
+        }
+      }
+      .num {
+        font-size: px2vw(28);
+        font-family: $font-family;
+        margin-top: px2vw(12);
+        font-weight: 500;
+        line-height: px2vw(30);
+        .end-tag {
+          display: inline-block;
+          height: px2vw(30);
+          background: #fff;
+          padding: 0 px2vw(14);
+          color: #f75a50;
+          font-size: px2vw(22);
+          font-family: $font-family;
+          font-weight: 400;
+        }
+      }
+      .info {
+        display: flex;
+        margin-top: px2vw(48);
+        .item {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          .title {
+            margin-bottom: px2vw(10);
+            font-size: px2vw(24);
+            font-family: $font-family;
+            font-weight: 400;
+          }
+          .num {
+            font-size: px2vw(34);
+            font-family: $font-family;
+            font-weight: 500;
+          }
+        }
+      }
+    }
+    .expend {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: px2vw(40);
+      transition: all 0.5s linear;
+      .expend-btn {
+        width: px2vw(24);
+        img {
+          width: 100%;
+        }
+      }
+    }
+  }
+  .expend-box {
+    padding: px2vw(30) px2vw(40);
+    background: #fff;
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      &:first-child {
+        margin-bottom: px2vw(30);
+      }
+      span {
+        color: #7d7d7d;
+        font-size: px2vw(24);
+        font-family: $font-family;
+        font-weight: 400;
+      }
+    }
+  }
+  .divide {
+    height: px2vw(20);
+    background: #f5f6f8;
+    width: 100%;
+    &::after {
+      content: " ";
+    }
+  }
+  .scrollerBox {
+    background: #f5f6f8;
+  }
+  .record {
+    padding: 0 px2vw(40);
+    background: #fff;
+    .cell {
+      display: flex;
+      .label {
+        color: #7d7d7d;
+        margin-right: px2vw(40);
+        font-size: px2vw(28);
+        font-family: $font-family;
+        font-weight: 300;
+      }
+      .value {
+        color: #262626;
+        font-size: px2vw(28);
+        font-family: $font-family;
+        font-weight: 400;
+      }
+    }
+    .title {
+      font-size: px2vw(32);
+      color: #262626;
+      font-family: $font-family;
+      font-weight: 500;
+      padding: px2vw(40) 0;
+    }
+  }
+  .footer-box {
+    // position: fixed;
+    // bottom: 0;
+    width: 100%;
+    display: flex;
+    box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.05);
+    .van-button {
+      flex: 1;
+      width: 50%;
+      height: px2vw(112);
+      font-size: px2vw(34);
+      font-weight: 400;
+      font-family: $font-family;
+      border-radius: 0;
+      &.reset {
+        color: #da9a78;
+      }
+      &.edit {
+        color: #fff;
+        background: linear-gradient(
+          270deg,
+          rgba(248, 204, 173, 1) 0%,
+          rgba(218, 154, 120, 1) 100%
+        );
+      }
+    }
+  }
+}
+
+/deep/ .fund-dialog {
+  .van-dialog {
+    .van-dialog__footer {
+      .van-dialog__confirm {
+        background: linear-gradient(
+          270deg,
+          rgba(248, 204, 173, 1) 0%,
+          rgba(218, 154, 120, 1) 100%
+        );
+      }
+      .van-dialog__cancel{
+        border:1px solid rgba(218,154,120,1);
+        color:#DA9A78;
+      }
+    }
+  }
+}
+</style>

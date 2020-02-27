@@ -1,0 +1,56 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <Scroller>
+      <Pagetitle :title="titleInfo" :notice="noticeInfo"></Pagetitle>
+
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :style="styleObject" :disabled="forbidden" @click="showMask('Confirm')">下一步</van-button>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Pagetitle from "./components/Pagetitle";
+import { Button } from "vant";
+
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    Pagetitle,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      titleInfo: "人脸识别",
+      noticeInfo: "请遵循相应图标作出缓慢动作",
+      //是否禁用
+      forbidden: true,
+      styleObject: {
+        background: ""
+      },
+    };
+  },
+  created() {
+  },
+  methods: {
+    showMask() {
+      alert("前端已加载 Confirm 方法，下面调 手机原生方法");
+      // window.NativeCall.Confirm("孙浩真优秀");
+    },
+  },
+};
+</script>
+<style lang="scss" scoped>
+
+</style>

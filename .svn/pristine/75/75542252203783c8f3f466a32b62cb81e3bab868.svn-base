@@ -1,0 +1,180 @@
+<template>
+  <div class="echart">
+    <md-chart
+      :size="['6rem', '4rem']"
+      :max="y.max"
+      :min="y.min"
+      :lines="lines"
+      :format="format"
+      :labels="x"
+      :datasets="datasets"
+      :shift="shift"
+    />
+  </div>
+</template>
+
+<script>
+import { Chart } from "mand-mobile";
+export default {
+  name: "chart-demo",
+  components: {
+    [Chart.name]: Chart
+  },
+  data() {
+    return {
+      datasets: [],
+      shift: 0.6
+    };
+  },
+  props: {
+    x: {
+      require: true
+    },
+    y: {
+      require: true
+    },
+    chartData: {
+      require: true
+    },
+    chartType: {
+      type: String,
+      require: true
+    },
+    lines: {
+      require: false,
+      default: 4
+    }
+  },
+  methods: {
+    format(val) {
+      if (this.chartType == "prdValue") {
+        return Math.round(val * 100) / 100;
+      } else if (this.chartType == "yield") {
+        return Math.round(val * 100) / 100 + "%";
+      } else {
+        //incomedata
+        return Math.round(val * 10) / 10 + "%";
+      }
+    }
+  },
+  watch: {
+    chartData: {
+      handler(val) {
+        console.log(val);
+        this.datasets = [
+          {
+            color: "#5e64ff",
+            width: 1,
+            theme: "region",
+            values: val
+          }
+        ];
+      }
+    }
+  },
+  mounted() {
+    // let text = document.getElementsByTagName("text")[6];
+    // console.log(text)
+    // document.getElementsByTagName("text")[6].setAttribute('x','1em')
+//       var times = [
+//         [1571611326922, 0.2],
+//         [1572612326922, 0.1],
+//         [1573613326922, 0.2],
+//         [1574614326922, 0.1],
+//         [1575615326922, 0.1],
+//         [1576616326922, 0.1],
+//         [1577617326922, 0.1],
+//         [1578618326922, 0.3],
+//         [1579619326922, 0.1]
+//       ];
+// option = {
+//     xAxis: {
+//         // type: 'category',
+//         type:'time',
+//         boundaryGap: false,
+//         splitLine: {
+//             show: false
+//         },
+//         interval : 3600 * 24 * 1000*30
+//     },
+//     tooltip : {
+//         trigger: 'axis',
+//         axisPointer: {
+//             type: 'shadow',
+//             label: {
+//                 backgroundColor: '#6a7985'
+//             },
+//         },
+//         // trigger:'none'
+//     },
+//     yAxis: {
+//         type: 'value',
+//         axisLabel: {
+//             formatter: function(v){
+//                 return  v*100+'%';
+//             }
+//         }
+//     },
+//     series: [{
+//         data: times,
+//         type: 'line',
+//         lineStyle:{
+//             color:'#3AABFF'
+//         },
+//         symbol:'circle',
+//         symbolSize:'1',
+//         showSymbol:false,
+//         areaStyle: {
+//             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+//                 offset: 0,
+//                 color: 'rgba(58, 138, 255, .6)'
+//             }, {
+//                 offset: 1,
+//                 color: 'rgba(58, 180, 255, .4)'
+//             }])
+//         },
+//         itemStyle: {
+//         normal: {
+//                 borderWidth: 3,
+//                 // borderColor: 'yellow',
+//                 color: 'RGBA(39, 145, 250, 1)'
+//             },
+//         }
+//     }]
+// };
+
+
+  },
+  created() {
+    console.log(this.y, this.y.min);
+    this.step = (this.y.max - this.x.min) / 5;
+    if (this.chartType == "InComeRate") {
+      this.shift = 1;
+    } else {
+      this.shift = 0.6;
+    }
+    console.log(this.shift);
+    this.datasets = [
+      {
+        color: "#5e64ff",
+        width: 1,
+        theme: "region",
+        values: this.chartData
+      }
+    ];
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.echart {
+  height: px2vw(467);
+}
+svg {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  height: px2vw(467);
+}
+</style>
+

@@ -1,0 +1,385 @@
+<template>
+   <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader
+      :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'#fff'"
+    >
+    </Myheader>
+    <div class="content_top">
+        <!-- <p>卡号</p>
+        <p>中旅银行&nbsp;|&nbsp;{{ this.$route.query.Acct | CardProtect }}</p> -->
+        <p>
+        <img class="img" src="@/assets/deposit/index/icon_yinhangka_44@2x.png" alt />
+        <span>银行卡({{ this.$route.query.Acct | CardNoFour }})</span>
+        </p>
+      </div>
+    <div class="content">
+      <div class="Auto">
+      <div v-if="cardlist"  class="cardtrue">
+        <h5>生效中</h5>
+            <div  v-for="(item,i) in  Cardlist" class="temlist"     @click="goToreceipt(item)">
+                <div class="temlist_data">
+                  <div class="temlist_left">
+                    <p>{{item.DebtType | depositDateType }}{{item.TermCode | depositDateChange}}储蓄</p>
+                    <p>{{item.DueDt | DateChange}}到期</p>
+                  </div>
+                  <div class="temlist_middle">
+                    <p>利率</p>
+                    <p>{{item.Rate | toFixedNum }}%</p>
+                  </div>
+                  <div class="temlist_right">
+                    <p>存入本金(人民币)</p>
+                    <p>{{item.Balance| Money }}</p>
+                  </div>
+                </div>
+              </div>
+      </div>
+      <div v-else  class="cardtrue">
+          <h5>生效中</h5>
+            <div  v-for="(itemI,j) in BIGlist"  @click="goTobigreceipt(itemI)"   class="temlist">
+                <div class="temlist_data"  >
+                  <div class="temlist_left">
+                    <!-- <p v-if="itemI.TermType == 'M'">{{itemI.DepositTerm}}个月存期</p>
+                    <p v-else="itemI.TermType == 'Y'" >{{itemI.DepositTerm}}年</p> -->
+                    <p >{{itemI.PrdName}}</p>
+                    <p>{{itemI.EndDate | DateChange }}</p>
+                  </div>
+                  <div class="temlist_middle">
+                    <p>利率</p>
+                    <p>{{itemI.PrdInt | toFixedNumBer  }}%</p>
+                  </div>
+                  <div class="temlist_right">
+                    <p>存入本金(人民币)</p>
+                    <p>{{itemI.PayerAmt| Money }}</p>
+                  </div>
+                </div>
+              </div>
+      </div>
+      <div v-if="nocardlist" class="cardfalse">
+        <h5>已失效</h5>
+              <div  v-for="(item,i) in  Nocardlist"  @click="goToreceipt(item,1)" class="temlist"   >
+                <div class="temlist_data"  >
+                  <div class="temlist_left">
+                    <p>{{item.DebtType | depositDateType}}{{item.TermCode | depositDateChange}}储蓄</p>
+                    <p>{{item.DueDt | DateChange}}到期</p>
+                  </div>
+                  <div class="temlist_middle">
+                    <p>利率</p>
+                    <P v-if="bignocard">{{item.Rate | toFixedNumBer }}%</P>
+                    <p v-else>{{item.Rate | toFixedNum }}%</p>
+                  </div>
+                  <div class="temlist_right">
+                    <p>存入本金(人民币)</p>
+                    <p>0.00</p>
+                    <!-- <p>{{item.TransAmt| Money }}</p> -->
+                  </div>
+                </div>
+              </div>
+      </div>
+      </div>
+    </div>
+    </div>
+
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header, //头部组件
+    [Button.name]: Button
+  },
+  data() {
+    return{
+      cardlist:false,
+      nocardlist:false,
+      Cardlist:[],
+      Nocardlist:[],
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      item:null,
+      iteM:false,//控制显示
+      BIGlist:null,//大额计数
+      bigDatashow:false,//大额显示
+      bignocard:false,//大额注销显示
+      Cardshow :false,//整取显示
+      Noticeshow:false,//通知显示
+    }
+},
+  created(){
+    console.log(this.$route.query);
+},
+  mounted(){
+  if(this.$route.query.Item){
+    this.cardlist=false
+    this.iteM=true
+    this.item=(JSON.parse(this.$route.query.Item))
+    var data = []
+    for(let i=0;i<this.item.length;i++){
+      console.log(this.item[i])
+      for(let j=0;j<this.item[i].length;j++){
+        console.log(this.item[i])
+        if(this.item[i][j].PayerAcNo.indexOf(this.$route.query.Acct) !== -1){
+                data.push(this.item[i][j])
+              }
+            }
+          }
+    this.BIGlist = data
+    this.setDepositDatabig()
+  }else{
+    this.setDepositData()
+    }
+  },
+  computed:{
+  },
+  methods:{
+    goToreceipt(item,i){
+      console.log(item);
+      var item = JSON.stringify(item)
+        this.$router.push({
+            path:('/receipt'),
+          query:{
+            title:"存单详情",
+            SortId:this.$route.query.SortId,
+              item,
+              i
+          }
+        })
+    },
+     //大额存单持有单个详情
+    goTobigreceipt(value){
+      console.log(value)
+      this.request("LargeDepRecPrdInfo",{
+        BranchId: "1999",
+        BankId: "9999",
+        BillAcctNo:value.BillAcctNo,
+        BillSerial:value.PrdCode,
+        Balance:value.PayerAmt,
+      },true)
+      .then(res=>{
+        console.log(res)
+      var item = JSON.stringify(res.List[0])
+      var Val=  JSON.stringify(value)
+        this.$router.push({
+        path:"/receipt",
+        query:{
+          title:"定期详情",
+          InterestAmt:res.InterestAmt,
+          item,
+          Val
+        }
+      })
+      })
+      .catch(error=>{
+        console.log(error);
+      })
+    },
+    //大额详情
+    setDepositDatabig(){
+    this.request("SubAcctQry",{
+      BranchId: "1999",
+      BankId: "9999",
+      Acct:this.$route.query.Acct,
+      SortId:this.$route.query.SortId,
+    },true)
+    .then((res)=>{
+      console.log(res);
+      res.List.forEach((i)=>{
+      if(i.CardStat == '*' || i.CardStat == '#' ){
+        this.nocardlist = true
+        this.bignocard = true
+        this.Nocardlist.push(i)
+      }
+    })
+    })
+    .catch((error)=>{
+      console.log(error);
+    })
+    },
+    //卡内详情
+    setDepositData(){
+    this.request("SubAcctQry",{
+      BranchId: "1999",
+      BankId: "9999",
+      Acct:this.$route.query.Acct,
+      SortId:this.$route.query.SortId,
+    },true)
+    .then((res)=>{
+      console.log(res);
+      res.List.forEach((i)=>{
+        if(i.CardStat == '*' || i.CardStat == '#' ){
+        this.nocardlist = true
+        this.Nocardlist.push(i)
+      }
+      else{
+        if(this.iteM == false){
+        this.cardlist=true
+        this.Cardlist.push(i)
+        }
+      }
+      })
+    })
+    .catch((error)=>{
+      console.log(error);
+    })
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  // flex: 1;
+  overflow: auto;
+}
+.Auto{
+  flex: 1;
+}
+.content_top{
+  height:px2vw(110);
+  background:rgba(255,255,255,1);
+  display:flex;
+  padding: 0 px2vw(40) 0;
+  align-content: center;
+  justify-content: space-between;
+  // margin-bottom: px2vw(20);
+  p{
+        height:px2vw(110);
+    line-height:px2vw(110);
+    letter-spacing:px2vw(1);
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      display: flex;
+      align-items: center;
+      span{
+        margin-left:px2vw(10);
+      }
+      .img {
+        width: px2vw(32);
+        height: px2vw(32);
+      }
+  }
+}
+.cardtrue h5{
+  margin: px2vw(30) 0 px2vw(20);
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(168,168,168,1);
+  line-height:px2vw(24);
+}
+.cardfalse h5{
+  margin: px2vw(30) 0 px2vw(20);
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(168,168,168,1);
+  line-height:px2vw(24);
+}
+
+ .temlist {
+    padding: 0 px2vw(40) 0;
+    background: #fff;
+      .temlist_data{
+         display: flex;
+          align-items: center;
+          justify-content: space-between;
+           height: px2vw(133);
+          border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+          p:nth-of-type(1) {
+          height: px2vw(22);
+          font-size: px2vw(22);
+          font-family: PingFangSC-Light, PingFangSC;
+          font-weight: 300;
+          color: rgba(125, 125, 125, 1);
+          line-height: px2vw(22);
+        }
+        p:nth-of-type(2) {
+          height: px2vw(30);
+          font-size: px2vw(28);
+          font-family: PingFangSC-Medium, PingFangSC;
+          font-weight: 500;
+          color: rgba(38, 38, 38, 1);
+          line-height: px2vw(30);
+          margin-top: px2vw(20);
+        }
+      }
+    }
+
+
+ .temlist:last-child {
+    border-bottom: none;
+  }
+  .cardfalse .temlist {
+    padding: 0 px2vw(40) 0;
+    background: rgba(245,246,248,1);
+      .temlist_data{
+         display: flex;
+          align-items: center;
+          justify-content: space-between;
+           height: px2vw(133);
+          border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+          p:nth-of-type(1) {
+          height: px2vw(22);
+          font-size: px2vw(22);
+          font-family: PingFangSC-Light, PingFangSC;
+          font-weight: 300;
+          color: rgba(125, 125, 125, 1);
+          line-height: px2vw(22);
+        }
+        p:nth-of-type(2) {
+          height: px2vw(30);
+          font-size: px2vw(28);
+          font-family: PingFangSC-Medium, PingFangSC;
+          font-weight: 500;
+          color:rgba(206,206,208,1);
+          line-height: px2vw(30);
+          margin-top: px2vw(20);
+        }
+      }
+    }
+
+
+ .temlist:last-child {
+    border-bottom: none;
+  }
+</style>

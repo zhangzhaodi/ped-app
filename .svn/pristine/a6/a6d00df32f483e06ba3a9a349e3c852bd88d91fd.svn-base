@@ -1,0 +1,318 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader :backgroundColor="'none'" :isWhite="true"></Myheader>
+    <!-- 中部展示 -->
+    <div class="content">
+      <img src="@/assets/travelTreasure/index/icon_youxiaobao@2x.png" class="youxiaobao" />
+      <h5 class="content_advertising">闲 / 钱 / 存 / 起 / 来 / 坐 / 等 / 发 / 大 / 财</h5>
+      <div class="earnings">
+        <!-- 控制显示 -->
+        <div class="temp" v-if="temp">
+          <p class="earnings_p">七日年化收益率</p>
+          <h3 class="earnings_h3">2.4680%</h3>
+          <h5 class="earnings_h5">易基金天天理财A</h5>
+          <P class="earnings_p1">
+            灵活存取<span>|</span>稳健增值<span>|</span>极速到账
+          </P>
+          <div class="earnings_but"  @click="hreftwo"><span>转入</span></div>
+        </div>
+        <!-- 控制显示 -->
+        <div v-if="!temp">
+            <h1>hello!!!</h1>
+        </div>
+        <!-- 滑动 -->
+        <div class="low">
+          <span :class="activeClass == 0? 'active':''"   @click="qh(true,0)"></span>
+          <span :class="activeClass == 1? 'active':''"   @click="qh(false,1)"></span>
+        </div>
+      </div>
+        <!-- 中部尾巴 -->
+         <div class="paragraph" >
+            <div class="paragraph_other">
+              <img src="@/assets/travelTreasure/single/img_zhuangshi@2x.png" class="paragraph_imgleft" />
+              <p>产品特点</p>
+              <img src="@/assets/travelTreasure/single/img_zhuangshi@2x.png" class="paragraph_imgright" />
+            </div>
+        </div>
+         <!-- 底部 -->
+    <div class="foot">
+      <div>
+        <div class="foot_left">
+          <img class="img" src="@/assets/travelTreasure/index/icon_kuaisudaozhang@2x.png" alt="">
+        </div>
+        <div class="foot_right">
+            <h4>取出最快5分钟到账</h4>
+            <h5>单日账户单品可快速取出一万元，银行服务时间内最快5分钟到账。</h5>
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+       <div>
+        <div class="foot_left">
+          <img class="img" src="@/assets/travelTreasure/index/guanfangrenzheng@2x.png" alt="">
+        </div>
+        <div class="foot_right">
+            <h4>公司规模大 资产安全</h4>
+            <h5>易方达基金管理有限公司资产超过10000亿元，由公司名字保险公司担保资产。</h5>
+        </div>
+      </div>
+    </div>
+    </div>
+
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,   //头部组件
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      temp:true,
+      activeClass: 0, // 0为默认选择第一个，-1为不选择
+    };
+  },
+  created() {
+    //请求数据
+  },
+  methods: {
+     qh:function(e,t){      //控制显示滑块
+      console.log(e,t);
+      this.temp=e,
+      this.activeClass=t
+    },
+    hreftwo(){
+      this.$router.push({
+          path: '/rollin',
+          query: {
+            name: '张三',
+            id: 1,
+          }
+        })
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,h1,h2,h3,h4,h5,img{
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  background: url("~@/assets/travelTreasure/index/bg_1youxiaobao@2x.png") no-repeat;
+  background-size:  100% 100%;
+  -webkit-scrollbar {display:none}
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  overflow: auto;
+}
+.youxiaobao {
+  margin-top: px2vw(30);
+  width: px2vw(360);
+  height: px2vw(126);
+}
+.content_advertising {
+  height: px2vw(26);
+  font-size: px2vw(22);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+  line-height: px2vw(26);
+  letter-spacing: px2vw(1);
+  margin-top: px2vw(29);
+}
+// 显示设置
+.earnings {
+  width: px2vw(690);
+  height: px2vw(713);
+  background: linear-gradient(
+    170deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  border-radius: px2vw(16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  margin-top:px2vw(60);
+  padding-bottom: px2vw(40);
+}
+.temp{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.earnings_but {
+  width: px2vw(609);
+  height: px2vw(90);
+  line-height: px2vw(90);
+  text-align: center;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 190, 78, 1) 0%,
+    rgba(255, 159, 8, 1) 100%
+  );
+  border-radius: px2vw(45);
+  margin-top:px2vw(85);
+}
+.earnings_but  span {
+  width:px2vw(68);
+  height:px2vw(34);
+  font-size:px2vw(34);
+  font-family:PingFangSC;
+  font-weight:400;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(34);
+}
+.earnings_p {
+  width: px2vw(252);
+  height: px2vw(36);
+  font-size: px2vw(36);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(36);
+  margin-top:px2vw(90);
+}
+.earnings_h3 {
+  width: px2vw(427);
+  height: px2vw(100);
+  font-size: px2vw(100);
+  font-family: PingFangSC;
+  font-weight: 500;
+  color: rgba(254, 110, 3, 1);
+  line-height: px2vw(100);
+  margin-top:px2vw(36);
+}
+.earnings_h5 {
+    height: px2vw(26);
+  font-size: px2vw(26);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(125, 125, 125, 1);
+  line-height: px2vw(26);
+  margin-top:px2vw(46);
+}
+.earnings_p1 {
+  width: 100%;
+  height: px2vw(33);
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 300;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(33);
+  margin-top:px2vw(70);
+  text-align:center;
+}
+.earnings_p1 span{
+  margin: 0 px2vw(40) 0;
+}
+.low span{
+  display: inline-block;
+  width:px2vw(20);
+  height:px2vw(8);
+  background:rgba(227,227,227,1);
+  border-radius:px2vw(4);
+  margin-top:px2vw(50);
+}
+.low .active {
+  display: inline-block;
+  width:px2vw(32);
+  height:px2vw(8);
+  background:rgba(247,90,80,1);
+  border-radius:px2cw(4);
+  margin-top:px2vw(50);
+}
+//中部显示
+.paragraph{
+  width:100%;
+  height:px2vw(45);
+  font-size:px2vw(32);
+  font-family:PingFangSC;
+  font-weight:500;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top:px2vw(100);
+}
+.paragraph_other{
+  width:px2vw(460);
+  display: flex;
+  flex-direction:row;
+  align-items: center;
+  line-height:px2vw(45);
+  justify-content:space-around;
+}
+.paragraph .paragraph_imgleft{
+  width:px2vw(120);
+  height:px2vw(6);
+  display: inline-block;
+}
+.paragraph .paragraph_imgright{
+  transform: rotate(180deg);
+  width:px2vw(120);
+  height:px2vw(6);
+  display:inline-block;
+}
+// 底部样式
+.foot{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+  padding-top: px2vw(40);
+  div{
+    display: flex;
+    align-items: center;
+  }
+}
+.foot  .foot_left{
+  display: inline-block;
+}
+.foot  .foot_right{
+  display: inline-block;
+  margin-left: px2vw(24);
+}
+.foot .img{
+  width:px2vw(46);
+  height:px2vw(46);
+}
+.foot  .foot_right h4{
+  width:100%;
+  height:px2vw(33);
+  font-size:px2vw(24);
+  font-family:PingFangSC;
+  font-weight:500;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(33);
+}
+.foot  .foot_right h5{
+  width:px2vw(617);
+  height:px2vw(66);
+  font-size:px2vw(22);
+  font-family:PingFangSC;
+  font-weight:300;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(30);
+  margin-top: px2vw(10);
+}
+</style>

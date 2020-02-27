@@ -1,0 +1,71 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller>
+      <Pagetitle :title="titleInfo" :notice="noticeInfo"></Pagetitle>
+      <div class="sel-item">
+        <div class="sel-m">
+          <v-input v-model="bankCardPwd" label="请输入银行卡密码" placeholder="请输入账户密码"></v-input>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :style="styleObject" :disabled="forbidden" @click="showMask('Confirm')">下一步</van-button>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Pagetitle from "./components/Pagetitle";
+import { Button } from "vant";
+
+export default {
+  components: {
+    Myheader: Header,
+    vInput,
+    Scroller,
+    Pagetitle,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      titleInfo: "绑定银行卡密码",
+      noticeInfo: "请输入绑定银行卡账户密码",
+      //是否禁用
+      forbidden: true,
+      styleObject: {
+        background: ""
+      },
+      bankCardPwd:""
+    };
+  },
+  created() {},
+
+  methods: {
+    showMask() {
+      alert("前端已加载 Confirm 方法，下面调 手机原生方法");
+      // window.NativeCall.Confirm("孙浩真优秀");
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.footer-box{
+  display: flex;
+  justify-content: center;
+  .btn-box{
+    width: px2vw(670);
+  }
+}
+</style>

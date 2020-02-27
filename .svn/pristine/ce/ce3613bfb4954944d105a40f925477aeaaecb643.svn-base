@@ -1,0 +1,143 @@
+<template>
+  <div class="result">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="content">
+      <div class="top">
+        <div class="img">
+          <span class="iconfont iconicon_guanbi-"></span>
+        </div>
+        <p class="msg">收款失败</p>
+      </div>
+      <div class="line"></div>
+      <div class="detail">
+        <div class="payer">
+          <p class="left">错误码：AAAZTINGXSBJI234</p>
+          <p class="right">在线客服</p>
+        </div>
+      </div>
+      <div class="btn">
+        <van-button type="default" class="gohome" @click="gohome">返回首页</van-button>
+        <van-button type="default" class="again" @click="again">再试一次</van-button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  components: {
+    Myheader: Header
+  },
+  props: {
+    data: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      }
+    };
+  },
+  methods: {
+    gohome() {
+      this.$router.push({name:'index'})
+    },
+    again() {
+      this.$router.push({name:'startGathering'})
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+.content {
+  font-family: PingFangSC;
+  .top {
+    height: px2vw(348);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    .img {
+      height: px2vw(110);
+      width: px2vw(110);
+      background: linear-gradient(#F96159, #FF4040);
+      border-radius: 50%;
+      color: #fff;
+      line-height: px2vw(110);
+      text-align: center;
+      margin: 0 auto;
+    }
+    .msg {
+      font-size: px2vw(40);
+      font-weight: 400;
+      color: #262626;
+      text-align: center;
+      line-height: px2vw(40);
+      margin-top: px2vw(40);
+    }
+  }
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        flex: none;
+        color: #7d7d7d;
+      }
+      .center {
+        flex: 1;
+        color: #000;
+      }
+      .right {
+        color: #008bff;
+        flex: none;
+      }
+    }
+  }
+  .btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(100);
+    font-size: px2vw(30);
+    font-weight: 400;
+    padding: 0 px2vw(40);
+    box-sizing: border-box;
+    /deep/ .van-button {
+      height: px2vw(90);
+      width: px2vw(310);
+      border-radius: px2vw(45);
+    }
+    .gohome {
+      background-color: #fff;
+      border: px2vw(1) solid #3e8fff;
+      color: #3e8fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .again {
+      background-color: #3e8fff;
+      border: px2vw(1) solid #3e8fff;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+  }
+}
+</style>

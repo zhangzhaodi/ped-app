@@ -1,0 +1,56 @@
+const img1 = require('@/assets/personalInterests/icon_jipiaoyuding@2x.png')
+const img2 = require('@/assets/personalInterests/icon_huochepiaoyuding@2x.png')
+const img3 = require('@/assets/personalInterests/icon_giubintingquanyi@2x.png')
+const img4 = require('@/assets/personalInterests/icon_mianfeijiesong@2x.png')
+const img5 = require('@/assets/personalInterests/icon_dengjifuwu@2x.png')
+const img6 = require('@/assets/personalInterests/icon_qiangpiao@2x.png')
+const img7 = require('@/assets/personalInterests/icon_zhishengjijiuyuan@2x.png')
+const img8 = require('@/assets/personalInterests/icon_hangyanxian@2x.png')
+const img9 = require('@/assets/personalInterests/icon_menpiaoyouhiu@2x.png')
+const img10 = require('@/assets/personalInterests/icon_alvyouri@2x.png')
+const img11 = require('@/assets/personalInterests/icon_zhusuyouhiu@2x.png')
+const img12 = require('@/assets/personalInterests/icon_mianfeizhusu@2x.png')
+const img13 = require('@/assets/personalInterests/icon_mianmenpiao@2x.png')
+const img14 = require('@/assets/personalInterests/icon_dingzhilvxing@2x.png')
+const img15 = require('@/assets/personalInterests/icon_xiqiliu@2x.png')
+const img16 = require('@/assets/personalInterests/icon_jinrongquanyi@2x.png')
+const img17 = require('@/assets/personalInterests/icon_youhui@2x.png')
+const img18 = require('@/assets/personalInterests/icon_chuguoqianzheng@2x.png')
+let arr = [
+    { title: '机票预订', url: "https://ctstrip.jzctb.com:8002/passengerTicket/productDetails", buttonText: "立即预定", icon: img1, hasLabel: false, class: "0", rank: "0,1,2,3,4,5,6", number: [], text: "全国合作机场、高铁贵宾厅" },
+    { title: '火车票预订', buttonText: "立即预定", icon: img2, hasLabel: false, class: "0", rank: "0,1,2,3,4,5,6", number: [], text: "郑州出发路段火车票抢票" },
+    { title: '贵宾厅权益', url: "https://cts.dangtoo.com/gbt_list.html", buttonText: "立即使用", icon: img3, hasLabel: true, unit: '年', class: "0", rank: "1,2,3,4,5,6", number: [0, 3, 3, 10, '不限次', '不限次', '不限次', '不限次'], text: "新郑机场及合作高铁贵宾厅服务" },
+    { title: '免费接、送服务', url: "https://sd.ssdlqcfw.com/ShengDaZhonglv/zxQyJs?time=1579485941234", buttonText: "立即查看", icon: img4, hasLabel: true, unit: '年', class: "0", rank: "3,4,5,6", number: [0, 0, 0, 0, 1, 2, 3], text: "同城50公里免费接、送机或接、送站服务(四选一)" },
+    { title: '贵宾厅登机服务', url: "https://cts.dangtoo.com/gbt_list.html", buttonText: "立即使用", icon: img5, hasLabel: true, unit: '年', class: "0", rank: "3,4,5,6", number: [0, 0, 0, 0, 1, 2, '不限次'], text: "全国合作机场贵宾厅登机服务" },
+    { title: '火车票抢票', buttonText: "立即抢票", icon: img6, hasLabel: true, unit: '年', class: "0", rank: "3,4,5,6", number: [0, 0, 0, 0, 3, 5, 10], text: "郑州出发路段火车票抢票" },
+    { title: '直升机救援', buttonText: "立即使用", icon: img7, hasLabel: true, unit: '年', class: "0", rank: "4,5,6", number: [0, 0, 0, 0, 0, 1, 1], text: "直升机空中医疗救护" },
+    { title: '航班延误险', url: "https://cts.dangtoo.com/topic_hyx/cts_wx/hyx.html", buttonText: "立即提交", icon: img8, hasLabel: true, unit: '年', class: "0", rank: "1,2,3,4,5,6", number: [0, 3, 3, 3, 3, 3, 3, 3], text: "国内航班延误险(一分钟起赔，最高150元；两小时以上，最高2000元)" },
+    { title: '门票优惠', buttonText: "立即预定", icon: img9, hasLabel: false, class: "1", rank: "0,1,2,3,4,5,6", number: [], text: "尊享合作景区门票专属优惠" },
+    { title: '“i旅游”日景区免门票', url: "https://cts.dangtoo.com/cts_hot_list.htmlhttps://cts.dangtoo.com/cts_hot_list.html", buttonText: "立即预定", icon: img10, hasLabel: false, class: "1", rank: "0,1,2,3,4,5,6", number: [], text: "每月26号“i旅游日”景区免门票" },
+    { title: '住宿优惠', url: "https://ctstrip.jzctb.com:8002/hotelBooking/productDetail", buttonText: "立即预定", icon: img11, hasLabel: false, class: "1", rank: "0,1,2,3,4,5,6", number: [], text: "尊享合作酒店住宿专属优惠" },
+    { title: '免费住宿', buttonText: "立即预定", icon: img12, hasLabel: true, unit: '年', class: "1", rank: "4,5,6", number: [0, 0, 0, 0, 0, 1, 2], text: "全国合作高端酒店免费入住" },
+    { title: '免门票畅玩', buttonText: "立即预定", icon: img13, hasLabel: true, unit: '年', class: "1", rank: "3,4,5,6", number: [0, 0, 0, 0, 3, 10, 10], text: "全国合作景区或主题乐园免门票" },
+    { title: '定制旅行', buttonText: "立即定制", icon: img14, hasLabel: false, class: "1", rank: "0,1,2,3,4,5,6", number: [], text: "尊享定制旅行服务" },
+    { title: '最i星期六', url: "https://cts.dangtoo.com/dangtoo_quanyi_list.html", buttonText: "立即预定 ", icon: img15, hasLabel: false, class: "2", rank: "0,1,2,3,4,5,6", number: [], text: "便利店、商超、餐饮、加油、观影" },
+    { title: '免费金融权益', buttonText: "", icon: img16, hasLabel: false, class: "3", rank: "0,1,2,3,4,5,6", number: [], text: "尊享焦作中旅银行提供的银行卡工本费、小额管理费、手机银行及个人网银转账等24项免费项目" },
+    { title: '优惠金融项目', buttonText: "", icon: img17, hasLabel: true, unit: '月', class: "3", rank: "0,1,2,3,4,5,6", number: [5, 5, '不限次', '不限次', '不限次', '不限次', '不限次'], text: "尊享ATM异地跨行取款、境外取款等12项优惠项目，免手续费。" },
+    { title: '出国签证', url: "https://m.11visa.com/#/", buttonText: "立即使用", icon: img18, hasLabel: false, class: "4", rank: "0,1,2,3,4,5,6", number: [], text: "尊享手机银行全球签证办理专属优惠业务，足不出户办签证" }
+]
+function equities(rank) {
+    let newArr = []
+    arr.map(item => {
+        if (item.rank.indexOf(rank) != '-1') {
+            item.number = item.number[rank] ? item.number[rank] : 0
+            if (!newArr[item.class]) {
+                newArr[item.class] = []
+                newArr[item.class].push(item)
+            } else {
+                newArr[item.class].push(item)
+            }
+
+        }
+    })
+    // newArr.map(item => console.log(item.length))
+    return newArr
+}
+export default equities;

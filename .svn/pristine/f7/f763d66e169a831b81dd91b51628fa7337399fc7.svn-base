@@ -1,0 +1,379 @@
+<template>
+  <div class="outer phone-transfer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div class="main">
+      <div class="group field-section">
+        <div class="filed_cell">
+          <div class="label">收款人</div>
+          <div class="filed">
+            <m-input :maxlength="20" type="text" v-model="payee.name" :value="payee.name" placeholder="请输入真实姓名">
+              <template slot="right">
+                <img class="right-icon" src="@/assets/transferAccounts/icon_tongxunlu@2x.png" @click='openAddressBook' />
+              </template>
+            </m-input>
+          </div>
+        </div>
+
+        <div class="filed_cell">
+          <div class="label">手机号码</div>
+          <div class="filed">
+            <m-input type="phone" :maxlength="15" v-model="payee.phone" :value="payee.phone" placeholder="请输入手机号码">
+            </m-input>
+          </div>
+        </div>
+
+        <div class="filed_cell picker">
+          <van-cell is-link @click="bankListShow = true">
+            <template slot="title" class="label">
+              <span class="custom-title">收款银行</span>
+            </template>
+            <template>
+              <div v-if="payee.bankName" style="color:#262626;">{{payee.bankName}}</div>
+              <div class="placeholder" v-else>请选择收款银行</div>
+            </template>
+          </van-cell>
+        </div>
+        <div class="filed_cell picker" v-show="ibpsBankList.length > 1">
+          <van-cell is-link @click="openBankIbpsList">
+            <template slot="title" class="label">
+              <span class="custom-title">汇入地</span>
+            </template>
+            <template>
+              <div style="color:#262626;" v-show="payee.bankNbr">{{payee.bankaliasname}}</div>
+            </template>
+          </van-cell>
+        </div>
+      </div>
+      <div class="info">
+        <div class="txt">请确保收款人姓名为真实姓名</div>
+        <van-button :disabled="disNext" :loading="loading"  @click="next">下一步</van-button>
+        <div class="explain">
+          <div>说明</div>
+          <div>1.通过手机银行进行手机号转账，单笔/每日限额为10000元。</div>
+          <div>2.如收款人手机号码已绑定收款账户（绑定账户需收款人另行开通），款项将实时入账，否则款项将在付款人账户中冻结直至收款人收款，或次日21:30前未收款自动解除交易。</div>
+          <div>3.收款方手机号可绑定银行卡收款，未绑定也可通过短信回复卡号收款。</div>
+        </div>
+      </div>
+      <van-popup v-model="dialogFlag" :round="true">
+        <div class="content">
+          <div class="text">
+            <span>当前手机号未绑定银行卡</span>
+            <span>请查看手机号是否输入有误</span>
+          </div>
+          <van-button class="confirm" type="default" @click="confirm" :close-on-click-overlay="false">我知道了</van-button>
+        </div>
+      </van-popup>
+
+      <!-- 银行卡列表 -->
+      <bankList :show.sync="bankListShow" :zl="true" @select="selectBank"></bankList>
+      <!-- 二级银行卡列表 汇入地选择 -->
+      <secondBankList :show.sync="ibpsBankListshow" :bankList="ibpsBankList"  @select="selectIbpsBank"></secondBankList>
+      <!-- 银行卡选择后选择超网银行列表 -->
+      <!-- <van-action-sheet class="ibps-list" v-model="ibpsBankListshow" :actions="ibpsBankList" @select="selectIbpsBank" cancel-text="取消" /> -->
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions } from "vuex";
+import { Popup, ActionSheet , Toast } from "vant";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import BankList from "@/components/Picker/bankList";
+import mInput from "@/components/Input/bankCardNum.vue";
+import SecondBankList from "@/components/Picker/secondBankList";
+export default {
+  components: {
+    Myheader: Header,
+    Mydialog: Dialog,
+    Scroller,
+    [Popup.name]: Popup,
+    [ActionSheet.name]: ActionSheet,
+    [Toast.name]: Toast,
+    BankList,
+    mInput,
+    SecondBankList
+  },
+  created(){
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      activeNames: ["1"],
+      payeesNum: 100,
+      dialogFlag: false,
+      dialogContent: "",
+      show: false,
+      payee: {
+        name: "",
+        phone: "",
+        bankNbr:'',
+      },
+      bankListShow: false,
+      ibpsBankListshow: false,
+      ibpsBankList: [],
+      loading: false,
+    };
+  },
+  computed: {
+    disNext() {
+      let disabled = true;
+      if (!this.payee.name) {
+        disabled = true
+      } else if (!this.payee.phone) {
+        disabled = true
+      } else if (!this.payee.bankNbr) {
+        disabled = true
+      } else {
+        disabled = false;
+      }
+      return disabled
+    }
+  },
+  methods: {
+    // 打开手机通讯录
+    openAddressBook() {
+      window.NativeCall.SearchBySystem(params => {
+        let data = JSON.parse(params);
+        //userAgent 属性是一个只读的字符串，声明了浏览器用于 HTTP 请求的用户代理头的值
+        let u = navigator.userAgent;
+        let isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1;
+        let isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); 
+        if(isAndroid){
+          this.payee.name = data.UserName;
+          let str = data.UserNumber.toString();
+          str = str.replace(/\s+/g,"");//去掉空格
+          str = str.replace(/-/g,'');//去掉横杠
+          this.payee.phone = str.slice(-11);//从末尾截取11位作为手机号码  处理+86的情况
+          // let phone = data.UserNumber.replace(/[+-\s]/g, '').slice(-11);
+          // this.payee.phone = phone;
+        }
+        if(isiOS){
+          this.payee.name = data.Name;
+          let str = data.Phone.toString();
+          str = str.replace(/\s+/g,"");//去掉空格
+          str = str.replace(/-/g,'');//去掉横杠
+          this.payee.phone = str.slice(-11);//从末尾截取11位作为手机号码  处理+86的情况
+          // let phone = data.Phone.replace(/[+-\s]/g, '').slice(-11);
+          // this.payee.phone = data.Phone;
+        }
+      });
+    },
+    // 选择银行
+    selectBank(data) {
+      console.log(data, '选择银行');
+      this.payee.bankName = data.bankName;
+      this.payee.bankId = data.bankId;
+      if (data.ibpsBankList.length > 0) {
+        this.ibpsBankList = data.ibpsBankList;
+        let keyIndex = 0;
+        data.ibpsBankList.map((item, index) => {
+          if (data.bankName == item.bankaliasname) {
+            keyIndex = index;
+          }
+        })
+        this.payee.bankNbr = data.ibpsBankList[keyIndex].bankagent;
+        this.payee.bankaliasname = data.ibpsBankList[keyIndex].bankaliasname
+        console.log("bankNbr", this.payee.bankNbr)
+      }
+      // 开户网点信息置空
+      this.payee.dotNbr = '';
+      this.payee.dotName = '';
+      // 超网标志
+      if (data.ibpsFlage === 'Y') {
+        this.payee.IBPSFlag = 1;
+      } else {
+        this.payee.IBPSFlag = 0;
+      }
+    },
+    // 选择超网银行汇入地
+    selectIbpsBank(item) {
+      console.log(item);
+      this.payee.bankNbr = item.bankagent;
+      this.payee.bankaliasname = item.bankaliasname
+      this.ibpsBankListshow = false;
+      // this.payee.
+    },
+    // 打开选择超网银行组件
+    openBankIbpsList() {
+      if (this.ibpsBankList.length > 1) {
+        this.ibpsBankListshow = true;
+      }
+    },
+    // 手机号转账
+    qryMobile(){
+      let params = {
+        PayeeAcctName: this.payee.name,
+        TelephoneNum: this.payee.phone,
+        PayerAcBankId: this.payee.bankNbr,
+      }
+      this.request('MobileBindQry',params).then(res=>{
+        if(res.PayerAcNo){
+          console.log(res,"结果")
+          this.payee.bankCard = res.PayerAcNo;
+          this.payee.payeeAcctNbr = res.PayerAcNo;
+          this.payee.payeeBankName = this.payee.bankName;
+          this.payee.payeeAcctName = res.UserName;
+          console.log(this.payee,"收款人")
+          this.$router.push({ name: "linkmanTransfer", query:{isPhoneTransfer: true}, params:{ payee: this.payee } });
+        }else{
+          if(res.UserNameFlag == '1'){
+            this.$toast(res.ResultMsg)
+          }else{
+            this.dialogFlag = true;
+          }
+        }
+        this.loading = false;
+      }).catch(err=>{
+        this.dialogFlag = true;
+        this.loading = false;
+      })
+    },
+    next() {
+      this.loading = true;
+      this.qryMobile();
+      // if (this.payee.name != "" && this.payee.phone != "") {
+      //   // this.dialogContent =
+      //   //   "当前手机号未绑定我行银行卡请查看手机号是否输入有误";
+      //   this.({ name: "linkmanTransfer" });
+      // } else {
+      //   this.dialogFlag = true;
+      //   if (this.payee.name == "") {
+      //     this.dialogContent = "请输入姓名";
+      //   } else {
+      //     this.dialogContent = "请输入手机号码";
+      //   }
+      // }
+    },
+    confirm() {
+      this.dialogFlag = false;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  background-color: #f5f6f8;
+}
+.phone-transfer {
+  .main {
+    width: 100%;
+    position: absolute;
+    top: px2vw(108);
+    .group {
+      width: 100%;
+      margin-top: 0;
+      color: #262626;
+    }
+  }
+}
+/deep/ .van-field__control {
+  height: 100%;
+}
+/deep/ .van-cell {
+  height: px2vw(110);
+}
+/deep/ .van-field__label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/deep/ .van-cell__value {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.line {
+  position: relative;
+}
+.line::after {
+  content: " ";
+  width: px2vw(670);
+  height: px2vw(1);
+  position: absolute;
+  top: -px2vw(0.5);
+  left: px2vw(40);
+  background-color: #eff0f1;
+  z-index: 100;
+}
+/deep/ .van-hairline--top-bottom::after {
+  border-width: 0;
+}
+.info {
+  margin-left: px2vw(40);
+  margin-top: px2vw(20);
+  .txt{
+    font-size: px2vw(24);
+    color: #7d7d7d;
+    font-weight:300;
+    font-family: $font-family;
+  }
+}
+/deep/ .van-button {
+  width: px2vw(670);
+  height: px2vw(90);
+  color: #fff;
+  background:linear-gradient(270deg,rgba(107,171,255,1) 0%,rgba(108,138,249,1) 100%);
+  font-size: px2vw(34);
+  border-radius: px2vw(45);
+  margin-top: px2vw(101);
+}
+.explain {
+  width: px2vw(670);
+  font-size: px2vw(22);
+  
+  line-height: px2vw(30);
+  text-align: justify;
+  margin-top: px2vw(39);
+  div {
+    margin-top: px2vw(6);
+    font-family: $font-family;
+    font-weight: 400;
+    color: #7d7d7d;
+  }
+}
+/deep/ .van-icon-contact:before {
+  content: "";
+  width: px2vw(29);
+  height: px2vw(34);
+  background: url("~@/assets/transferAccounts/link.png");
+  background-size: 100% 100%;
+}
+/deep/ .van-popup--center {
+  top: 43%;
+}
+.content {
+  width: px2vw(552);
+  height: px2vw(249);
+  background-color: #fff;
+  border-radius: px2vw(16);
+  padding: px2vw(60) px2vw(40) px2vw(40) px2vw(40);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .confirm {
+    width: px2vw(472);
+    height: px2vw(72);
+    line-height: px2vw(72);
+    background:linear-gradient(270deg,rgba(107,171,255,1) 0%,rgba(108,138,249,1) 100%);
+  }
+  .text {
+    width: px2vw(472);
+    height: px2vw(72);
+    font-size: px2vw(26);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: #262626;
+    line-height: px2vw(36);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+</style>

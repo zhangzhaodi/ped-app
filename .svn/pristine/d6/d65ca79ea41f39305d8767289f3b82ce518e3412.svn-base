@@ -1,0 +1,36 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//首次加挂
+import Index from "../pages/index";
+import EnterPassword from "../pages/enterPassword";
+
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "账户加挂",
+        keepAlive: true
+      }
+    },
+    //验证密码
+    {
+      path: "/enterPassword",
+      name: "enterPassword",
+      component: EnterPassword,
+      meta: {
+        title: "账户加挂",
+        keepAlive: true
+      }
+    },
+  ]
+});

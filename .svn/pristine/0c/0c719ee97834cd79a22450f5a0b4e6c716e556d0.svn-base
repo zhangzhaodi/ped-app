@@ -1,0 +1,131 @@
+<template>
+  <div class="outer phone-transfer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <section class="field-section">
+      <div class="filed_cell">
+        <van-cell is-link @click="setLimit">
+          <template slot="title">
+            <span class="custom-title">修改转账限额</span>
+          </template>
+        </van-cell>
+      </div>
+      <div class="filed_cell">
+        <van-cell is-link @click="setPhone">
+          <template slot="title">
+            <span class="custom-title">设置手机号收款</span>
+          </template>
+        </van-cell>
+      </div>
+      <!-- <div class="img-box">
+        <img style="width:100%;" src="https://www.baidu.com/img/bd_logo1.png?qua=high&where=super" alt="">
+      </div> -->
+    </section>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import { mapGetters, mapActions } from "vuex";
+import { SwitchCell, Toast } from "vant";
+import { Amount, InputItem } from "mand-mobile";
+import {mapMutations} from 'vuex'
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    vInput,
+    [SwitchCell.name]: SwitchCell,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+    };
+  },
+  computed: {
+  },
+  created() {
+  },
+  mounted() { },
+  methods: {
+    ...mapMutations('transferAccounts',['PHONECONFIG',"PHONEBINDED"]),
+    // setCard() {
+    //   this.$router.push({ name: 'setCard' })
+    // },
+    // 去设置限额
+    setLimit() {
+      let params = {
+        ios: 'DLimitMoneyController',
+        ClassName:"com.example.zlv_master.activity.mine.XianErActivity"
+      }
+      window.NativeCall.goToNativePage(params, res => {
+        //跳转至原生页面
+      });
+    },
+    // 设置手机号收款
+    setPhone() {
+      this.$router.push({ name: 'setPhone'})
+    },
+  
+
+  }
+};
+</script>
+<style lang="scss" scoped>
+.phone-transfer {
+  .field-section {
+    margin-top: px2vw(20);
+    background: #fff;
+    .field-header {
+      display: flex;
+      align-items: center;
+      height: px2vw(80);
+      padding-left: px2vw(40);
+      font-weight: 400;
+      img {
+        width: px2vw(32);
+        height: px2vw(32);
+        margin-right: px2vw(20);
+      }
+      .title {
+        color: $color-text;
+        font-size: px2vw(30);
+      }
+    }
+  }
+  /deep/ .filed_cell {
+    // 收款人手机号
+    // &.notify_payee-filed {
+    //   .label {
+    //     width: px2vw(180);
+    //   }
+    // }
+
+    .van-cell {
+      .van-cell__title {
+        line-height: inherit;
+        flex: 1;
+        width: px2vw(120);
+        margin-right: px2vw(40);
+      }
+    }
+  }
+}
+.have-set {
+  color: $color-text;
+}
+.img-box{
+  background-color: #eee;
+  width: 100%;
+  height:px2vw(80);
+}
+</style>

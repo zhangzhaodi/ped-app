@@ -1,0 +1,181 @@
+<template>
+  <van-popup v-model="isShow" position="bottom" class="bottomPupup" @close="close">
+    <div class="head">
+      <p class="iconfont iconicon_guanbi-" @click="close"></p>
+      <p class="title">{{title}}</p>
+    </div>
+    <div class="cardList">
+      <div
+        class="item"
+        v-for="(item,index) in Lists"
+        :key="index"
+        @click="choose(index,item)"
+        :style="{backgroundColor:chooseIndex==index?'#F4F5F7':'#fff'}"
+      >
+        <p class="text">{{item.text}}</p>
+        <div class="right">
+          <span class="iconfont iconcheck-" v-if="chooseIndex==index"></span>
+        </div>
+      </div>
+    </div>
+  </van-popup>
+</template>
+
+<script>
+import { Popup } from "vant";
+export default {
+  components: {
+    [Popup.name]: Popup
+  },
+  props: {
+    show: {
+      require: true,
+      default: false
+    },
+    type: {
+      require: true,
+      type: Number
+    },
+    Lists: {
+      require: true,
+      type: Array
+    },
+    title: {
+      require:true
+    }
+  },
+  watch: {
+    //监听父组件中show的变化
+    show: {
+      handler(val) {
+        this.isShow = val;
+        this.chooseIndex = this.arr[this.type];
+      }
+    }
+  },
+  data() {
+    return {
+      chooseIndex: null, //被选中的卡
+      isShow: false,
+      arr:[]
+    };
+  },
+  created() {
+    // console.log(this.type);
+  },
+  methods: {
+    choose(index, item) {
+      this.chooseIndex = index;
+      // this.$emit("choose", item);
+      switch (this.type) {
+        case 0:
+          this.$parent.form.CoinType = item;
+          this.arr[0]=index
+          break;
+        case 1:
+          this.$parent.form.CoinValue = item;
+          this.arr[1]=index
+          break;
+      }
+      this.isShow = false;
+      this.$parent.bottomFlag = false;
+    },
+    close() {
+      this.isShow = false;
+      this.$parent.bottomFlag = false;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.bottomPupup {
+  padding-bottom: px2vw(152);
+  .head {
+    height: px2vw(100);
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0 px2vw(40);
+    .iconfont {
+      width: px2vw(22);
+      height: px2vw(22);
+      font-size: px2vw(24);
+      color: #666666;
+    }
+    .title {
+      font-size: px2vw(34);
+      font-weight: 400;
+      color: #262626;
+      text-align: center;
+      flex: 1;
+    }
+  }
+  .item {
+    padding: 0 px2vw(40);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: px2vw(110);
+    .text {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      letter-spacing: px2vw(1);
+    }
+    .left {
+      width: px2vw(55);
+      height: px2vw(55);
+      img {
+        width: 100%;
+        border-radius: 50%;
+      }
+    }
+    .center {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: px2vw(70);
+      flex: 1;
+      margin-left: px2vw(20);
+      .bank {
+        font-size: px2vw(30);
+        font-weight: 400;
+        color: #262626;
+        line-height: px2vw(30);
+        letter-spacing: px2vw(1);
+      }
+      .money {
+        font-size: px2vw(24);
+        font-family: PingFangSC;
+        font-weight: 300;
+        color: #7d7d7d;
+        line-height: px2vw(24);
+      }
+    }
+    .right {
+      width: px2vw(45);
+      color: #3e8fff;
+      .iconfont {
+        font-size: px2vw(24);
+        font-weight: 800;
+      }
+    }
+  }
+  .add {
+    height: px2vw(110);
+    padding: 0 px2vw(40) 0 px2vw(115);
+    font-size: px2vw(26);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    .iconfont {
+      font-size: px2vw(22);
+      color: #7d7d7d;
+    }
+  }
+}
+</style>

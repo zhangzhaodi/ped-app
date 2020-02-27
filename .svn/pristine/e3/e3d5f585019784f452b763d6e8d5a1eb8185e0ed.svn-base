@@ -1,0 +1,108 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :backgroundColor="header.color"
+      :isWhite="header.isWhite"
+    ></Myheader>
+    <div class="content">
+      <div class="mask">
+        <div class="title">
+          <div class="line"></div>
+          <h1>活动规则</h1>
+          <div class="line"></div>
+        </div>
+        <div class="rules">
+          <p>1、活动规则活动规则活动规，则活动规则活动规则活动规则活动规则活动规则活动，规则活动规则活动规则活动规则，活动规则活动规则活动规则活动规则活动规则活动规则，活动规则活动规则活动规则活动规则活动规则活动规则。</p>
+          <p>2、活动规则活动规则活动规，则活动规则活动规则活动规则活动规则活动规则活动，规则活动规则活动规则活动规则，活动规则活动规则活动规则活动规则活动规则活动规则，活动规则活动规则活动规则活动规则活动规则活动规则。</p>
+          <p>3、活动规则活动规则活动规，则活动规则活动规则活动规则活动规则活动规则活动，规则活动规则活动规则活动规则，活动规则活动规则活动规则活动规则活动规则活动规则，活动规则活动规则活动规则活动规则活动规则活动规则。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      header: {
+        color: "transparent",
+        isWhite: true
+      }
+    };
+  },
+  components: {
+    Myheader: Header
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .content {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+  .headerBox {
+    position: absolute;
+  }
+}
+.content {
+  background: url("~@/assets/recommendShare/bg_huodonggiuze@2x.png");
+  background-size: 100% 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  padding-top: px2vw(88);
+  .mask {
+    width: px2vw(670);
+    height: px2vw(1157);
+    box-sizing: border-box;
+    padding: 0 px2vw(40);
+    background: linear-gradient(
+      rgba(255, 255, 255, 0.21),
+      rgba(255, 255, 255, 0.15)
+    );
+    border-radius: px2vw(20);
+  }
+  .title {
+    margin-top: px2vw(70);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    h1 {
+      font-size: px2vw(50);
+      font-family: PingFangSC-Semibold, PingFang SC;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+  .rules {
+    margin-top: px2vw(35);
+    p {
+      margin-top: px2vw(30);
+      font-size: px2vw(26);
+      line-height: px2vw(38);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+}
+</style>

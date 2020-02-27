@@ -1,0 +1,451 @@
+<template>
+  <div class="outer yuyue">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div class="header-box">
+      <div class="title">转账金额</div>
+      <div class="money"><span class="unit">￥</span>{{order.transAmt | Money}}</div>
+      <ul class="">
+        <li class="item">
+          <div class="label">转账日期</div>
+          <div class="content">{{dateText(order)}}自动转账</div>
+        </li>
+        <li class="item" v-if="order.contractTyp!='00'">
+          <div class="label">执行日期</div>
+          <div class="content">
+            <span>{{order.createDate | dateFormat1}}</span><span v-if="order.endDate">-{{order.endDate | dateFormat1}}</span>
+          </div>
+        </li>
+        <li class="item">
+          <div class="label">付款账户</div>
+          <div class="content">焦作中旅银行({{order.payerAcctNbr | CardNoFour}})</div>
+        </li>
+        <li class="item">
+          <div class="label">收款账户</div>
+          <div class="content">{{order.payeeAcctName}}-{{order.payeeBankName}}({{order.payeeAcctNbr | CardNoFour}})</div>
+        </li>
+        <li class="item">
+          <div class="label">转账用途</div>
+          <div class="content">{{order.transUsage}}</div>
+        </li>
+      </ul>
+    </div>
+    <div v-if="TransList && TransList.length == 0" style="flex:1;background:#F5F6F8;">
+      <van-divider class="divider">
+        当前暂无转账记录
+      </van-divider>
+      <div class="nodata-status">
+        <p v-if="order.transStatus == 1">预约转账失败</p>
+        <p v-if="order.transStatus == 2">预约转账已撤销</p>
+        <p v-if="order.transStatus == 7">预约转账已结束</p>
+      </div>
+      <p class="next-time" v-if="order.transStatus == 5 && nextTransDate && nextTransDate != 'end'">下次自动转账时间:{{nextTransDate}}</p>
+    </div>
+    
+    <Scroller v-if="TransList && TransList.length > 0" style="flex:1;background:#F5F6F8;">
+      <div class="yuyue-status">
+        <p v-if="order.transStatus == 5 && nextTransDate != 'end'">下次自动转账时间:{{nextTransDate}}</p>
+        <p v-if="order.transStatus == 1">预约转账失败</p>
+        <p v-if="order.transStatus == 2">预约转账已撤销</p>
+        <p v-if="order.transStatus == 7">预约转账已结束</p>
+        <!-- <p class="next-time" v-if="order.transStatus == 9">交易超时</p> -->
+      </div>
+      <div class="history-list" v-if="TransList && TransList.length > 0" v-for="(item,index) in TransList" :key="index" style="background:#fff;">
+        <div class="wrapper">
+          <div class="left">
+            <p class="date">{{item.transTime | dateFormat}}</p>
+            <p class="desc">自动转账</p>
+          </div>
+          <div class="right">
+            <span >-{{item.transAmt|Money}}</span>
+            <p class="info" v-if="item.transStatus == 0">成功</p>
+            <p class="info failure" v-if="item.transStatus == 1">失败<span class="wrong-info" v-if="item.returnMsg">({{item.returnMsg}})</span></p>
+            <p class="info warning" v-if="item.transStatus != 0 && item.transStatus != 1">{{getStatus(item.transStatus)}}</p>
+          </div>
+        </div>
+
+      </div>
+
+    </Scroller>
+
+    <div class="add-order" @click="cancelConfirm" v-if="order.transStatus == 5">
+      撤销预约
+    </div>
+    <MyDialog :show="alertShow" :isClose="false" :confirmButtonText="`我再想想`" :cancelButtonText="`撤销预约`" @cancel="repeal" @con="alertShow = false">
+      <p slot="content" class="dialog-content">
+        撤销后不可恢复，是否继续？
+      </p>
+    </MyDialog>
+
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions } from "vuex";
+import { Amount, InputItem } from "mand-mobile";
+import { Divider, Toast } from "vant";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import dayjs from 'dayjs';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Divider.name]: Divider,
+    [Toast.name]: Toast,
+    MyDialog: Dialog
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      alertShow: false,
+      order: {
+        contractId: "",
+        contractPeriodTyp: "",
+        contractPeriodVal: "",
+        contractTyp: "",
+        createDate: "",
+        endDate: "",
+        extTransTypCd: "",
+        payeeAcctName: "",
+        payeeAcctNbr: "",
+        payeeBankName: "",
+        payeeBankNbr: "",
+        payerAcctName: "",
+        payerAcctNbr: "",
+        totalNum: "",
+        transAmt: "",
+        transDate: "",
+        transStatus: "",
+        transTime: "",
+        transUsage: "",
+        transferWay: "",
+        TransList: [],
+      },
+      TransList:[],
+      historyList: [{
+        name: '自动转账',
+        date: '2019-09-02',
+        money: 0.01
+      }, {
+        name: '自动转账',
+        date: '2019-09-03',
+        money: 0.02
+      }, {
+        name: '自动转账',
+        date: '2019-09-13',
+        money: 2
+      }],
+      nextTime: '2019-01-22',
+      _tokenName: '',
+      nextTransDate: '',
+    };
+  },
+  computed: {
+  },
+  filters: {
+    dateFormat(val) {
+      return dayjs(val).format('YYYY-MM-DD')
+    },
+    dateFormat1(val) {
+      return dayjs(val).format('YYYY.MM.DD')
+    },
+  },
+  created() {
+    if (this.$route.params.data) {
+      this.order = this.$route.params.data;
+      console.log(this.order,"order")
+      // this.getNextTransDate();
+    }
+    this.getData();
+    // console.log("this.oooo", this.$route.params)
+  },
+  mounted() { },
+  methods: {
+    getData() {
+      let params = {
+        ContractId: this.order.contractId,
+      }
+      this.request('QueryTransBookingDetail', params, true
+      ).then((res) => {
+        console.log(res, "获取历史转账详情")
+        this.TransList = res.TransList;
+        this.nextTransDate = res.NextDateMap.planDate;
+      }).catch((error) => {
+        // Toast("获取常用联系人失败")
+        console.log(error)
+        this.TransList = [];
+      })
+    },
+    getStatus(status){
+      return this.tools.getTransStatus(status);
+    },
+    // 获取下次转账时间  //后台已提供计算，此方法废弃
+    getNextTransDate() {
+      // AppointmentType, Period周期   PeriodTyp 2：周 3月
+      let createDate = this.order.createDate,
+        endDate = this.order.endDate,
+        dayVal = this.order.contractPeriodVal,
+        today = dayjs();
+      if (this.order.contractTyp == '00') {
+        this.nextTransDate = dayjs(createDate).format('YYYY-MM-DD')
+      } else if (this.order.contractTyp == '01') {
+        if (this.order.contractPeriodTyp == 2) { //周
+          let weekDay = dayjs().day(dayVal).format('YYYY-MM-DD'); //获取每周时选择的时间
+          if (dayjs(weekDay).isBefore(today)) { // 如果选取的时间已过去，则顺延至下周这个星期几
+            this.nextTransDate = dayjs().day(dayVal).add(1, 'w').format('YYYY-MM-DD')
+          } else {
+            this.nextTransDate = weekDay;
+          }
+        } else if (this.order.contractPeriodTyp == 3) {
+          if (dayVal != 32) {
+            let monthDay = dayjs().date(dayVal).format('YYYY-MM-DD');
+            if (dayjs(monthDay).isBefore(today)) { //顺延
+              this.nextTransDate = dayjs().date(dayVal).add(1, 'M').format('YYYY-MM-DD')
+            } else {
+              this.nextTransDate = monthDay;
+            }
+          } else { //selectDay 月末
+            let endDay = dayjs().endOf('month').format('YYYY-MM-DD');
+            if (dayjs(endDay).isBefore(today)) {
+              this.nextTransDate = dayjs().endOf('month').add(1, 'M').format('YYYY-MM-DD')
+            } else {
+              this.nextTransDate = endDay;
+            }
+          }
+        }
+      }
+
+
+      console.log(this.nextTransDate,"下次转账时间")
+    },
+    async cancelConfirm() {
+      let params = {
+        ContractId: this.order.contractId,
+      }
+      let res = await this.request('TransBookingCancellationConfirm', params, true)
+      this._tokenName = res._tokenName;
+      this.alertShow = true;
+      // this.request('TransBookingCancellationConfirm', {}, true
+      // ).then((res) => {
+      //   console.log(res, "联系人")
+      //   res._token = this.cancelToken;
+      // }).catch((error) => {
+      //   // Toast("获取常用联系人失败")
+      //   console.log(error)
+      // })
+    },
+    dateText(item) {
+      //00定时转账；01:周期转账；
+      if (item.contractTyp == '00') {
+        return dayjs(item.createDate).format('YYYY.MM.DD')
+      } else if (item.contractTyp == "01") {
+        if (item.contractPeriodTyp == 2) { //周
+          let text = '每周一'
+          let value = Number(item.contractPeriodVal)
+          switch (value) {
+            case 1:
+              text = '每周一';
+              break;
+            case 2:
+              text = '每周二';
+              break;
+            case 3:
+              text = '每周三';
+              break;
+            case 4:
+              text = '每周四';
+              break;
+            case 5:
+              text = '每周五';
+              break;
+            case 6:
+              text = '每周六';
+              break;
+            case 7:
+              text = '每周日';
+              break;
+            default:
+              text = "没有匹配的值"
+          }
+          return text
+        } else if (item.contractPeriodTyp == '3') {
+          if(item.contractPeriodVal == 32){
+            return `每月最后一天`
+          }
+          let text = `每月${item.contractPeriodVal}日`
+          return text
+        }
+      }
+    },
+    repeal() {
+      let params = {
+        ContractId: this.order.contractId,
+        _tokenName: this._tokenName,
+      }
+      this.request('TransBookingCancellation', params, true
+      ).then((res) => {
+        Toast("撤销成功")
+        res._token = this.cancelToken;
+        this.alertShow = false;
+        this.$router.go(-1);
+      }).catch((error) => {
+        Toast(error._RejMessage)
+        console.log(error)
+      })
+
+
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.add-order {
+  // margin-top: px2vw(20);
+  color: #ff4040;
+  font-size: px2vw(34);
+  box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.05);
+}
+.dialog-content {
+  margin-top: px2vw(20);
+  margin-bottom: px2vw(50);
+  text-align: center;
+}
+.yuyue {
+  .header-box{
+    background:#fff;
+    .title{
+      color:#7d7d7d;
+      font-size:px2vw(28);
+      font-family: $font-family;
+      width:100%;
+      text-align:center;
+      margin-top:px2vw(30);
+      margin-bottom:px2vw(16);
+    }
+    .money{
+      text-align:center;
+      font-size:px2vw(60);
+      font-family: $font-family;
+      margin-bottom:px2vw(80);
+      .unit{
+        font-size:px2vw(40)
+      }
+    }
+    .item{
+      display:flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom:px2vw(40);
+      padding: 0 px2vw(40);
+      .label{
+        color:#7d7d7d;
+        font-size:px2vw(28);
+        font-family: $font-family;
+      }
+      .content{
+        color:#000;
+        font-size:px2vw(28);
+        font-weight: 400;
+        font-family: $font-family;
+      }
+    }
+  }
+
+  .yuyue-status p{
+    margin-top:px2vw(30);
+    margin-bottom:px2vw(11);
+    margin-left:px2vw(40);
+    color:#7d7d7d;
+    font-family: $font-family;
+    font-size:px2vw(24);
+  }
+  .divider {
+    padding: 0 px2vw(197);
+    line-height: px2vw(30);
+    color: #7d7d7d;
+    font-size: px2vw(22);
+    margin-top: p2xvw(40);
+    margin-bottom: px2vw(12);
+    border-color: #d8d8d8;
+  }
+  .nodata-status p{
+    color:#7d7d7d;
+    font-size:px2vw(24);
+    font-weight: 400;
+    text-align: center;
+    
+  }
+  .next-time {
+    text-align: center;
+    line-height: px2vw(30);
+    color: #7d7d7d;
+    font-size: px2vw(22);
+    padding-top: px2vw(20);
+    padding-bottom: px2vw(40);
+  }
+  .history-list {
+    height: px2vw(130);
+    &:not(:last-child) .wrapper {
+      border-bottom: $border-bottom;
+      margin-bottom: 1px;
+    }
+    .wrapper {
+      margin: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      height: 100%;
+    }
+    .left {
+      .date {
+        font-size: px2vw(30);
+        font-family: $font-family;
+        color: $color-text;
+        margin-bottom: px2vw(15);
+      }
+      .desc {
+        color: #7d7d7d;
+        font-size: px2vw(24);
+        font-family: $font-family;
+      }
+    }
+
+    .right {
+      flex: 1;
+      text-align: right;
+      color: #262626;
+      font-size: px2vw(30);
+      font-family: $font-family;
+      .fail{
+        color:#ff4040;
+        margin-bottom: px2vw(10);
+      }
+      .info {
+        margin-top: px2vw(10);
+        color: #282828;
+        font-size: px2vw(24);
+        &.failure{
+          color:#ff4040;
+          .wrong-info{
+            color:#7d7d7d;
+          }
+        }
+        &.warning{
+          color:#FFB52B;
+        }
+      }
+    }
+    &:last-child {
+      border: none;
+    }
+  }
+}
+</style>

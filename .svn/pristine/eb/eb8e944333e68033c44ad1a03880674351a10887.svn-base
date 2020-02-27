@@ -1,0 +1,141 @@
+import Vue from "vue";
+import Router from "vue-router";
+import Index from "../pages/index";
+import RegistrationSuccessful from "../pages/registrationSuccessful";
+import BindCard from "../pages/bindCard";
+import EnterIdCard from "../pages/enterIdCard";
+import Password from "../pages/setAccountTradingPsd";
+import TradePsdAgain from "../pages/tradePsdAgain";
+import BankCardPwd from "../pages/bankCardPwd";
+import AddInformation from "../pages/addInformation";
+import SmsVerification from "../pages/smsVerification";
+import FaceRecognition from "../pages/faceRecognition";
+import TradersPassword from "../pages/tradersPassword";
+import Agreement from "../pages/agreement.vue"
+
+Vue.use(Router);
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "",
+        keepAlive: true
+      }
+    },
+    //身份证录入
+    {
+      path: "/enterIdCard",
+      name: "enterIdCard",
+      component: EnterIdCard,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    //绑定银行卡
+    {
+      path: "/bindCard",
+      name: "bindCard",
+      component: BindCard,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    //交易密码
+    {
+      path: "/tradersPassword",
+      name: "tradersPassword",
+      component: TradersPassword,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/password",
+      name: "password",
+      component: Password,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/tradePsdAgain",
+      name: "tradePsdAgain",
+      component: TradePsdAgain,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    //添加附加信息
+    {
+      path: "/addInformation",
+      name: "addInformation",
+      component: AddInformation,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    //绑定银行卡密码
+    {
+      path: "/bankCardPwd",
+      name: "bankCardPwd",
+      component: BankCardPwd,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    //输入短信验证码
+    {
+      path: "/smsVerification",
+      name: "smsVerification",
+      component: SmsVerification,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    //人脸识别
+    {
+      path: "/faceRecognition",
+      name: "faceRecognition",
+      component: FaceRecognition,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    //结果页
+    {
+      path: "/registrationSuccessful",
+      name: "registrationSuccessful",
+      component: RegistrationSuccessful,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    //电子协议
+    {
+      path: "/agreement",
+      name: "agreement",
+      component: Agreement,
+      meta: {
+        title: "电子账户服务协议",
+        keepAlive: false
+      }
+    },
+  ]
+});

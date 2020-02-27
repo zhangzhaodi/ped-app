@@ -1,0 +1,342 @@
+<template>
+  <van-popup v-model="isShow" position="bottom" class="bottomPupup" round @close="close">
+    <div class="head">
+      <p class="iconfont iconicon_guanbi-" @click="close"></p>
+      <p class="title">收益计算器</p>
+    </div>
+    <div class="content">
+      <div class="article">
+        <p class="p">
+          购买金额(元)
+          <i slot="left" class="iconfont iconicon_bianji-"></i>
+        </p>
+        <!-- <input class="inp" type="number" v-model="price" /> -->
+        <van-field :value="price" placeholder="请输入金额" />
+        <md-ruler
+          :scope="scope"
+          :step="1000"
+          :unit="100"
+          :max="100000"
+          :min="100"
+          v-model="goToprice"
+        ></md-ruler>
+
+        <div class="benxi">
+          <div class="time_ding">
+            <p class="text">购买时长(天)</p>
+            <input class="ipt" type="number" v-model="day" @blur="inputchange" />
+          </div>
+          <div class="total">
+            <p class="text">本息合计(元)</p>
+            <h4 v-if="!howmany">
+              <span></span>
+              <span class="span1"></span>
+            </h4>
+            <h4 v-else>{{howmany}}</h4>
+          </div>
+        </div>
+
+        <p class="tip">计算收益不代表未来实际收益，市场有风险，投资需谨慎。</p>
+      </div>
+    </div>
+  </van-popup>
+</template>
+
+<script>
+import { Popup, Field } from "vant";
+import { Ruler } from "mand-mobile";
+export default {
+  components: {
+    [Popup.name]: Popup,
+    [Ruler.name]: Ruler,
+    [Field.name]: Field
+  },
+  props: {
+    show: {
+      require: true,
+      default: false
+    },
+    rate: {
+      require: true
+    }
+  },
+  computed: {
+    goToprice: {
+      get() {
+        // console.log(this.price);
+        return parseInt(this.price);
+      },
+      set(val) {
+        if (val < 100) {
+          // console.log(this.price);
+          return (this.price = 100);
+        } else {
+          // console.log(this.price);
+          return (this.price = val);
+        }
+      }
+    }
+  },
+  watch: {
+    //监听父组件中show的变化
+    show: {
+      handler(val) {
+        this.isShow = val;
+      }
+    },
+    price: {
+      handler(val) {
+        this.inputchange();
+      }
+    },
+    day: {
+      handler(val) {
+        this.inputchange();
+      }
+    }
+  },
+  data() {
+    return {
+      isShow: false,
+      showmold: false,
+      showcurrency: false,
+      showPicker: false,
+      currencycolumns: ["人民币"],
+      moldcolumns: ["90", "180"],
+      ratecolumns: [],
+      ratedata: "",
+      currency: "人民币",
+      mold: "90",
+      price: 5000,
+      scope: [0, 100000],
+      day: 30,
+      much: true,
+      many: "",
+      howmany: null
+    };
+  },
+  created() {
+    console.log(this.rate);
+  },
+  methods: {
+    close() {
+      this.$emit("close");
+    },
+    inputchange() {
+      this.howmany =
+        (parseFloat(this.rate) / 10000) * parseInt(this.price) * this.day +
+        parseInt(this.price);
+      // console.log(parseFloat(this.rate),parseInt(this.price),this.day)
+      // console.log(this.howmany)
+    },
+    onConfirmcurrency(value) {
+      console.log(value);
+      this.currency = value;
+      this.showcurrency = false;
+    },
+    onConfirmMold(value) {
+      console.log(value);
+      this.mold = value;
+      this.showmold = false;
+    },
+    onConfirmone(value) {
+      console.log(value);
+      this.ratedata = value;
+      this.showPicker = false;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.bottomPupup {
+  // padding-bottom: px2vw(152);
+  height: px2vw(750);
+  display: flex;
+  flex-direction: column;
+  .head {
+    height: px2vw(100);
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0 px2vw(40);
+    .iconfont {
+      width: px2vw(22);
+      height: px2vw(22);
+      font-size: px2vw(24);
+      color: #666666;
+    }
+    .title {
+      font-size: px2vw(34);
+      font-weight: 400;
+      color: #262626;
+      text-align: center;
+      flex: 1;
+    }
+  }
+}
+.content {
+  margin-top: px2vw(20);
+  flex: 1;
+  width: px2vw(750);
+  background: rgba(255, 255, 255, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .article {
+    display: flex;
+    flex-direction: column;
+    width: px2vw(670);
+    align-items: center;
+    .p {
+      // height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(24);
+      margin-top: px2vw(40);
+    }
+
+    .md-ruler {
+      margin-top: px2vw(60);
+    }
+    /deep/ .md-ruler-cursor {
+      background: rgba(214, 159, 129, 1);
+      box-shadow: none;
+    }
+    /deep/ .md-ruler-arrow {
+      display: none;
+    }
+    h4 {
+      height: px2vw(50);
+      font-size: px2vw(1);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(50);
+      margin-top: 0;
+      span {
+        display: inline-block;
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        background: rgba(125, 125, 125, 1);
+        height: px2vw(5);
+        width: px2vw(33);
+      }
+    }
+    .tip {
+      height: px2vw(20);
+      font-size: px2vw(20);
+      font-family: PingFangSC-Light, PingFang SC;
+      font-weight: 300;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(20);
+      margin-top: px2vw(30);
+    }
+    button {
+      width: px2vw(670);
+      height: px2vw(90);
+      background: linear-gradient(
+        270deg,
+        rgba(181, 213, 255, 1) 0%,
+        rgba(182, 197, 252, 1) 100%
+      );
+      border-radius: 45px;
+      text-align: center;
+      line-height: px2vw(90);
+      font-size: px2vw(34);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+      margin-top: px2vw(90);
+      margin-bottom: px2vw(20);
+    }
+  }
+}
+.content {
+  height: px2vw(50);
+  font-size: px2vw(60);
+  font-family: PingFangSC-Medium, PingFang SC;
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(50);
+  text-align: center;
+  margin-top: px2vw(30);
+}
+.time_ding {
+  height: px2vw(50);
+  font-size: px2vw(60);
+  font-family: PingFangSC-Medium, PingFang SC;
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(50);
+}
+.time {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: px2vw(670);
+  margin-top: px2vw(30);
+  p {
+    height: px2vw(50);
+    font-size: px2vw(30);
+    font-family: PingFangSC-Light, PingFang SC;
+    font-weight: 300;
+    color: rgba(168, 168, 168, 1);
+    line-height: px2vw(30);
+  }
+  .left,
+  .right {
+    padding: 0 px2vw(26) px2vw(20);
+    p {
+      border-bottom: px2vw(1) solid #a8a8a8ff;
+    }
+  }
+}
+.benxi {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 px2vw(40);
+  .time_ding,
+  .total {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    align-items: center;
+    .text {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+  .time_ding {
+    input {
+      width: 50%;
+      text-align: center;
+    }
+  }
+  .span1 {
+    margin-left: px2vw(5);
+  }
+}
+/deep/ .van-field__control {
+  height: px2vw(50);
+  font-size: px2vw(60);
+  font-family: PingFangSC-Medium, PingFang SC;
+  font-weight: 500;
+  text-align: center;
+  color: rgba(214, 159, 129, 1);
+  line-height: px2vw(50);
+  margin-top: px2vw(30);
+}
+.md-ruler{
+  height: px2vw(120);
+  width: 100%;
+}
+</style>

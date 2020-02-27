@@ -1,0 +1,180 @@
+<template>
+  <div class="tradingRecord">
+    <!-- 交易记录 -->
+    <p class="title">交易记录</p>
+    <div class="item">
+      <div class="left">
+        <p class="text">分红日期</p>
+        <p class="time">{{data.TransDate|timeFormat1}}</p>
+      </div>
+      <div class="center">
+        <p class="text">{{type[data.LC_TransCode]}}</p>
+        <p class="time">{{data.Amt|Money}}元</p>
+      </div>
+      <div class="right">
+        <p :class="['state',{'red':data.TransState!='8'&&data.TransState=='A'&&data.TransState=='S'&&data.TransState=='5'}]">{{data.TransState|transState}}</p>
+      </div>
+      <!-- <div class="top">
+        <p class="money">
+          <span>￥</span>
+          <span>{{data.Amt|Money}}</span>
+        </p>
+        <p :class="['state',{'red':data.TransState!=8}]">{{data.TransState|transState}}</p>
+      </div>
+      <div class="bottom">
+        <p class="type">{{type[data.LC_TransCode]}}</p>
+        <p class="time">{{data.TransDate|timeFormat1}}</p>
+      </div>-->
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    data: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      type: {
+        100200: "购买",
+        100226: "份额增强",
+        100516: "赎回",
+        100202: "撤回",
+        100219: "客户撤单"
+      }
+    };
+  },
+  filters: {
+    transState(val) {
+      let obj = {
+        0: "预受理",
+        1: "受理",
+        2: "已撤单",
+        3: "已抹账",
+        4: "失败",
+        5: "确认中",
+        6: "部分确认未全部返回",
+        7: "部分确认已全部返回",
+        8: "确认成功",
+        9: "确认失败",
+        A: "认购确认",
+        B: "份额调账",
+        D: "分红数据",
+        E: "已重发",
+        F: "重发失败",
+        S: "成功",
+        Y: "预约",
+        Z: "处理中"
+      };
+      return obj[val];
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.tradingRecord {
+  flex: 1;
+  padding: px2vw(40) px2vw(40) px2vw(26);
+  box-sizing: border-box;
+  background: #fff;
+  margin-top: px2vw(20);
+}
+.title {
+  font-size: px2vw(32);
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  margin-bottom: px2vw(20);
+}
+.item {
+  height: px2vw(132);
+  padding: px2vw(30) 0;
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  position: relative;
+  .text {
+    font-size: px2vw(24);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(125, 125, 125, 1);
+  }
+  .time {
+    font-size: px2vw(28);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    margin-top: px2vw(20);
+  }
+  .left,.center{
+    flex: 1;
+  }
+  .right {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    // margin-left: px2vw(162);
+    .state {
+      font-size: px2vw(28);
+      font-weight: 400;
+      color: #27cd6e;
+    }
+    .red {
+      color: #ff4040;
+    }
+  }
+}
+// .item {
+//   height: px2vw(130);
+//   padding: px2vw(30) 0;
+//   display: flex;
+//   flex-direction: column;
+//   justify-content: space-between;
+//   box-sizing: border-box;
+//   position: relative;
+//   .top {
+//     height: px2vw(40);
+//     display: flex;
+//     flex-direction: row;
+//     justify-content: space-between;
+//     align-items: center;
+//     .money {
+//       font-size: 0;
+//       span {
+//         font-size: px2vw(30);
+//         font-weight: 400;
+//         color: rgba(51, 51, 51, 1);
+//       }
+//     }
+//     .state {
+//       font-size: px2vw(30);
+//       font-weight: 400;
+//       color: #27cd6e;
+//     }
+//     .red {
+//       color: #ff4040;
+//     }
+//   }
+//   .bottom {
+//     font-size: px2vw(22);
+//     font-weight: 300;
+//     color: rgba(125, 125, 125, 1);
+//     display: flex;
+//     flex-direction: row;
+//     justify-content: space-between;
+//   }
+// }
+.item::after {
+  content: " ";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: px2vw(1);
+  background: #ebeef0;
+}
+</style>

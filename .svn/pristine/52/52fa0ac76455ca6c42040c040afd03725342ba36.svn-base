@@ -1,0 +1,307 @@
+<template>
+  <div class="outer market">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter">
+    </Myheader>
+    <div class="search-bar">
+      <Search :placeholder="`闲钱理财，首选游小宝`" @search="handleSearch" @clear="handleSearch"></Search>
+      <div class="filter" @click="drawerShow = true">
+        筛选
+        <img src="~@/assets/fund/icon_shaixuan@2x.png" alt="">
+      </div>
+    </div>
+
+    <van-tabs v-model="active" @click="handleSearch" animated class="myTabs" :line-width="32| toPx" :line-height="4 | toPx" color="#262626" title-active-color="#333333" title-inactive-color="#7D7D7D">
+      <van-tab v-for="(tab,index) in tabsList" :title="tab.name" :key="index">
+        <van-list v-model="loading" :finished="finished" @load="loadMore">
+          <el-table  class="table" :data="tableData"  style="width: 100%;height:100%;"  header-row-class-name="header-row" @sort-change="sortChange" @row-click="toDetail">
+            <el-table-column label="基金名称" :width="240 | toPx" class-name="column1" fixed>
+              <template slot-scope="scope">
+                <div class="fund-name">
+                  {{scope.row.productName}}
+                </div>
+                <div class="fund-num">
+                  {{scope.row.productNo}}
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="prodValue" :width="180 | toPx" class-name="normal-column" sortable label="最新净值">
+              <template slot-scope="scope ">
+                <div class="fund-name">
+                  {{scope.row.prodValue}}
+                </div>
+                <div class="fund-num">
+                  {{getDate(scope.row.date)}}
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="dayFloat" :width="180 | toPx" class-name="normal-column red col-gray" sortable label="日涨跌幅">
+            </el-table-column>
+            <!-- <el-table-column prop="weekTrip" :width="180 | toPx" class-name="normal-column red" sortable label="周涨跌幅"> -->
+            </el-table-column>
+            <el-table-column prop="monthFloat" :width="180 | toPx" class-name="normal-column red col-gray" sortable label="月涨跌幅">
+            </el-table-column>
+            <!-- <el-table-column prop="halfYearTrip" :width="200 | toPx" class-name="normal-column red" sortable label="半年涨跌幅"> -->
+            </el-table-column>
+            <!-- <el-table-column prop="yearTrip" :width="180 | toPx" class-name="normal-column red col-gray" sortable label="年涨跌幅"> -->
+            </el-table-column>
+            <el-table-column prop="perFirstAmt" :width="180 | toPx" class-name="normal-column" sortable label="起购金额">
+              <template slot-scope="scope ">
+                <div>
+                  {{scope.row.perFirstAmt | Money}}
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </van-list>
+        <!-- <div v-if="tableData.length > 0" class="add-btn">
+          <img src="~@/assets/fund/icon_tianjia@2x.png" alt=""> 添加自选
+        </div> -->
+        <!-- 表格无数据时显示 -->
+        <div v-if="tableData.length == 0" class="nodata-box">
+          <img :src="require(`@/assets/fund/img_zanwudingtou@2x.png`)" alt />
+          <p class="text">暂无数据</p>
+          <!-- <div class="footer-box">
+            <div class="btn-box">
+              <van-button class="ghost">添加自选</van-button>
+            </div>
+          </div> -->
+        </div>
+      </van-tab>
+    </van-tabs>
+
+    <!-- 点击header编辑后展示 -->
+    <!-- <edit :show.sync="editShow" :fundList="tableData" @submit="updateList"></edit> -->
+    <my-drawer :show.sync="drawerShow" @submit="filterFund"></my-drawer>
+
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import Search from '@/components/Search.vue'
+import { mapGetters, mapActions, mapState , mapMutations } from "vuex";
+
+// import Edit from '../edit.vue'
+import MyDrawer from './drawer.vue'
+import dayjs from 'dayjs'
+import { List } from 'vant';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    Search,
+    // Edit,
+    MyDrawer,
+    [List.name]: List
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      active: 0,
+      searchName: '',
+      
+      tabsList: [{
+        name: '全部',
+        index: 0,
+      }, {
+        name: '股票型',
+        index: 1,
+      }, {
+        name: '债券型',
+        index: 2,
+      }, {
+        name: '货币型',
+        index: 3,
+      }, {
+        name: '混合型',
+        index: 3,
+      }, {
+        name: '组合型',
+        index: 9,
+      }],
+      tableData: [],
+      tableData1: [{
+        productName: '天聚红利灵活0',
+        number: "001647",
+        newValue: "1.3722",
+        date: '08-15',
+        dayTrip: '29.34%',
+        monthTrip: '29.4262%',
+        weekTrip: '28.4325%',
+        halfYearTrip: '30.2325%',
+        yearTrip: '22.2325%',
+        startMoney: '3000',
+        id: 0,
+      }, {
+        productName: '天聚红利灵活1',
+        number: "001647",
+        newValue: "2.3722",
+        date: '08-15',
+        dayTrip: '12.34%',
+        weekTrip: '28.4325%',
+        halfYearTrip: '30.2325%',
+        yearTrip: '23.2325%',
+        startMoney: '2500',
+        monthTrip: '40.4262%',
+        id: 1,
+      }, {
+        productName: '天聚红利灵活2',
+        number: "001647",
+        newValue: "3.3722",
+        date: '08-15',
+        dayTrip: '31.34%',
+        weekTrip: '28.4325%',
+        halfYearTrip: '30.2325%',
+        yearTrip: '24.2325%',
+        startMoney: '2000',
+        monthTrip: '24.4262%',
+        id: 2,
+      }, {
+        productName: '天聚红利灵活3',
+      }, {
+        productName: '天聚红利灵活4',
+      }, {
+        productName: '天聚红利灵活5',
+      }, {
+        productName: '天聚红利灵活6',
+      }, {
+        productName: '天聚红利灵活7',
+      }, {
+        productName: '天聚红利灵活8',
+      }, {
+        productName: '天聚红利灵活9',
+      }],
+      drawerShow: false,
+      pageNum: 10, //每页数据有多少条
+      page: 1,
+      loading: false,
+      finished: false,
+      time: null,
+      RiskGrade: '',
+      TACode: '',
+    };
+  },
+  computed: {
+    startNum() {
+      let start = (this.page - 1) * this.pageNum + 1;
+      return start
+    },
+    endNum() {
+      // return 1
+      return this.page * this.pageNum
+    }
+  },
+  created() {
+    //this.initData() 
+  },
+  mounted() { },
+  methods: {
+    // loadMore() {
+    //   this.initData();
+    // },
+    ...mapMutations('fund', ['SELECTFUND']),
+    loadMore() {
+      // BranchId=PHNE&ChnlId=62&ProductInfo=产品周期&ProdValue=1&StartPageNum=1&EndPageNum=10
+      this.getData();
+    },
+    getData() {
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductInfo: this.searchName,
+        // ProdValue: '',
+        // DayFloat: '',
+        ProcudtAtrrib: this.active == 0 ? '' : this.active,
+        StartPageNum: this.startNum,
+        EndPageNum: this.endNum,
+        RiskGrade: this.RiskGrade,
+        TACode: this.TACode,
+      }
+      this.loading = false;
+      this.request('FundSupermarket', params).then(res => {
+        console.log("基金列表", res)
+        if (res.List.length > 0) {
+          if (!this.tableData) {
+            this.tableData = res.List;
+          } else {
+            this.tableData = [...this.tableData, ...res.List];
+          }
+          if (res.List.length < this.pageNum) {//获取的新数据小于每页数据量，则不需再次翻页
+            this.finished = true;
+          }else{
+            this.page++;
+          }
+        
+        } else {
+          this.finished = true;
+        }
+        console.log("当前页码",this.page)
+        this.loading = false;
+      }).catch(err => {
+        this.loading = false;
+        this.finished = true;
+      })
+    },
+    // 筛选基金
+    filterFund(data) {
+      console.log(data, "帅选")
+      this.RiskGrade = data.RiskGrade;
+      if (data.RiskGrade == 0) {
+        this.RiskGrade = ""
+      }
+      this.TACode = data.TACode;
+      this.handleSearch();
+    },
+    handleSearch(data) {
+      this.page = 1;
+      this.searchName = data;
+      this.finished = false;
+      this.tableData = [];
+    },
+
+    getDate(val) {
+      return dayjs(val).format('MM-DD')
+    },
+    sortChange(data) {
+      console.log(data, "排序")
+    },
+    toDetail(row){
+      console.log(row,"row")
+      this.SELECTFUND(row);
+      this.$router.push({ name: 'fundDetail'})
+      
+    },
+    updateList(data) {
+      console.log("新列表", data)
+      this.tableData = data;
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+.market {
+  /deep/ .myTabs {
+    .van-tabs--line .van-tabs__wrap {
+      height: px2vw(90);
+    }
+    .van-hairline--top-bottom::after {
+      border-width: 0 0 1px 0;
+    }
+    .van-tabs__line {
+      bottom: 19px;
+    }
+    .van-tab {
+      font-size: px2vw(28);
+      &.van-tab--active {
+        font-size: px2vw(36);
+      }
+    }
+  }
+}
+</style>

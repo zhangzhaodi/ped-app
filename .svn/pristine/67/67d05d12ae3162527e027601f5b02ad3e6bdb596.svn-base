@@ -1,0 +1,402 @@
+<template>
+  <div class="outer yuyue">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div class="yuyueTabs">
+        <van-tabs class="flex-list" v-model="active"  swipeable title-active-color="#262626" sticky title-inactive-color="#7d7d7d" line-width="16" line-height="2" color="#262626">
+          <van-tab class="flex-list" :name='0' title="进行中">
+            <Scroller style="background:inherit">
+                <div class="item" v-for="(item,index) in ExecuteList" :key="index" @click="handleSelect(item)">
+                  <div class="title">
+                    <div class="left">
+                      <div class="color" :style="{backgroundColor:'#0091FF'}" v-if="item.contractTyp == '01' && item.contractPeriodTyp == '2'"></div>
+                      <div class="color" :style="{backgroundColor:'#FFB100'}" v-else-if="item.contractTyp == '01' && item.contractPeriodTyp == '3'"></div>
+                      <div class="color" :style="{backgroundColor:'#00C49F'}" v-else="item.contractTyp == '00'"></div>
+                      <span>{{dateText(item)}},自动转账</span>
+                    </div>
+                    <span class="desc">{{item.transUsage}}</span>
+                  </div>
+                  <div class="content">
+                    <div class="left">
+                      <p class="gathering">转账金额(￥)</p>
+                      <p class="money">{{item.transAmt|Money}}</p>
+                    </div>
+                    <div class="right">
+                      <div class="from">
+                        <p class="bank">
+                          <span>焦作中旅银行</span>
+                          <span>({{item.payerAcctNbr |CardNoFour}})</span>
+                        </p>
+                      </div>
+                      <div class="to">
+                        <p>{{item.payeeAcctName}}</p>
+                        <p class="bankName">{{item.payeeBankName}}({{item.payeeAcctNbr |CardNoFour}})</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </Scroller>
+            <div class="add-order" @click="toAdd">
+              <img src="@/assets/add.png" />
+              添加预约转账
+            </div>
+          </van-tab>
+          <van-tab :name='1' title="已终止">
+            <Scroller style="background:inherit">
+              <div class="items">
+                <div class="item" v-for="(item,index) in EndList" :key="index" @click="handleSelect(item)">
+                  <div class="title">
+                    <div class="left">
+                      <div class="color" :style="{backgroundColor:'#A8A8A8'}"></div>
+                      <span>{{dateText(item)}},自动转账</span>
+                    </div>
+                    <span class="desc">{{item.transUsage}}</span>
+                  </div>
+                  <div class="content">
+                    <div class="left">
+                      <p class="gathering">转账金额(￥)</p>
+                      <p class="money">{{item.transAmt|Money}}</p>
+                    </div>
+                    <div class="right">
+                      <div class="from">
+                        <p class="bank">
+                          <span>焦作中旅银行</span>
+                          <span>({{item.payerAcctNbr |CardNoFour}})</span>
+                        </p>
+                      </div>
+                      <div class="to">
+                        <p>{{item.payeeAcctName}}</p>
+                        <p class="bankName">{{item.payeeBankName}}({{item.payeeAcctNbr |CardNoFour}})</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Scroller>
+          </van-tab>
+        </van-tabs>
+    </div>
+    
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions } from "vuex";
+import { Divider, Tab, Tabs } from "vant";
+import dayjs from 'dayjs';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Divider.name]: Divider,
+    [Tab.name]: Tab,
+    [Tabs.name]: Tabs,
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      form: {
+        desc: '',
+      },
+      orderList: [],
+      ExecuteList: [],
+      EndList: [],
+      active: '',
+    };
+  },
+  computed: {
+
+  },
+  created() {
+    this.getData();
+  },
+  activated() {
+    this.getData();
+  },
+  mounted() { },
+  methods: {
+    handleSelect(item) {
+      this.$router.push({ name: 'orderDetail', query: { contractId: item.contractId }, params: { data: item } })
+    },
+    toAdd() {
+      this.$router.push({ name: 'orderAdd' })
+    },
+    getStatus(status) {
+      return this.tools.getTransStatus(status);
+    },
+    dateText(item) {
+      //00定时转账；01:周期转账；
+      if (item.contractTyp == '00') {
+        return dayjs(item.createDate).format('YYYY-MM-DD')
+      } else if (item.contractTyp == "01") {
+        if (item.contractPeriodTyp == 2) { //周
+          let text = '每周一'
+          let value = Number(item.contractPeriodVal)
+          switch (value) {
+            case 1:
+              text = '每周一';
+              break;
+            case 2:
+              text = '每周二';
+              break;
+            case 3:
+              text = '每周三';
+              break;
+            case 4:
+              text = '每周四';
+              break;
+            case 5:
+              text = '每周五';
+              break;
+            case 6:
+              text = '每周六';
+              break;
+            case 7:
+              text = '每周日';
+              break;
+            default:
+              text = "没有匹配的值"
+          }
+          return text
+        } else if (item.contractPeriodTyp == '3') {
+          if (item.contractPeriodVal == 32) {
+            return `每月最后一天`
+          }
+          let text = `每月${item.contractPeriodVal}日`
+          return text
+        }
+      }
+    },
+
+    getData() {
+      let params = {
+        ExtTransTypCd: '1221|1222',
+      }
+      this.request('QueryTransBookingList', params
+      ).then((res) => {
+        console.log(res, "联系人")
+        let { EndList, ExecuteList } = res;
+        this.ExecuteList = ExecuteList;
+        this.EndList = EndList;
+      }).catch((error) => {
+        console.log(error)
+      })
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/.yuyue .van-sticky--fixed {
+  top: px2vw(88);
+}
+.yuyue{
+  position: relative;
+  .headerBox{
+    position: fixed;
+    top:0;
+  }
+} 
+
+.add-order {
+  display: flex;
+  flex: 0;
+  width:100%;
+  // flex-shrink: 0;
+  position: fixed;
+  bottom: 0;
+  margin-top: px2vw(1);
+  box-shadow: 0px 0px 44px 0px rgba(62, 62, 62, 0.12);
+}
+.empty {
+  .img-box {
+    width: px2vw(300);
+    margin: px2vw(86) auto 0;
+    img {
+      width: 100%;
+    }
+    p {
+      font-size: px2vw(28);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(40);
+      text-align: center;
+      margin-top: px2vw(26);
+    }
+  }
+}
+.yuyueTabs {
+  // overflow: hidden;
+  margin-top: px2vw(88);
+  height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  /deep/ .van-tabs {
+    .van-tab__pane{
+      position: relative;
+      display: flex;
+      flex:1;
+      height:100%;
+      flex-direction: column;
+    }
+    .van-tabs__wrap {
+      display: flex;
+      flex-shrink: 0;
+    }
+    .van-tabs__nav{
+      width:100%;
+    }
+    .van-tabs__nav--line {
+      padding-bottom: 0;
+    }
+    .van-tabs__line {
+      bottom: px2vw(10);
+    }
+    .van-tab{
+      height: px2vw(90);
+      font-size:px2vw(26);
+      color:#7d7d7d;
+      font-family:$font-family;
+      font-weight:400;
+      span{
+        display: inline;
+      }
+      &.van-tab--active{
+        font-size:px2vw(30);
+        font-family:$font-family;
+        font-weight:500;
+      }
+    } 
+    .van-tabs__content {
+      height: 100%;
+      display: flex;
+      flex:1;
+      flex-direction: column;
+    }
+  }
+  .scrollerBox {
+    padding: 0 px2vw(30);
+    padding-top: px2vw(30);
+    padding-bottom: px2vw(120);
+    .item {
+      background-color: #fff;
+      margin-bottom: px2vw(30);
+      // box-shadow: 0 px2vw(8) px2vw(40) 0 rgba(121, 126, 139, 0.08);
+      border-radius: px2vw(16);
+      .title {
+        height: px2vw(70);
+        font-family: $font-family;
+        color: #262626;
+        font-size: px2vw(24);
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        border-bottom: px2vw(1) solid #eff0f1;
+        .left {
+          display: flex;
+          height: 100%;
+          align-items: center;
+          font-family: $font-family;
+        }
+        .desc {
+          margin-right: px2vw(40);
+          color: #7d7d7d;
+          font-size: px2vw(24);
+          font-family: $font-family;
+        }
+        .color {
+          width: px2vw(8);
+          height: px2vw(36);
+          margin-right: px2vw(36);
+          border-top-right-radius: px2vw(16);
+          border-bottom-right-radius: px2vw(16);
+        }
+      }
+      .content {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 px2vw(40);
+        height: px2vw(242);
+        .left {
+          width: 100%;
+          margin-right: px2vw(30);
+          .gathering {
+            font-size: px2vw(24);
+            color: #7d7d7d;
+            font-family: $font-family;
+            font-weight: 300;
+          }
+          .money {
+            margin-top: px2vw(12);
+            font-size: px2vw(46);
+            font-weight: 500;
+            font-family: $font-family;
+            color: #262626;
+          }
+        }
+        .right {
+          background: url("~@/assets/fundCollection/icon_jiantou2@2x.png") left
+            px2vw(6) no-repeat;
+          background-size: px2vw(16) px2vw(110);
+          width: px2vw(560);
+          display: flex;
+          flex-direction: column;
+          padding-left: px2vw(24);
+          .circle {
+            width: px2vw(10);
+            height: px2vw(10);
+            box-sizing: border-box;
+            background-color: transparent;
+            border: px2vw(3) solid #f96159;
+            border-radius: 50%;
+          }
+          .bank {
+            color: #262626;
+            font-weight: 400;
+            span {
+              font-size: px2vw(26);
+            }
+          }
+
+          .to {
+            margin-top: px2vw(66);
+            font-size: px2vw(26);
+            .bankName {
+              color: #7d7d7d;
+              font-weight: 400;
+              margin-top: px2vw(8);
+              font-size: px2vw(26);
+              font-family: $font-family;
+            }
+          }
+          // .center {
+          //   width: 100%;
+          //   height: px2vw(40);
+          //   display: flex;
+          //   flex-direction: row;
+          //   justify-content: flex-start;
+          //   .arrow {
+          //     width: px2vw(16);
+          //     height: px2vw(40);
+          //     background: url("~@/assets/fundCollection/icon_jiantou2@2x.png");
+          //     background-size: 100% 100%;
+          //     margin-left: px2vw(-4);
+          //   }
+          // }
+        }
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,153 @@
+<template>
+  <div class="item" @click="toDetail">
+    <div class="top">
+      <p class="rate">
+        <span>{{item.maxRate}}</span>
+        <span class="per">%</span>
+        <span v-if="item.minRate">-</span>
+        <span v-if="item.minRate">{{item.minRate}}</span>
+        <span class="per" v-if="item.minRate">%</span>
+      </p>
+      <span class="day">{{item.day+'天'}}</span>
+      <span class="theCast">{{item.theCast+'元起投'}}</span>
+    </div>
+    <div class="center">
+      <span class="info">{{item.info}}</span>
+      <span class="name">{{item.name}}</span>
+    </div>
+    <div class="bottom">
+      <div class="tab">
+        <p v-for="(i,index) in item.tab" :key="index">{{i}}</p>
+      </div>
+      <div class="gatherTime">{{"筹集期:"+item.gatherTime}}</div>
+    </div>
+    <div class="line">
+      <div
+        class="color"
+        :style="{ 'backgroundColor': item.per ==0?'#EFF0F1':item.per>50?'#31CC69':'#FFB52B','width':item.per+'%' }"
+      ></div>
+    </div>
+    <div class="remain">
+      <div class="money">
+        <span>剩余额度(元):</span>
+        <span class="black">{{item.remain|Money}}</span>
+      </div>
+      <div class="per">
+        <span>剩余额度百分比:</span>
+        <span>{{item.per+'%'}}</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    item: {
+      require: true
+    }
+  },
+  methods: {
+    toDetail() {
+      this.$router.push({ name: "detail", params: this.item });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.item {
+  height: px2vw(318);
+  font-weight: 400;
+  color: #a8a8a8;
+  overflow: hidden;
+  .top {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: px2vw(50);
+    .rate {
+      font-size: 0;
+      font-weight: 500;
+      color: #f75a50;
+      span{
+        font-size: px2vw(54);
+      }
+      .per {
+        font-size: px2vw(27);
+      }
+    }
+    .day {
+      margin-right: px2vw(40);
+      flex: 1;
+      text-align: right;
+      font-size: px2vw(32);
+      color: #262626;
+    }
+    .theCast {
+      font-size: px2vw(32);
+      color: #262626;
+    }
+  }
+  .center {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(10);
+    .info,
+    .name {
+      color: #a8a8a8;
+      font-size: px2vw(24);
+    }
+  }
+  .bottom {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(28);
+    .tab {
+      width: px2vw(307);
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      p {
+        padding: 0 px2vw(8);
+        color: #e39e5c;
+        height: px2vw(28);
+        line-height: px2vw(28);
+        font-size: px2vw(20);
+        font-weight: 400;
+        border-radius: px2vw(4);
+        background: linear-gradient(#fffbf6, #fff4e9);
+      }
+    }
+    .gatherTime {
+      font-size: px2vw(24);
+      font-weight: 400;
+      color: #a8a8a8;
+    }
+  }
+  .line {
+    margin-top: px2vw(30);
+    height: px2vw(6);
+    background: #f5f6f8;
+    border-radius: px2vw(7);
+    .color {
+      height: 100%;
+      border-radius: px2vw(7);
+    }
+  }
+  .remain {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(22);
+    font-size: px2vw(22);
+    font-weight: 300;
+    color: #7d7d7d;
+    .black {
+      color: #000;
+    }
+  }
+}
+</style>

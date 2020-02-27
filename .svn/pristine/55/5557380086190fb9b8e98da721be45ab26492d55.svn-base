@@ -1,0 +1,255 @@
+<template>
+  <van-popup v-model="isShow" position="bottom" class="bottomPupup" round @close="close">
+    <div class="head">
+      <p class="iconfont iconicon_guanbi-" @click="close"></p>
+      <p class="title" v-if="cardType==1">请选择付款卡</p>
+      <p class="title" v-if="cardType==2">请选择收款卡</p>
+    </div>
+    <div class="cardList">
+      <div
+        class="item"
+        v-for="(item,index) in cardLists"
+        :key="index"
+        @click="choose(index,item)"
+        :style="{backgroundColor:chooseIndex==index?'#F4F5F7':'#fff'}"
+      >
+        <div class="left" v-if="cardType =='2'">
+          <img src="https://mobile.jzctb.com:8002/zl/bankIcons/CTS.png" />
+        </div>
+        <div class="left" v-else>
+          <!-- <img :src="'http://188.177.155.83:8081/zl/bankIcons/'+item.BankId+'.png'" /> -->
+          <img :src="tools.bankIconImg(item.BankId)" />
+        </div>
+        <div class="center">
+          <p class="bank" v-if="cardType =='1'">
+            <span>{{item.BankName}}</span>
+            <span>|</span>
+            <!-- <span v-if="item.bankAcType">{{item.bankAcType|cardTypeName}}</span> -->
+            <span>({{item.PayerAccount | CardNoFour}})</span>
+          </p>
+          <p class="bank" v-else>
+            <!-- <span>{{item.acName}}</span> -->
+            <span>{{'焦作中旅银行'}}</span>
+            <span>|</span>
+            <span>{{item.contTypCd|cardTypeName}}</span>
+            <span>({{item.vouId | CardNoFour}})</span>
+          </p>
+          <p class="money" v-if="cardType =='2'">
+            <span>可用余额：</span>
+            <span>{{item.balance | Money}}</span>
+            <span>元</span>
+          </p>
+        </div>
+        <div class="right">
+          <span class="iconfont iconcheck-" v-if="chooseIndex==index"></span>
+        </div>
+      </div>
+    </div>
+    <div class="add" v-if="cardType==1" @click="addCard">
+      <p>新增银行卡</p>
+      <span class="iconfont icongengduo-"></span>
+    </div>
+  </van-popup>
+</template>
+
+<script>
+import { Popup } from "vant";
+export default {
+  components: {
+    [Popup.name]: Popup
+  },
+  props: {
+    show: {
+      require: true,
+      default: false
+    },
+    cardType: {
+      require: true,
+      type: Number
+    }
+  },
+  watch: {
+    //监听父组件中show的变化
+    show: {
+      handler(val) {
+        this.isShow = val;
+        if (this.cardType == "1") {
+          //付款卡
+          this.chooseIndex = this.payerIndex;
+          this.cardLists = this.$store.state.fundCollection.payerList;
+        } else {
+          //收款卡
+          this.chooseIndex = this.payeeIndex;
+          this.cardLists = this.$store.state.fundCollection.cardList;
+        }
+      }
+    },
+    cardType: {
+      handler(val) {
+        // console.log(val)
+        if (val == "1") {
+          //付款卡
+
+          this.cardLists = this.$store.state.fundCollection.payerList;
+        } else {
+          //收款卡
+          this.cardLists = this.$store.state.fundCollection.cardList;
+        }
+      }
+    }
+  },
+  filters: {
+    cardTypeName(data) {
+      // console.log("data11", data);
+      let nameJson = {
+        E1: "村镇银行卡",
+        E2: "市民卡",
+        E3: "活期一本通",
+        E5: "借记卡",
+        E6: "信用卡",
+        E7: "银贷通（信用卡）",
+        E8: "抵贷通(信用卡）",
+        E9: "金贷通(信用卡）",
+        Em: "新市民卡",
+        Eb: "社保卡"
+      };
+      return nameJson[data];
+    }
+  },
+  data() {
+    return {
+      chooseIndex: null, //被选中的卡
+      isShow: false,
+      cardLists: [],
+      payeeIndex: null,
+      payerIndex: null
+    };
+  },
+  created() {},
+  methods: {
+    choose(index, item, img) {
+      if (this.cardType == "1") {
+        //付款卡
+        this.payerIndex = index;
+      } else {
+        //收款卡
+        this.payeeIndex = index;
+      }
+      this.chooseIndex = index;
+      item.cardType = this.cardType;
+      item.index = index;
+      if (this.cardType == "1") {
+        this.$emit("chooseCard", {
+          ...item,
+          bankImg: this.tools.bankIconImg(item.BankId)
+        });
+        item.name = "付款卡";
+      } else {
+        item.name = "收款卡";
+        this.$emit("chooseCard", item);
+      }
+      this.isShow = false;
+      this.$parent.bottomFlag = false;
+    },
+    close() {
+      this.isShow = false;
+      this.$parent.bottomFlag = false;
+    },
+    addCard() {
+      this.isShow = false;
+      this.$emit("toAdd");
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.bottomPupup {
+  padding-bottom: px2vw(152);
+  .head {
+    height: px2vw(100);
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0 px2vw(40);
+    .iconfont {
+      width: px2vw(22);
+      height: px2vw(22);
+      font-size: px2vw(24);
+      color: #666666;
+    }
+    .title {
+      font-size: px2vw(34);
+      font-weight: 400;
+      color: #262626;
+      text-align: center;
+      flex: 1;
+    }
+  }
+  .item {
+    padding: 0 px2vw(40);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: px2vw(110);
+    .left {
+      width: px2vw(55);
+      height: px2vw(55);
+      img {
+        width: 100%;
+        border-radius: 50%;
+      }
+    }
+    .center {
+      display: flex;
+      flex-direction: column;
+      // justify-content: space-between;
+      justify-content: center;
+      height: px2vw(70);
+      flex: 1;
+      margin-left: px2vw(20);
+      .bank {
+        font-size: 0;
+        font-weight: 400;
+        color: #262626;
+        // line-height: px2vw(30);
+        letter-spacing: px2vw(1);
+        span {
+          font-size: px2vw(30);
+        }
+      }
+      .money {
+        font-size: px2vw(24);
+        font-family: PingFangSC;
+        font-weight: 300;
+        color: #7d7d7d;
+        line-height: px2vw(24);
+        margin-top: px2vw(16);
+      }
+    }
+    .right {
+      width: px2vw(45);
+      color: #3e8fff;
+      .iconfont {
+        font-size: px2vw(24);
+        font-weight: 800;
+      }
+    }
+  }
+  .add {
+    height: px2vw(110);
+    padding: 0 px2vw(40) 0 px2vw(115);
+    font-size: px2vw(26);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    .iconfont {
+      font-size: px2vw(22);
+      color: #7d7d7d;
+    }
+  }
+}
+</style>

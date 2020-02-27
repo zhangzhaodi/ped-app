@@ -1,0 +1,1259 @@
+<template>
+  <div class="outer" v-if="data">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="product">
+        <div class="left">
+          <p v-if="data.modulCode=='1102'" class="rateText">预期收益率</p>
+          <p v-else-if="data.modulCode=='1303'||data.modulCode=='1306'" class="rateText">业绩比较基准</p>
+          <p v-else-if="data.modulCode=='1307'" class="rateText">7日年化收益率</p>
+          <p
+            :class="['rate',{'textOver':data.expectProfRate.length>6&&data.expectProfRate.length<12},{'textOver1':data.expectProfRate.length>12}]"
+            v-if="data.modulCode=='1102'||data.modulCode=='1303'"
+          >
+            <span>{{data.expectProfRate?data.expectProfRate.indexOf('%')==-1?data.expectProfRate+'%':data.expectProfRate:'0%'}}</span>
+            <!-- <span class="per">%</span> -->
+          </p>
+          <p class="rate" v-else-if="data.modulCode=='1307'">
+            <span>{{data.Yield|parseFloatTwo}}</span>
+            <!-- <span class="per">%</span> -->
+          </p>
+          <p
+            :class="['rate',{'textOver':data.benchmark.length>6&&data.benchmark.length<12},{'textOver1':data.benchmark.length>12}]"
+            v-else
+          >
+            <span>{{data.benchmark|parseFloatTwo}}</span>
+          </p>
+          <div class="tab">
+            <p v-for="(item,index) in tab" :key="index">{{item.toString()}}</p>
+          </div>
+        </div>
+        <div class="right">
+          <p class="holdDay">投资期限(天)</p>
+          <p class="day">
+            <span class="num">{{holdDay()}}</span>
+            <span class="text" v-if="data.modulCode!='1307'">(天)</span>
+          </p>
+          <div class="per">
+            <span class="text">剩余百分比:</span>
+            <span class="info">{{data.subAmtPer?data.subAmtPer:'0'}}%</span>
+          </div>
+        </div>
+      </div>
+      <!-- 产品状态 -->
+      <div class="state">
+        <div class="remain">
+          <!-- <div class="money">
+            <span class="text">剩余额度:</span>
+            <span class="info">{{data.remain|Money}}</span>
+          </div>-->
+        </div>
+        <div class="icon">
+          <div>
+            <img src="@/assets/manageMoney/icon_anquan@2x.png" />
+            <p>{{data.riskGradeName}}</p>
+          </div>
+          <div>
+            <img src="@/assets/manageMoney/icon_dizengjine@2x.png" />
+            <p>递增金额{{data.paddAMT}}元</p>
+          </div>
+          <!-- <div>
+            <img src="@/assets/manageMoney/icon_zhaungtai@2x.png" />
+            <p>状态灵活查询</p>
+          </div>-->
+        </div>
+      </div>
+      <!-- 投资规则 -->
+      <div class="rule top">
+        <h2>投资规则</h2>
+        <img src="@/assets/manageMoney/img_touziguize@2x.png" class="bar" />
+        <div class="shaft" v-if="data.modulCode=='1102'">
+          <!-- 时间轴 -->
+          <div class="left">
+            <p class="title">起息日</p>
+            <!-- <p class="time">{{new Date(parseInt(data.ProdStartDate)).getTime()|Format("yyyy-MM-dd")}}</p> -->
+            <p class="time">{{data.prodStartDate|timeFormat1}}</p>
+          </div>
+          <div class="center">
+            <p class="title">到期日</p>
+            <p class="time">{{data.prodEndDate|timeFormat1}}</p>
+          </div>
+          <div class="right">
+            <p class="title">汇款到账</p>
+            <p class="time">3个工作日之内</p>
+          </div>
+        </div>
+        <div class="shaft" v-if="data.modulCode=='1303'">
+          <!-- 时间轴 -->
+          <div class="left">
+            <p class="title">起息日</p>
+            <!-- <p class="time">{{new Date(parseInt(data.ProdStartDate)).getTime()|Format("yyyy-MM-dd")}}</p> -->
+            <p class="time">{{data.prodStartDate|timeFormat1}}</p>
+          </div>
+          <div class="center">
+            <p class="title">到期日</p>
+            <p class="time">{{data.prodEndDate|timeFormat1}}</p>
+          </div>
+          <div class="right">
+            <p class="title">汇款到账</p>
+            <p class="time">3个工作日之内</p>
+          </div>
+        </div>
+        <!-- productState=1募集期 productState=0开放期 -->
+        <div class="shaft" v-if="data.modulCode=='1306'&&data.productState=='1'">
+          <!-- 时间轴 -->
+          <div class="left">
+            <p class="title">份额确认日</p>
+            <!-- <p class="time">{{new Date(parseInt(data.ProdStartDate)).getTime()|Format("yyyy-MM-dd")}}</p> -->
+            <p class="time">{{data.prodStartDate|timeFormat1}}</p>
+          </div>
+          <div class="center">
+            <p class="title">到期日</p>
+            <p class="time">{{data.prodEndDate|timeFormat1}}</p>
+          </div>
+          <div class="right">
+            <p class="title">回款到账</p>
+            <p class="time">到期后3个工作日内</p>
+          </div>
+        </div>
+        <div class="shaft" v-if="data.modulCode=='1306'&&data.productState=='0'">
+          <!-- 时间轴 -->
+          <div class="left">
+            <p class="title">份额确认日</p>
+            <!-- <p class="time">{{new Date(parseInt(data.ProdStartDate)).getTime()|Format("yyyy-MM-dd")}}</p> -->
+            <p class="time" v-if="data.nextDate!='0'">{{data.nextDate|timeFormat1}}</p>
+            <p class="time" v-else>T+1</p>
+          </div>
+          <div class="center">
+            <p class="title">到期日</p>
+            <p class="time">确认日+N</p>
+          </div>
+          <div class="right">
+            <p class="title">回款到账</p>
+            <p class="time">到期后3个工作日内</p>
+          </div>
+        </div>
+        <div class="shaft" v-if="data.modulCode=='1307'&&data.productState=='1'">
+          <!-- 时间轴 -->
+          <div class="left">
+            <p class="title">确定日</p>
+            <!-- <p class="time">{{new Date().getTime()|Format("yyyy-MM-dd")}}</p> -->
+            <p class="time">{{data.prodEstabDate|timeFormat1}}</p>
+          </div>
+          <div class="center">
+            <p class="title">到期日</p>
+            <p class="time">{{data.prodEndDate|timeFormat1}}</p>
+          </div>
+          <div class="right">
+            <p class="title">收益到账日</p>
+            <p class="time">实时到账</p>
+          </div>
+        </div>
+        <div class="shaft" v-if="data.modulCode=='1307'&&data.productState=='0'">
+          <!-- 时间轴 -->
+          <div class="left">
+            <p class="title">购买日</p>
+            <p class="time">{{new Date().getTime()|Format("yyyy-MM-dd")}}</p>
+            <!-- <p class="time">{{data.prodStartDate|timeFormat1}}</p> -->
+          </div>
+          <div class="center">
+            <p class="title">赎回</p>
+            <!-- <p class="time">{{data.prodStartDate|timeFormat1}}</p> -->
+          </div>
+          <div class="right">
+            <p class="title">收益到账日</p>
+            <p class="time">实时到账</p>
+          </div>
+        </div>
+        <!-- <div class="shaft" v-if="data.modulCode=='1307'">
+          <div class="left">
+            <p class="title">起息日</p>
+            <p class="time">{{data.prodStartDate|timeFormat1}}</p>
+          </div>
+          <div class="center">
+            <p class="title">到期日</p>
+            <p class="time">{{data.benefitMaturiteDate|timeFormat1}}</p>
+          </div>
+          <div class="right">
+            <p class="title">结息日</p>
+            <p class="time">{{data.prodEndDate|timeFormat1}}</p>
+          </div>
+        </div>-->
+      </div>
+      <!-- 产品信息 -->
+      <div class="productInfo top">
+        <h2>产品信息</h2>
+        <div class="name">
+          <div class="lab">产品名称</div>
+          <div class="content">{{data.productName}}</div>
+        </div>
+        <div class="num">
+          <div class="lab">产品编号</div>
+          <div class="content">{{data.productNo}}</div>
+        </div>
+        <div class="currency">
+          <div class="lab">币种</div>
+          <!-- // 156-人民币
+          // 250-马克
+          // 256-法郎
+          // 344-港元
+          // 392-日元
+          // 826-英镑
+          // 840-美元-->
+          <div class="content">{{currentType[this.data.currencyType]}}</div>
+        </div>
+      </div>
+      <!-- 历史收益 -->
+      <div class="history top" v-if="chartData.length>1">
+        <h2 v-if="data.modulCode=='1102'||data.modulCode=='1303'">历史收益</h2>
+        <h2 v-else-if="data.modulCode=='1306'">过往净值</h2>
+        <h2 v-else>七日年化</h2>
+        <!-- <echarts :x="x" :y="y" :lines="lines" :chartData="chartData" :chartType="chartType"></echarts> -->
+        <echarts
+          :chartData="chartData"
+          :chartType="chartType"
+          :interval="interval"
+          :max="max"
+          :min="min"
+          v-if="data.modulCode=='1303'||data.modulCode=='1102'"
+        ></echarts>
+        <echarts :chartData="chartData" :chartType="chartType" :interval="interval" v-else></echarts>
+      </div>
+    </div>
+
+    <!-- 同意购买 -->
+    <div class="buy">
+      <!-- <div class="counter" @click="manageMoneyCal">
+        <span class="iconfont iconicon_jisuanqi--"></span>
+        <p>算收益</p>
+      </div>-->
+      <div class="btn" @click="toApply" v-if="data.isBuy=='0'||data.isBuy=='2'">购买</div>
+      <div class="btn" v-if="data.isBuy=='1'">已售罄</div>
+    </div>
+    <!-- 弹出框 -->
+    <Mydailog
+      :type="dialog.type"
+      :show="dialog.show"
+      @confirm="confirm"
+      @cancel="cancel"
+      :confirmButtonText="dialog.text"
+      :cancelButtonText="dialog.cancel"
+    ></Mydailog>
+    <!-- 连续弹出 -->
+    <Mydailog
+      :type="dialog1.type"
+      :show="dialog1.show"
+      @confirm="confirm"
+      @cancel="cancel"
+      :confirmButtonText="dialog1.text"
+      :cancelButtonText="dialog1.cancel"
+    ></Mydailog>
+    <!-- 理财计算器 -->
+    <!-- <manageMoneyCal :rate="rate" @close="close" :show="calShow"></manageMoneyCal> -->
+  </div>
+</template>
+
+<script>
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+import Header from "@/components/Header/Header.vue";
+import detailDailog from "../../components/detailDialog.vue";
+// import manageMoneyCal from "../../components/bottomPopup.vue";
+import { Toast } from "vant";
+// import echarts from "../../components/echarts";
+import echarts from "../../components/testEcharts";
+export default {
+  components: {
+    Myheader: Header,
+    [Toast.name]: Toast,
+    Mydailog: detailDailog,
+    // manageMoneyCal,
+    echarts
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      data: null,
+      currentType: {
+        156: "人民币",
+        250: "马克",
+        256: "法郎",
+        344: "港元",
+        392: "日元",
+        826: "英镑",
+        840: "英镑"
+      },
+      // tab: ["高收益", "年度回馈", "新用户专享"],
+      tab: [],
+      dialog: {
+        type: null,
+        show: false,
+        text: null,
+        cancel: null
+      },
+      dialog1: {
+        type: null,
+        show: false,
+        text: null,
+        cancel: null
+      },
+      res: null,
+      calShow: false, //计算器显示
+      ProductNo: null,
+      rate: null,
+      _RejCode: null,
+      x: [],
+      y: { max: null, min: null },
+      chartData: [],
+      chartType: "", //prdValue产品净值yield年化收益率
+      interval: null,
+      step: 0,
+      lines: 4,
+      goNative: false,
+      max: 0,
+      min: 0
+    };
+  },
+  //判断from来的地方
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      if (
+        from.name == "index" ||
+        from.name == "manageMoneyList" ||
+        !from.name
+      ) {
+        // console.log(1)
+        if (!from.name) {
+          vm.goNative = true;
+        }
+        vm.productInfo();
+      } else {
+        // console.log(2)
+        console.log(vm.$store.state.manageMoney);
+        vm.ProductNo = vm.$store.state.manageMoney.productInfo.productNo;
+        vm.data = vm.$store.state.manageMoney.productInfo;
+        vm.productInfo();
+        if (vm.data.modulCode == "1102" || vm.data.modulCode == "1303") {
+          //期数
+          vm.prdSeriesQry();
+        } else {
+          vm.FinaQuotationQry();
+        }
+        vm.setChartType();
+      }
+    });
+  },
+  beforeRouteLeave(to, form, next) {
+    if (to.name == "index" && this.goNative) {
+      window.NativeCall.goBack();
+    } else {
+      next();
+    }
+  },
+  created() {
+    // console.log(ProductNo)
+    this.$store.state.manageMoney.detailFlag = false;
+    this.$toast.clear();
+    window.scrollTo(0, 0);
+    this.reset();
+  },
+  filters: {
+    timeFormat1(value) {
+      if (!value) {
+        return "";
+      } else {
+        let arr = [];
+        arr.push(value.slice(0, 4));
+        arr.push(value.slice(4, 6));
+        arr.push(value.slice(6));
+        return arr.join("-");
+      }
+    },
+    termRange(val) {
+      // 周期产品有多个周期
+      let str = val.replace(/天/g, "");
+      let arr = val.split(",");
+      let max = Math.max.apply(null, arr);
+      let min = Math.min.apply(null, arr);
+    }
+  },
+  computed: {
+    day() {
+      function getTime(value) {
+        let arr = [];
+        arr.push(value.slice(0, 4));
+        arr.push(value.slice(4, 6));
+        arr.push(value.slice(6));
+        return arr.join("-");
+      }
+      let start =
+        new Date(getTime(this.data.prodStartDate)).getTime() /
+        1000 /
+        60 /
+        60 /
+        24;
+      let end =
+        new Date(getTime(this.data.prodEndDate)).getTime() /
+        1000 /
+        60 /
+        60 /
+        24;
+      let day = end - start;
+      return day;
+    }
+  },
+  methods: {
+    ...mapActions("manageMoney", ["setProductInfo"]),
+    //获取产品详情
+    productInfo() {
+      this.ProductNo = this.$route.params.productNo
+        ? this.$route.params.productNo
+        : this.data.productNo;
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        ProductType: "1",
+        ProductNo: this.ProductNo,
+        QueryFields: "prd_serial~serial_periods~prd_label"
+      };
+      // console.log(this.data.ProductNo);
+      // CurrentType
+      //ProdStartDate起息日 BenefitMaturiteDate到账日
+      //ProdEndDate-ProdStartDate投资期限
+      this.request("financialProMsgQry", params)
+        .then(res => {
+          try {
+            res.ProductInfo[0].isBuy = res.isBuy;
+            this.data = res.ProductInfo[0];
+            this.data.investerTerm = res.investerTerm;
+            this.data.Yield = this.$route.params.yield?this.$route.params.yield:'';
+            // this.data.investerTerm = this.$route.params.investerTerm;
+            this.data.subAmtPer = res.subAmtPer;
+            this.setProductInfo(this.data);
+            if (
+              this.data.modulCode == "1102" ||
+              this.data.modulCode == "1303"
+            ) {
+              //期数
+              this.prdSeriesQry();
+            } else {
+              this.FinaQuotationQry();
+            }
+            this.tabCreated();
+            this.setChartType();
+          } catch (error) {}
+        }).catch(err => {
+          this.$toast(err._RejMessage);
+          let _this = this;
+          setTimeout(function() {
+            _this.$toast.clear();
+            _this.$router.go(-1);
+          }, 2000);
+        });
+    },
+    tabCreated() {
+      // prd_serial~serial_periods~prd_label
+      // if (this.data.prd_serial != "") {
+      //   this.tab.push(this.data.prd_serial);
+      // }
+      // if (this.data.serial_periods != "") {
+      //   this.tab.push(this.data.serial_periods);
+      // }
+      if (this.data.perFirstAMT >= 10000) {
+        this.tab.push(this.data.perFirstAMT / 10000 + "万元起");
+      } else {
+        this.tab.push(this.data.perFirstAMT + "元起");
+      }
+      if (this.data.prd_label) {
+        let arr = this.data.prd_label.split(" ");
+        console.log(arr)
+        this.tab.push(arr[0]);
+      }
+    },
+    //获取用户登录信息
+    login() {
+      //测试
+      window.NativeCall.getUserInfo(userInfo => {
+        this.$store.state.userInfo = JSON.parse(userInfo);
+        if (this.$store.state.userInfo.UserId) {
+          // alert(userInfo)
+          this.hasCard();
+        } else {
+          // this.dialog = {
+          //   type: "6",
+          //   show: true,
+          //   text: "登录",
+          //   cancel: "取消"
+          // };
+          let params = {
+            ios: "DLoginVController",
+            ClassName:
+              "com.example.zlv_master.activity.login.login.LoginActivity"
+          };
+
+          window.NativeCall.goToNativePage(params, res => {
+            this.login();
+          });
+        }
+      });
+    },
+    hasCard() {
+      let params = {
+        BranchId: "9999",
+        ChnlId: "62",
+        BankId: "9999"
+      };
+      this.request("QryDebitCard", params).then(res => {
+        // 测试改成>
+        if (res.QueryAddAccount.length <= 0) {
+          this.dialog = {
+            type: "8",
+            show: true,
+            text: "确定",
+            cancel: "取消"
+          };
+          // let params = {
+          //   package: "addBankCard",
+          //   router: "",
+          //   routerDic: ""
+          // };
+          // window.NativeCall.goToPackage(params);
+        } else {
+          this.getUserInfo();
+        }
+      });
+    },
+    manageMoneyCal() {
+      this.calShow = true;
+    },
+    close() {
+      this.calShow = false;
+    },
+    //折线图
+    prdSeriesQry() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        PrdSeries: this.data.prd_serial,
+        OffSet: "1",
+        QueryNum: "10"
+      };
+      // PrdSerial 产品系列
+      // PrdName 产品名称
+      // PrdCode 产品代码
+      // PrdNum 产品期数
+      // InComeRate 预期收益率
+      this.request("PrdSeriesQry", { ...params }).then(res => {
+        this.interval = null;
+        let data = [];
+        let day = [];
+        res.PrdList.map(item => {
+          //数据格式正确时取数据
+          if (item.IncomeRate != "0" && item.PrdNum) {
+            let time = item.PrdNum;
+            day.push(time);
+            data.unshift([time, item.IncomeRate]);
+          }
+          this.max = Math.max.apply(null, day);
+          this.min = Math.min.apply(null, day);
+          this.interval = parseInt((this.max - this.min) / 7);
+        });
+        this.chartData = data.slice(-7);
+        console.log(this.chartData);
+      });
+    },
+    FinaQuotationQry() {
+      //行情查询
+      let nowDate = new Date();
+      let end = this.GetFormatDate(nowDate, 0);
+      let start = this.GetFormatDate(nowDate, -10);
+      console.log(this.start);
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        PositionString: "1",
+        QueryRowsNum: "10",
+        ProductNo: this.data.productNo,
+        StartDate: start,
+        EndDate: end
+      };
+      this.request("FinaQuotationQry", { ...params })
+        .then(res => {
+          this.itemList = res.CurCommisList;
+          let max = 0;
+          let min = 0;
+          let step = 0;
+          let data = [];
+          let x = [];
+          if (this.data.modulCode == "1307") {
+            //货币净值
+            let timeList = [];
+            res.CurCommisList.map(item => {
+              //数据格式正确时取数据
+              if (item.IssueDate != "0" && item.Yield) {
+                let value = item.Yield;
+                let time = new Date(
+                  item.IssueDate.slice(0, 4) +
+                    "-" +
+                    item.IssueDate.slice(4, 6) +
+                    "-" +
+                    item.IssueDate.slice(6, 8)
+                ).getTime();
+                timeList.push(time);
+                if (!time) {
+                  time = new Date().getTime();
+                }
+                data.unshift([time, value]);
+              }
+            });
+            // console.log(timeList);
+            // 最大天数和最小天数
+            let max = Math.max.apply(null, timeList);
+            let min = Math.min.apply(null, timeList);
+            let step = max - min;
+            // //计算天数间隔
+            let day = parseInt(step / 24 / 60 / 60 / 1000);
+            // //数据在五条以内有几条展示几条、以上时保持横轴最多五条
+            if (day < 5) {
+              this.interval = 1;
+            } else {
+              this.interval = parseInt(day / 5);
+            }
+            this.chartData = data.slice(-7);
+            console.log(this.chartData);
+          }
+          if (this.data.modulCode == "1306") {
+            //周期净值
+            let timeList = [];
+            res.CurCommisList.map(item => {
+              //数据格式正确时取数据
+              if (item.IssueDate != "0" && item.ProdValue) {
+                let value = item.ProdValue;
+                let time = new Date(
+                  item.IssueDate.slice(0, 4) +
+                    "-" +
+                    item.IssueDate.slice(4, 6) +
+                    "-" +
+                    item.IssueDate.slice(6, 8)
+                ).getTime();
+                timeList.push(time);
+                if (!time) {
+                  time = new Date().getTime();
+                }
+                data.unshift([time, value]);
+              }
+            });
+            // console.log(timeList);
+            // 最大天数和最小天数
+            let max = Math.max.apply(null, timeList);
+            let min = Math.min.apply(null, timeList);
+            let step = max - min;
+            // //计算天数间隔
+            let day = parseInt(step / 24 / 60 / 60 / 1000);
+            // //数据在五条以内有几条展示几条、以上时保持横轴最多五条
+            if (day < 5) {
+              this.interval = 1;
+            } else {
+              this.interval = parseInt(day / 5);
+            }
+            this.chartData = data.slice(-7);
+            console.log(this.chartData);
+          }
+        })
+        .catch(err => {
+          let str = err._RejMessage;
+          // this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+        });
+    },
+    setChartType() {
+      if (this.data.modulCode == "1102" || this.data.modulCode == "1303") {
+        this.chartType = "InComeRate";
+      } else if (this.data.modulCode == "1306") {
+        this.chartType = "prdValue";
+      } else {
+        this.chartType = "yield";
+      }
+    },
+    cycleDay(val) {
+      // console.log(val);
+      let value = val.replace(/天/g, "");
+      let arr = value.split(",");
+      if (arr.length <= 1) return arr[0];
+      let max = Math.max.apply(null, arr);
+      let min = Math.min.apply(null, arr);
+      return min + "-" + max;
+    },
+    holdDay() {
+      let day;
+      if (this.data.modulCode == "1102" || this.data.modulCode == "1303") {
+        // this.$route.params
+        // day = this.data.investerTerm ? this.data.investerTerm + "" : "0" + "";
+        day = this.data.investerTerm ? this.data.investerTerm + "" : "0" + "";
+      } else if (this.data.modulCode == "1306") {
+        if (this.data.termTypeRange) {
+          day = this.cycleDay(this.data.termTypeRange);
+        } else {
+          day = this.data.cycleDays ? this.data.cycleDays + "" : "0";
+        }
+      } else {
+        day = "随时申赎";
+      }
+      return day;
+    },
+    reset() {
+      // this.y = {
+      //   max: 1.2,
+      //   min: 0
+      // };
+      // this.lines = 4;
+      this.chartData = [];
+      this.x = ["0", "0", "0", "0", "0"];
+    },
+    GetFormatDate(dd, n) {
+      // var dd = new Date()
+      dd.setDate(dd.getDate() + n); // 获取n天后的日期
+      let y = dd.getFullYear(); // 年份
+      let m =
+        dd.getMonth() + 1 < 10 ? "0" + (dd.getMonth() + 1) : dd.getMonth() + 1; // 月份，不足10补0
+      let d = dd.getDate() < 10 ? "0" + dd.getDate() : dd.getDate(); // 日，不足10补0
+      return y + "" + m + "" + d;
+    },
+    //获取用户信息
+    getUserInfo() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        CustomerIdentifyType: "1",
+        CustomerIdentify: this.$store.state.userInfo.UserId,
+        ProductType: "1"
+      };
+      //风险评定
+      this.request("customerInfoQry", { ...params })
+        .then(res => {
+          this.res = res;
+          //测试改成!
+          if (res.SignFlag == "1") {
+            //已签约
+            if (res.DateFlag == "0") {
+              //未过期
+              this.riskMatch();
+            } else if (res.DateFlag != "0" && res.CustomerRiskGrade != 0) {
+              this.dialog = {
+                type: "4",
+                show: true,
+                text: "确定",
+                cancel: "取消"
+              };
+              // this.$router.push({ name: "riskIndex" });
+            } else {
+              // this.dialog = {
+              //   //未进行风险评估
+              //   type: "3",
+              //   show: true,
+              //   text: "评估",
+              //   cancel: "取消"
+              // };
+              this.$router.push({ name: "riskIndex" });
+            }
+          } else {
+            //未签约
+            this.isWhite();
+          }
+        })
+        .catch(err => {
+          if (err._RejCode == "TimeOut") {
+            // this.dialog = {
+            //   type: "6",
+            //   show: true,
+            //   text: "登录",
+            //   cancel: "取消"
+            // };
+            let params = {
+              ios: "DLoginVController",
+              ClassName:
+                "com.example.zlv_master.activity.login.login.LoginActivity"
+            };
+            window.NativeCall.goToNativePage(params, res => {
+              this.login();
+            });
+          } else {
+            this.$toast(err._RejMessage);
+          }
+        });
+    },
+    //判断等级是否匹配
+    riskMatch() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        ProductType: "1",
+        ProductNo: this.ProductNo,
+        CustomerIdentifyType: "1",
+        // CustomerIdentify: this.$store.state.userInfo.UserId
+        CustomerIdentify: this.$store.state.userInfo.CifNo
+      };
+      this.request("riskMatchValidate", { ...params })
+        .then(res => {
+          this.res = res;
+          // res.CustomerRiskGrade = '0'
+          if (
+            res.CustomerRiskGrade < res.ProductRiskGrade ||
+            res.CustomerRiskGrade == "0"
+          ) {
+            //测试改成>
+            // Toast("当前用户等级不匹配,请重新评估");
+            this.dialog = {
+              type: "5",
+              show: true,
+              text: "确定",
+              cancel: "取消"
+            };
+            // this.$router.push({ name: "riskIndex" });
+            //测试注掉
+            // setTimeout(function() {
+            //   this.$router.push({
+            //     name: "riskIndex",
+            //     query: res.CustomerRiskGrade
+            //   });
+            // }, 3000);
+          } else {
+            if (
+              this.data.productState == "0" ||
+              this.data.productState == "1"
+            ) {
+              this.$router.push({ name: "apply" });
+            } else {
+              this.$toast("产品已成立，无法购买");
+            }
+          }
+        })
+        .catch(err => {
+          let str = err._RejMessage;
+          this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+        });
+    },
+    //判断是否是白名单
+    isWhite() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        // MonilePhne: this.$store.state.userInfo.Id,
+        MonilePhne: this.$store.state.userInfo.CifNo
+      };
+      this.request("whiteListQry", { ...params })
+        .then(res => {
+          this.res = res;
+          console.log(res);
+          if (res.List.length > 0) {
+            // this.dialog = {
+            //   type: "1",
+            //   show: true,
+            //   text: "立即签约",
+            //   cancel: "取消"
+            // };
+            this.showOther();
+          } else {
+            // this.dialog = {
+            //   type: "2",
+            //   show: true,
+            //   text: "立即咨询",
+            //   cancel: "取消"
+            // };
+            this.request("ManagerInfoQry")
+              .then(res => {
+                this.$store.state.manageMoney.phoneNum = res.Phone;
+                this.dialog = {
+                  type: "2",
+                  show: true,
+                  text: "立即咨询",
+                  cancel: "取消"
+                };
+              })
+              .catch(error => {
+                this.dialog = {
+                  type: "2",
+                  show: true,
+                  text: "立即咨询",
+                  cancel: "取消"
+                };
+                this.$store.state.manageMoney.phoneNum = "95755";
+              });
+            // console.log(this.dialog);
+          }
+        })
+        .catch(err => {
+          this.$toast(err._RejMessage);
+        });
+    },
+    toApply() {
+      this.dialog = {
+        type: null,
+        show: false,
+        text: null,
+        cancel: null
+      };
+
+      this.login();
+      // console.log(this.$store.state.userInfo.Id);
+    },
+    confirm() {
+      //点击弹出的确认按钮
+      this.dialog.show = false;
+      // this.dialog1.show = false;
+      // console.log(1111);
+      if (
+        (this.dialog.type == "3") |
+        (this.dialog.type == "4") |
+        (this.dialog.type == "5")
+      ) {
+        this.$store.state.manageMoney.detailFlag = true;
+        this.$router.push({
+          name: "riskIndex"
+          // query: this.res.CustomerRiskGrade
+        });
+      } else if (this.dialog.type == "1") {
+        //去签约
+        this.dialog.show = false;
+        let _this = this;
+        setTimeout(function() {
+          _this.showOther();
+        }, 500);
+      } else if (this.dialog.type == "2") {
+        //拨打电话
+        let params = {
+          phone: this.$store.state.manageMoney.phoneNum
+        };
+        window.NativeCall.callPhone(params);
+      } else if (this.dialog.type == "6") {
+        //用户未登录
+        let params = {
+          ios: "DLoginVController",
+          ClassName: "com.example.zlv_master.activity.login.login.LoginActivity"
+        };
+        window.NativeCall.goToNativePage(params, res => {
+          this.login();
+        });
+      } else if (this.dialog.type == "7") {
+        this.$router.push({
+          name: "signInfo",
+          params: { goBackRouter: "apply" }
+        });
+      } else if (this.dialog.type == "8") {
+        let params = {
+          package: "addBankCard",
+          router: "",
+          routerDic: ""
+        };
+        window.NativeCall.goToPackage(params);
+      }
+    },
+    cancel() {
+      this.dialog.show = false;
+      if (this.dialog.type == "7") {
+        this.$toast("请至我行网点办理");
+      }
+    },
+    showOther() {
+      // console.log(1111);
+      this.dialog = {
+        type: "7",
+        show: true,
+        cancel: "否",
+        text: "是"
+      };
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: -px2vw(1);
+}
+.content::-webkit-scrollbar {
+  display: none; /*隐藏滚动条*/
+}
+.product {
+  padding: px2vw(40) 0 px2vw(36) px2vw(40);
+  height: px2vw(210);
+  background: #fff;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  .left {
+    width: px2vw(410);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    .rateText {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    .rate {
+      font-size: px2vw(50);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(249, 97, 89, 1);
+      // margin-top: px2vw(20);
+      // text-overflow: ellipsis;
+      // overflow: hidden;
+      // white-space: nowrap;
+    }
+    .textOver {
+      line-height: px2vw(37);
+      span {
+        font-size: px2vw(37);
+      }
+    }
+    .textOver1 {
+      line-height: px2vw(24);
+      padding-right:px2vw(80);
+      span {
+        font-size: px2vw(24);
+      }
+    }
+    .tab {
+      // width: px2vw(307);
+      display: flex;
+      flex-direction: row;
+      // justify-content: space-between;
+      p {
+        padding: px2vw(4) px2vw(8);
+        color: #e39e5c;
+        height: px2vw(28);
+        line-height: px2vw(28);
+        font-size: px2vw(20);
+        font-weight: 400;
+        border-radius: px2vw(4);
+        background: linear-gradient(#fffbf6, #fff4e9);
+      }
+      p:not(:first-child) {
+        margin-left: px2vw(20);
+      }
+    }
+  }
+  .right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    .holdDay {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    .day {
+      font-size: 0;
+      .num {
+        font-size: px2vw(50);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+      }
+      .text {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+      }
+    }
+    .setFontSize {
+      font-size: px2vw(30);
+    }
+    .dayText {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(125, 125, 125, 1);
+    }
+    .per {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(125, 125, 125, 1);
+      .info {
+        color: #262626;
+      }
+    }
+  }
+}
+.state {
+  height: px2vw(90);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  justify-content: space-between;
+  padding: px2vw(30) px2vw(40) px2vw(30) px2vw(40);
+  margin-top: px2vw(1);
+  background: #fff;
+  .icon {
+    color: #a8a8a8;
+    font-size: px2vw(24);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    div {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+    img {
+      width: px2vw(30);
+      height: px2vw(30);
+    }
+    p {
+      margin-left: px2vw(10);
+      margin-top: px2vw(2);
+    }
+  }
+}
+.rule {
+  padding: px2vw(40) px2vw(38) px2vw(50) px2vw(38);
+  img {
+    width: 100%;
+    height: px2vw(22);
+    margin-top: px2vw(57);
+  }
+  .shaft {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(18);
+    position: relative;
+    .title {
+      font-size: px2vw(28);
+      font-weight: 400;
+      color: #262626;
+    }
+    .time {
+      margin-top: px2vw(11);
+      font-size: px2vw(22);
+      font-weight: 400;
+      color: #7d7d7d;
+      text-align: right;
+    }
+    .left {
+      .title {
+        text-align: left;
+      }
+      .time {
+        text-align: left;
+      }
+    }
+    .center {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      margin: 0 auto;
+      .title {
+        text-align: center;
+      }
+      .time {
+        text-align: center;
+      }
+    }
+    .right {
+      .title {
+        text-align: right;
+      }
+    }
+  }
+}
+.productInfo {
+  padding: px2vw(40) px2vw(40) px2vw(52) px2vw(40);
+  box-sizing: border-box;
+  .name,
+  .num,
+  .currency {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(40);
+    .lab {
+      min-width: px2vw(140);
+      font-size: px2vw(28);
+      font-weight: 300;
+      color: #7d7d7d;
+    }
+    .content {
+      font-size: px2vw(28);
+      font-weight: 400;
+      color: #000000;
+      width: px2vw(518);
+      text-align: left;
+      // overflow: hidden;
+      // white-space: nowrap;
+      // text-overflow: ellipsis;
+      margin-left: px2vw(40);
+    }
+  }
+}
+.history {
+  padding: px2vw(40) px2vw(40) px2vw(20) px2vw(40);
+  // height: px2vw(773);
+}
+
+.buy {
+  width: 100%;
+  height: px2vw(112);
+  display: flex;
+  flex-direction: row;
+  .counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: px2vw(140);
+    background: #fff;
+    font-size: 0;
+    .iconfont {
+      font-size: px2vw(40);
+      color: #7d7d7d;
+    }
+    p {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #262626;
+      margin-top: px2vw(12);
+    }
+  }
+  .btn {
+    flex: 1;
+    font-size: px2vw(34);
+    height: px2vw(112);
+    font-weight: 400;
+    color: #ffffff;
+    text-align: center;
+    line-height: px2vw(112);
+    background: linear-gradient(
+      left,
+      rgba(218, 154, 120, 1),
+      rgba(248, 204, 173, 1)
+    );
+  }
+}
+h2 {
+  font-size: px2vw(32);
+  font-weight: bold;
+  color: #262626;
+  text-align: left;
+}
+.top {
+  margin-top: px2vw(20);
+  background: #fff;
+  box-sizing: border-box;
+}
+* {
+  padding: 0;
+  margin: 0;
+}
+</style>

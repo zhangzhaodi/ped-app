@@ -1,0 +1,203 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div v-if="signList.length>0" class="content">
+      <div class="item" v-for="(item,index) in signList" :key="index">
+        <div class="left">
+          <!-- <span>{{item.BankId}}</span> -->
+          <img :src="tools.bankIconImg(item.BankId)" />
+        </div>
+        <div class="center">
+          <div class="card">
+            <span class="bankAccount">{{item.PayerAccount |CardProtect}}</span>
+            <span v-if="item.bankAcType">|</span>
+            <span v-if="item.bankAcType">{{item.bankAcType|cardTypeName}}</span>
+          </div>
+          <div class="phone">
+            <span>预留手机号:</span>
+            <span>{{item.TelephoneNum |CardProtect}}</span>
+          </div>
+        </div>
+        <span class="right" @click="breakOut(item)">解约</span>
+      </div>
+    </div>
+    <div class="noCard" v-else>
+      <img src="~@/assets/fundCollection/img_zanwuqianyuezhanghao@2x.png" />
+      <p>暂无已签约账号</p>
+    </div>
+    <Captcha
+      :title="Captcha.title"
+      :visible.sync="Captcha.visible"
+      :phoneNum="phone"
+      @confirm="confirm"
+    ></Captcha>
+  </div>
+</template>
+
+<script>
+import header from "@/components/Header/Header";
+const icon = require("@/assets/myAccount/addBankCard/ico_right@3x.png");
+import { Toast } from "vant";
+import Captcha from "@/components/Popup/Captcha";
+export default {
+  components: {
+    Myheader: header,
+    [Toast.name]: Toast,
+    Captcha
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      phone: null,
+      signList: [],
+      Captcha: {
+        title: "请输入短信验证码",
+        visible: false
+      },
+      item: null
+    };
+  },
+  methods: {
+    breakOut(item) {
+      this.item = item;
+      this.phone = this.item.TelephoneNum
+      this.Captcha.visible = true;
+    },
+    confirm(val) {
+      //短信验证码确认回调
+      console.log(val)
+      this.Captcha.visible = false;
+      this.sendRequest(val);
+    },
+    getList() {
+      let params = {
+        BranchId: "7010",
+        ChnlId: "62",
+        LoginType: "R",
+        BankId: "9999",
+        CustomerNo: this.$store.state.userInfo.CifNo,
+        ChildBatchNum: "1",
+        LeftChildNum: "5",
+        PayeeAcNo: this.$store.state.fundCollection.payeer.vouId,
+      };
+      // this.$toast.clear()
+      this.request('CrossBankGetheringQry',{...params}, true).then(res=>{
+        // console.log(res)
+        this.signList = []
+        res.PayerAcList.map((item, index) => {
+            this.signList.push({ ...item, ...res.AddInfo[index] });
+          });
+        this.$store.state.fundCollection.payerList =this.signList
+      })
+    },
+    sendRequest(val) {
+      let params = {
+        BranchId: "7010",
+        ChnlId: "62",
+        LoginType:'R',
+        BankId:'9999',
+        ProtocolNo: this.item.ProtocolNo,
+        PayeeAcNo: this.item.RecverAccount,
+        PayeeAcName: this.item.RecverName,
+        PayerAcNo: this.item.PayerAccount,
+        PayerAcName: this.item.PayerName,
+        IdType: this.item.PapersType,
+        // IdNo: "350126196302230837",
+        IdNo: this.item.CustomerNo,
+        PayerMobilePhone: this.item.TelephoneNum,
+        // QueryType: this.item.QueryType,
+        QueryType: '0',
+        AddInfo: "summer",
+        SmsNbr:val.SmsNbr,
+        UserSmsId:val.UserSmsId,
+        SmsCode:val.code,
+        ApprTyp:'1',
+        // phoneNbr:this.item.TelephoneNum
+      };
+      this.request("TimingReceiptDel", params).then(res => {
+        Toast({
+          message: "解约成功",
+          icon: icon
+        });
+        this.getList()
+      });
+    }
+  },
+  created() {
+    // console.log(this.$store.state.fundCollection.cardList[0]);
+    this.getList()
+    // this.signList = this.$store.state.fundCollection.signInfo;
+    // this.phone = this.$store.state.userInfo.MobilePhone;
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  .item {
+    height: px2vw(110);
+    background-color: #fff;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 px2vw(40);
+    margin-top: px2vw(20);
+    .left {
+      width: px2vw(56);
+      height: px2vw(56);
+      img {
+        width: 100%;
+      }
+    }
+    .center {
+      flex: 1;
+      margin-left: px2vw(22);
+      height: px2vw(70);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      .card {
+        font-size: px2vw(30);
+        font-weight: 400;
+        color: #262626;
+        letter-spacing: 1px;
+      }
+      .phone {
+        font-size: px2vw(24);
+        font-weight: 300;
+        color: #7d7d7d;
+      }
+    }
+    .right {
+      font-size: px2vw(26);
+      font-weight: 400;
+      color: #ff4040;
+    }
+  }
+}
+
+.noCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: px2vw(168);
+  img {
+    width: px2vw(300);
+    height: px2vw(300);
+  }
+  p {
+    font-size: px2vw(28);
+    line-height: px2vw(40);
+    font-weight: 400;
+    color: #262626;
+  }
+}
+</style>

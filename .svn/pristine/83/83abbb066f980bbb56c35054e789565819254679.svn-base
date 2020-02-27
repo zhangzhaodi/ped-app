@@ -1,0 +1,81 @@
+<template>
+  <van-popup
+    v-model="show"
+    position="bottom"
+    @closed="closed"
+    round
+    :closeable="closeable"
+    lazy-render
+    style="height:80%"
+  > 
+    <p class="title">{{title}}</p>
+    <p class="item" v-for="(item,index) in netList" :key="index">{{item.title}}</p>
+  </van-popup>
+</template>
+
+<script>
+import { Popup } from "vant";
+export default {
+  components: {
+    [Popup.name]: Popup
+  },
+  props: {
+    selectNet: {
+      require: true
+    },
+    netList: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      show: false,
+      title: "请选择营业网点",
+      closeable:true
+    };
+  },
+  methods: {
+    onCancel() {
+      this.show = false;
+      this.$parent.selectNet = false;
+    },
+    onConfirm(picker) {
+      let year = new Date(picker).getFullYear();
+      let month = new Date(picker).getMonth() + 1;
+      let day = new Date(picker).getDate();
+      // console.log(picker);
+      let data =
+        year +
+        "-" +
+        (month > 9 ? month : "0" + month) +
+        "-" +
+        (day > 9 ? day : "0" + day);
+      this.selectData = data;
+      this.show = false;
+      this.$parent.selectNet = false;
+    },
+    closed() {
+      this.$parent.selectNet = false;
+    }
+  },
+  watch: {
+    selectNet: {
+      handler(val) {
+        this.show = val;
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.item {
+  height: px2vw(110);
+  line-height: px2vw(110);
+  font-size: px2vw(30);
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  padding: 0 px2vw(40);
+}
+</style>

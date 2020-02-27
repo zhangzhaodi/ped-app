@@ -1,0 +1,167 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <van-tabs v-model="active" class="my-tabs" :line-width="`4.27vw`">
+      <van-tab title="历史业绩" name="once">
+        <ul class="performance">
+          <li class="list-item title">
+            <div>日期</div>
+            <div>本产品</div>
+            <div>沪深300</div>
+          </li>
+          <li v-for="(item,index) in historyEarnings" class="list-item" :key="index">
+            <div class="date">{{item.date}}</div>
+            <!-- <div><span v-if='item.this > 0'>+</span>{{item.unit}}</div> -->
+            <div :class="item.other > 0 ? 'earnings' : 'minus'"><span v-if='item.this > 0'>+</span>{{item.this}}</div>
+            <div :class="item.other > 0 ? 'earnings' : 'minus'"><span v-if='item.range > 0'>+</span>{{item.other}}%</div>
+          </li>
+        </ul>
+      </van-tab>
+      <van-tab title="历史净值" name="day">
+        <ul class="performance">
+        <li class="list-item title">
+          <div>日期</div>
+          <div>本产品</div>
+          <div>沪深300</div>
+        </li>
+        <li v-for="(item,index) in historyNewWorth" class="list-item" :key="index">
+          <div class="date">{{item.date}}</div>
+          <div :class="item.this > 0 ? 'earnings' : 'minus'"><span v-if='item.this > 0'>+</span>{{item.this}}%</div>
+          <div :class="item.other > 0 ? 'earnings' : 'minus'"><span v-if='item.this > 0'>+</span>{{item.range}}%</div>
+        </li>
+        </ul>
+      </van-tab>
+
+    </van-tabs>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions } from "vuex";
+import { Amount, InputItem } from "mand-mobile";
+import { Tab, Tabs } from "vant";
+import vInput from "@/components/Input/v-input/";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Tab.name]: Tab,
+    [Tabs.name]: Tabs,
+    vInput
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      form: {
+        desc: '',
+      },
+      active: '',
+      historyEarnings: [{
+        date: '近1周',
+        this: '4.6',
+        other: '4.2'
+      }, {
+        date: '近1月',
+        this: '-1.25',
+        other: '-4.45'
+      }, {
+        date: '近3月',
+        this: '5.63',
+        other: '4.23'
+      },],
+      historyNewWorth: [{
+        date: '近1周',
+        unit: '4.6',
+        total: '4.6',
+        range: '3.2'
+      }, {
+        date: '近1周',
+        unit: '4.6',
+        total: '4.6',
+        range: '3.2'
+      }, {
+        date: '近1周',
+        unit: '4.6',
+        total: '4.6',
+        range: '3.2'
+      },]
+    };
+  },
+  computed: {
+  },
+  created() { },
+  mounted() { },
+  methods: {
+    handleSelect(item) {
+      this.selectItem = { ...item };
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/ .my-tabs {
+  .van-tabs__wrap {
+    height: px2vw(130);
+  }
+  .van-tab {
+    font-size: px2vw(30);
+    font-family: $font-family;
+    color: #7d7d7d;
+    font-weight: 500;
+    line-height: px2vw(130);
+    &.van-tab--active {
+      color: $color-text;
+    }
+  }
+  .van-tabs__line {
+    background: $color-text;
+    bottom: 27px;
+  }
+  .van-hairline--top-bottom::after {
+    border-width: 0;
+  }
+}
+/deep/ .van-tab__pane {
+  background: #fff;
+  padding: 0 px2vw(40);
+}
+.performance {
+  display: flex;
+  flex-direction: column;
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    height: px2vw(110);
+    align-items: center;
+    font-size: px2vw(30);
+    color: #262626;
+    border-bottom: 1px solid #ebeef0;
+    &:last-child {
+      border-bottom: none;
+    }
+    &.title {
+      color: #7d7d7d;
+    }
+    div {
+      display: flex;
+      width: px2vw(140);
+      &:last-child {
+        width: px2vw(115);
+      }
+      &.earnings {
+        color: #f96159;
+      }
+      &.minus {
+        color: #27cd6e;
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,261 @@
+<template>
+  <van-popup :overlay-style="{background:'#fff',opacity: 0}" v-if="visible" v-model="visible" :style="{  height: '100%',width: '100%' }" position="right">
+    <div class="outer">
+      <div class="custom-header">
+        <span class="iconfont" @click="onClickLeft">&#xe630;</span>
+        <span class="title">选择开户网点</span>
+        <span class="edit"></span>
+      </div>
+      <search :placeholder="`请输入`" @search="getData" @clear="getData"></search>
+      <Scroller>
+        <van-pull-refresh v-model="isLoading" @refresh="getData">
+          <van-index-bar v-if="indexListData.length > 0" :z-index="1" :sticky-offset-top="98" :index-list="indexAnchor" highlight-color="#262626">
+            <div v-for="(item,index) in indexListData" :key="index">
+              <van-index-anchor style="visibility: hidden;height: 0;" :index="item.anchor">{{item.anchor}}</van-index-anchor>
+              <div class="paddingLR40">
+                <van-cell v-for="(child,index) in item.children" :key="index" :clickable="true" @click="handleSelect(child)">
+                  <template slot="title">
+                    <div slot="title" class="payee-col">
+                      <div class="payee-right">
+                        <div>{{child.bankname}}</div>
+                      </div>
+                    </div>
+                  </template>
+                </van-cell>
+              </div>
+            </div>
+          </van-index-bar>
+          <div v-else class="no-data">
+            {{loadingTxt}}
+          </div>
+        </van-pull-refresh>
+
+      </Scroller>
+
+    </div>
+  </van-popup>
+</template>
+<script>
+import { IndexBar, IndexAnchor, Popup, Toast, PullRefresh } from "vant";
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import Search from "@/components/Search";
+var Pinyin = require("@/tools/pinyin.js").Pinyin;
+export default {
+  components: {
+    Search,
+    Myheader: Header,
+    [IndexBar.name]: IndexBar,
+    [IndexAnchor.name]: IndexAnchor,
+    [Toast.name]: Toast,
+    [Popup.name]: Popup,
+    Scroller,
+    [PullRefresh.name]: PullRefresh
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    bankId: {
+      type: String,
+      default: ''
+    },
+    cityCode: {
+      type: String,
+      default: ''
+    },
+    bankName: {
+      type: String,
+      default: ''
+    }
+  },
+  data() {
+    return {
+      visible: this.show,
+      //右侧锚点列表
+      indexAnchor: [],
+      //带锚点的数据列表
+      indexListData: [],
+      selectItem: {},
+      data: [],
+      isLoading: false,
+      loadingTxt: '加载中……'
+    };
+  },
+  created() {
+    // this.getIndexList();
+    // this.getData();
+  },
+  methods: {
+    getData(data = "") {
+      //bankId 为313时为城商银行，包括别行  前端自定义加入焦作中旅银行，筛选掉其他行， 但仍存留问题，用户故意去搜索别的城商行仍能搜索出结果
+      this.loadingTxt = '加载中……'
+      let bankCode = this.bankId.substring(0, 3);
+      let params = {
+        //branchId: '2336',
+        ChnlId: '62',
+        NodeCity: this.cityCode,//cityCode '9024'
+        BankCataLog: bankCode,//'bankId'  '102'
+        BankName: data,
+        DirectBankNo: this.bankId.length > 3 ? this.bankId : ''
+      }
+      this.request('QryOpenBankNetworkPoint', params, true).then((res) => {
+        if (res.NetworkList.length > 0) {
+          this.data = res.NetworkList;
+          if (this.bankName.indexOf("中旅") > 0) {//查询结果针对中旅银行特殊处理，网点结果筛选掉别的城商行网点。 （洛阳的某个银行）
+            // 此方法 应该在结果进行筛选
+            let arr = [];
+            this.data.map(item => {
+              if (item.bankname.indexOf("中旅") > 0) {
+                arr.push(item);
+              }
+            })
+            this.data = arr;
+          }
+          this.getIndexList();
+          this.isLoading = false;
+        } else {
+          this.loadingTxt = '暂无数据'
+        }
+        console.log('查询开户网点', res);
+      }).catch((error) => {
+        console.log(error)
+        this.indexListData = [];
+        this.indexAnchor = [];
+        this.loadingTxt = '暂无数据'
+        this.isLoading = false;
+      })
+
+    },
+    // 字母索引排序 获得新数据
+    getIndexList() {
+      let data = [...this.data];
+      console.log(data, "数组");
+      //第一轮生成带有26个字母的锚点列表
+      let arrList = [];
+      for (let i = 0; i < 26; i++) {
+        let item = {
+          anchor: String.fromCharCode((65 + i)),
+          children: []
+        }
+        arrList.push(item);
+      }
+      // console.log('arrList', arrList);
+      //将对应字母数据插入到indexList里
+      data.map(item => {
+        let name = item.bankname;//后台返回名字字段
+        let PinYin = Pinyin.parse(name)[0];
+        let firstStr = PinYin.target.substring(0, 1).toUpperCase();
+        for (let child of arrList) {
+          //可以加入其他判断 比如 我的账户（使用id作对比）
+          //字母索引插入
+          if (child.anchor === firstStr) {
+            child.children.push(item)
+          }
+        }
+      })
+      // 第三轮遍历arrList过滤掉无内容素的item,避免空占位
+      let indexList = [], indexAnchor = [];
+      for (let item of arrList) {
+        if (item.children.length > 0) {
+          indexList.push(item);
+          indexAnchor.push(item.anchor)
+        }
+      }
+      this.indexListData = indexList;
+      this.indexAnchor = indexAnchor;
+    },
+    onClickLeft() {
+      this.visible = false;
+      this.$emit("close");
+    },
+    handleSelect(item) {
+      this.selectItem = item;
+      this.visible = false;
+      this.$emit("select", this.selectItem);
+    }
+  },
+  watch: {
+    //监听父组件变化，并赋值
+    show: {
+      handler(val) {
+        this.visible = this.show;
+
+      }
+    },
+    visible: {
+      handler(val) {
+        this.$emit('update:show', val)
+        if (val) {
+          // if (this.indexListData.length === 0) {
+          this.getData();
+          // }
+        }
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/ .outer {
+  .no-data {
+    padding-top: px2vw(20);
+    text-align: center;
+    font-size: px2vw(28);
+    font-family: $font-family;
+    font-weight: 400;
+    color: #7d7d7d;
+    height: 100%;
+  }
+  .van-nav-bar {
+    z-index: 5 !important;
+    &.van-hairline--bottom::after {
+      border-bottom-width: 0;
+    }
+  }
+  .van-index-bar__sidebar {
+    margin-right: px2vw(16);
+  }
+  .van-nav-bar .van-icon {
+    color: #333;
+  }
+  .van-index-bar__index--active {
+    color: #333 !important;
+  }
+  .van-index-bar__index {
+    color: #0085ff;
+    line-height: px2vw(36);
+  }
+  .scrollerBox {
+    .van-cell {
+      margin: 0;
+      height: px2vw(110);
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+    .van-index-anchor {
+      background: #f5f6f8;
+      padding: 0 px2vw(40);
+      height: px2vw(61);
+      font-size: px2vw(24);
+      color: $color-text;
+      font-weight: 500;
+    }
+
+    .payee-col {
+      display: flex;
+      align-items: center;
+      .payee-right {
+        color: #262626;
+        font-weight: 400;
+        font-size: px2vw(30);
+        font-family: PingFangSC;
+        letter-spacing: px2vw(1);
+      }
+    }
+  }
+}
+</style>

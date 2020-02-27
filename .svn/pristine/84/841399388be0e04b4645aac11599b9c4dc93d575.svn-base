@@ -1,0 +1,80 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <Scroller>
+      <div class="img-box">
+        <img src="@/assets/椭圆形@2x.png" alt />
+      </div>
+      <div class="text-box">充值成功</div>
+      <div class="hint">预计10s内到账，实际时间以入账银行为准</div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button @click="next">完成</van-button>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+
+export default {
+  components: {
+    Myheader: Header,
+    Scroller
+  },
+  data() {
+    return {};
+  },
+  created() {},
+  methods: {
+    next() {
+      //回首页
+      window.NativeCall.goToNativePage({
+        ClassName: "com.example.zlv_master.activity.main.MainActivity",
+        ios: "DOneController"
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  .scrollerBox {
+    .img-box {
+      width: px2vw(110);
+      margin: 0 auto;
+      margin-top: px2vw(86);
+      img {
+        width: 100%;
+      }
+    }
+    .text-box {
+      font-size: px2vw(40);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      text-align: center;
+      margin: 0 px2vw(45);
+      margin-top: px2vw(40);
+      padding-bottom: px2vw(20);
+    }
+    .hint {
+      font-size: px2vw(28);
+      font-family: PingFangSC-Light, PingFangSC;
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+      text-align: center;
+    }
+    .btn-box {
+      padding: 0 px2vw(40);
+      .van-button {
+        background: none;
+        color: rgba(62, 143, 255, 1);
+        border: 1px solid rgba(62, 143, 255, 1);
+      }
+    }
+  }
+}
+</style>

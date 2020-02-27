@@ -1,0 +1,115 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller>
+      <Pagetitle :title="titleInfo" :notice="noticeInfo"></Pagetitle>
+      <van-password-input :value="value" info @focus="showKeyboard = true" gutter="10px" />
+      <van-number-keyboard
+        :show="showKeyboard"
+        @input="onInput"
+        @delete="onDelete"
+        @blur="showKeyboard = false"
+      />
+      <div class="footer-box">
+        <div class="btn-box">
+          <!-- <button disabled @click="showMask('Confirm')">下一步</button> -->
+          <van-button :style="styleObject" :disabled="forbidden" @click="showMask('Confirm')">下一步</van-button>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Pagetitle from "./components/Pagetitle";
+import { Button, PasswordInput, NumberKeyboard } from "vant";
+import {mapGetters,mapActions} from 'vuex'
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    Pagetitle,
+    [Button.name]: Button,
+    [PasswordInput.name]: PasswordInput,
+    [NumberKeyboard.name]: NumberKeyboard
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+       form:{
+        username: '',
+        IDCard: '',
+        eduBack: '',
+        workplace: '',
+        address: '',
+        job: '',
+      },
+      titleInfo: "再次输入账户交易密码",
+      noticeInfo: "请设置II类账户交易密码",
+      //是否禁用
+      forbidden: true,
+      styleObject: {
+        background: ""
+      },
+      value: "",
+      showKeyboard: true
+    };
+  },
+  computed:{
+    ...mapGetters('eleAccounts',[
+        "eleForm"
+    ]),
+  },
+  created() {
+    console.log("接受vuex",this.eleForm)
+    this.form = {...this.eleForm}
+    alert(this.form)
+  },
+
+  methods: {
+    showMask() {
+      alert("前端已加载 Confirm 方法，下面调 手机原生方法");
+      // window.NativeCall.Confirm("孙浩真优秀");
+    },
+    goProtocol() {
+      this.$router.push("indexList");
+    },
+    onInput(key) {
+      this.value = (this.value + key).slice(0, 6);
+      this.showKeyboard = true;
+      if (this.value.length == 6) {
+        this.forbidden = false;
+        this.styleObject.background = "rgba(249,97,89,1)";
+      } else {
+      }
+    },
+    onDelete() {
+      this.value = this.value.slice(0, this.value.length - 1);
+      if (this.value.length == 6) {
+      } else {
+        this.forbidden = true;
+        this.styleObject.background = "";
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.van-password-input ul {
+  width: 314px;
+  margin: 0 auto;
+}
+.van-password-input ul li {
+  border-radius: px2vw(6);
+  border: 1px solid rgba(153, 156, 160, 1);
+  height: px2vw(96);
+}
+</style>

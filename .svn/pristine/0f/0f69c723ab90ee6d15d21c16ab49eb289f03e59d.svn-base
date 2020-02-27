@@ -1,0 +1,105 @@
+<template>
+  <div class="viewport">
+    <Myheader title="账单"
+              :params="{leftShow: false}"></Myheader>
+    <div class="content">
+      <p class="company">
+        <img v-if="$route.params.PayType==='0'"
+             src="@/assets/payImages/shuifeiLi.png">
+        <img v-else-if="$route.params.PayType==='1'"
+             src="@/assets/payImages/icon_dianfei@2x.png">
+        <img v-else-if="$route.params.PayType==='2'"
+             src="@/assets/payImages/ranqifeilist.png">
+        <img v-else
+             src="@/assets/payImages/ranqifeilist.png">{{$route.params.BusinessName}}</p>
+      <p class="money"><span>￥</span>{{$route.params.PayAmt/100 | Money}}</p>
+      <p class="stat">交易成功</p>
+      <md-field>
+        <md-detail-item title="交易说明"
+                        :content="$route.params.PayType | type" />
+        <md-detail-item title="充值金额"
+                        :content="$route.params.PayAmt/100+'元'" />
+        <md-detail-item title="充值户号"
+                        :content="$route.params.UserNo" />
+        <md-detail-item title="交易时间"
+                        :content="payTime" />
+        <md-detail-item title="订单编号"
+                        :content="$route.params.PayTranSeqNo" />
+      </md-field>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header"
+import { Field, DetailItem } from 'mand-mobile'
+export default {
+  name: 'paymentRecordDetail',
+  components: {
+    Myheader: Header,
+    [Field.name]: Field,
+    [DetailItem.name]: DetailItem,
+  },
+  data () {
+    return {
+      detail: null
+    }
+  },
+  filters: {
+    type (num) {
+      return {
+        '0': '水费',
+        '1': '电费',
+        '2': '燃气费',
+        '4': '电话费'
+      }[num]
+    }
+  },
+  computed: {
+    payTime () {
+      return this.$route.params.PayDate.replace(/(\d{4})(\d{2})/, '$1-$2-') + ' ' + this.$route.params.PayTime.replace(/(\d{2})(\d{2})/, '$1:$2:')
+    }
+  }
+}
+</script>
+
+<style lang='scss' scoped>
+.viewport {
+  height: 100vh;
+  display: flex;
+  .content {
+    flex: 1;
+    background-color: #ffffff;
+    p {
+      margin-bottom: px2vw(20);
+      display: flex;
+      justify-content: center;
+      &.company {
+        padding-top: px2vw(30);
+        align-items: center;
+        font-size: px2vw(26);
+        color: #262626;
+        img {
+          margin-right: px2vw(10);
+          width: px2vw(32);
+          height: px2vw(32);
+        }
+      }
+      &.money {
+        align-items: flex-end;
+        font-size: px2vw(70);
+        color: #262626;
+        span {
+          margin-bottom: px2vw(5);
+          font-size: px2vw(40);
+        }
+      }
+      &.stat {
+        align-items: center;
+        font-size: px2vw(26);
+        color: #7d7d7d;
+      }
+    }
+  }
+}
+</style>

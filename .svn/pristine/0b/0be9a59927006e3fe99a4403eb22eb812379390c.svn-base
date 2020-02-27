@@ -1,0 +1,150 @@
+<template>
+  <div class="wrapper">
+    <Myheader :title="title"
+              :params="params"></Myheader>
+    <div class="content">
+      <div class="uer_info">
+        <ul>
+          <li v-for="(item,index) in contacts"
+              :key="index"
+              @click="choseUser(item)">
+            <div class="user_title">
+              <p>{{item.paymentName}}</p>
+              <p>用户名：{{item.paymentNo}}</p>
+            </div>
+            <div class="user_img">
+              <img src="@/assets/payImages/icon_bianji.png">
+              <img src="@/assets/payImages/icon_gengduo.png">
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="new_uesr"
+           @click="createNew">
+        <div class="new_info">
+          <p>新建名录</p>
+          <p>将当前用户存为新名录</p>
+        </div>
+        <img src="@/assets/payImages/icon_gengduo.png">
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  components: {
+    Myheader: Header,
+  },
+  data () {
+    return {
+      title: "常用名册",
+      params: {
+        leftShow: false
+      },
+      // 常用名册数据
+      contacts: []
+    }
+  },
+  mounted () {
+    this.initRoster()
+  },
+  methods: {
+    initRoster () {
+      const { payType } = this.$route.query
+      this.request("PaymentRegister", {
+        OperationType: 3,
+        Type: payType,
+        BankId: "9999",
+        BranchId: "1001",
+        ChnlId: "62",
+      }).then(res => {
+        this.contacts = res.ListPaymentReg
+      }).catch(error => {
+        console.log(error);
+      });
+    },
+    // 新建联系人
+    createNew () {
+      this.$router.push({ path: "" })
+    },
+    choseUser (item) {
+      const { payType } = this.$route.query
+      this.$router.replace({ path: "/electricityCharge", query: { ...item, payType } })
+    }
+  },
+}
+</script>
+
+<style lang='scss' scoped>
+.wrapper {
+  position: absolute;
+  .uer_info {
+    padding: 0 px2vw(40);
+    background-color: #fff;
+    margin-top: px2vw(20);
+    ul {
+      li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: px2vw(119);
+        border-bottom: 1px solid #eff0f1;
+        .user_title {
+          font-size: px2vw(30);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+          letter-spacing: px2vw(1);
+          p:last-child {
+            margin-top: px2vw(16);
+            color: rgba(125, 125, 125, 1);
+            font-size: px2vw(24);
+          }
+        }
+      }
+    }
+    .user_img {
+      img:last-child {
+        width: px2vw(12);
+        height: px2vw(24);
+        margin-left: px2vw(40);
+      }
+      img:first-child {
+        width: px2vw(34);
+        height: px2vw(34);
+      }
+    }
+  }
+  .new_uesr {
+    width: px2vw(750);
+    height: px2vw(120);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 1);
+    margin-top: px2vw(20);
+    padding: 0 px2vw(40);
+    box-sizing: border-box;
+    .new_info {
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      letter-spacing: px2vw(1);
+    }
+    p:last-child {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Light, PingFang SC;
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+      margin-top: px2vw(16);
+    }
+    img {
+      width: px2vw(12);
+      height: px2vw(24);
+    }
+  }
+}
+</style>

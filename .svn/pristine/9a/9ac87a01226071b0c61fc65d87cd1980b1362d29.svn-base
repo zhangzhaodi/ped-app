@@ -1,0 +1,520 @@
+<template>
+  <div class="outer set-card debit-card">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div v-if="phoneConfig.payeeCardList.length > 0">
+      <div class="info">开通后，您可以将所绑定的手机号用于收款</div>
+      <section class="field-section first">
+        <van-cell-group class="filed_cell phoneSwicth">
+          <van-cell>
+            <template slot="title">
+              <span class="custom-title">手机号收款</span>
+            </template>
+            <template>
+              <van-switch size="22px"  v-model="isOpen"  @input="toUnbind" />
+            </template>
+          </van-cell>
+        </van-cell-group>
+      </section>
+      <div v-if="isOpen">
+        <section class="field-section">
+          <van-cell-group class="filed_cell payee" @click="openCardList">
+            <van-cell>
+              <template slot="title">
+                <span class="custom-title">收款账户</span>
+              </template>
+              <template>
+                <span class="binded">中旅银行 | {{selectItem.CustomerName}}（{{selectItem.AcNo | CardNoFour}}）</span>
+              </template>
+              <template slot="right-icon">
+                <div v-if="!phoneBinded">
+                  <span class="iconfont">&#xe649;</span>
+                </div>
+              </template>
+            </van-cell>
+          </van-cell-group>
+        </section>
+
+        <section class="field-section">
+          <div class="filed_cell">
+            <div class="label">手机号码</div>
+            <div class="filed" style="text-align:right;">
+              <!-- <m-input v-if="!phoneBinded" type="phone" style="text-align:right;" :readonly="true" v-model="selectItem.Phone" :value="selectItem.Phone" placeholder="请输入银行卡预留手机号"></m-input> -->
+              <div>
+                {{selectItem.Phone}}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="terms" v-if="!phoneBinded">
+          <van-checkbox v-model="checked">
+            本人已阅读并同意<a href="#">《条款》</a>
+            <img slot="icon" slot-scope="props" :src="props.checked ? icon.active : icon.inactive">
+          </van-checkbox>
+        </div>
+
+        <div class="footer-box" >
+          <div class="btn-box">
+            <van-button v-if="!phoneBinded" class="marginLR40 bind-btn" :loading="loading" :disabled="disabled" @click="bindPhone">绑定</van-button>
+            <van-button v-if="phoneBinded" @click="goChange" class="marginLR40 bind-btn">更换账号</van-button>
+          </div>
+        </div>
+
+        <p class="tip">温馨提示<br />
+          1、手机号绑定开通时请确保您的账户开户时间在6个月之上、预留手机号码在6个月之上且账户已发生过实际交易。 <br />
+          2、您的账户与手机绑定后，汇款人可通过绑定的手机号码直接汇入您的绑定账户，请确保手机号码和账户为本人所有和控制且真实有效。 <br />
+          3、手机号绑定收款服务一个手机号码只能对应一个焦作中旅银行账户。如果变更手机号码或者账户请注销后重新绑定。 <br />
+          4、同一手机号码在多家银行绑定多个账号时，则最先绑定的账户为默认汇款账户。 <br />
+          5、手机号码绑定收款服务单笔限额为人民币1万元（含）。
+        </p>
+
+      </div>
+    </div>
+
+    <div v-else class="nodata-box">
+      <img :src="require(`@/assets/transferAccounts/img_wufuhezhanghu@2x.png`)" alt />
+      <p class="text">对不起，您未绑定我行I类实体账户</p>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button class="ghost" @click="toBindCard">绑定中旅银行卡</van-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 选择付款银行卡弹层 -->
+    <popup-round class="payee-card-popup" :visible.sync="popupShow" :title="`选择账户`" @confirm="handleConfirm">
+      <van-radio-group v-model="tempItem.AcNo">
+        <van-cell-group>
+          <van-cell class="payee-card__select" v-for="(item,index) in phoneConfig.payeeCardList" :key="index" :title="item.name" clickable @click="handleSelect(item)">
+            <template slot="title">
+              <div class="bank-icon_wrap">
+                <img :src="require(`@/assets/bankIcon/icon_CTS.png`)" alt />
+              </div>
+            </template>
+            <template slot="default">
+              <div>
+                <p class="card">{{item.AcNo | CardHide}}</p>
+                <div class="balance">{{item.bankName || '焦作中旅银行'}}</div>
+                <!-- | {{item.contTypCd | cardTypeName}}{{item.acctName ? `-${item.acctName}`: ''}} -->
+              </div>
+            </template>
+            <van-radio slot="right-icon" :name="item.AcNo">
+              <img slot="icon" slot-scope="props" v-show="props.checked" class="check-icon" :src="props.checked ? icon2.active : icon2.inactive">
+            </van-radio>
+          </van-cell>
+        </van-cell-group>
+      </van-radio-group>
+    </popup-round>
+
+    <captcha :visible.sync="captchaShow" :phoneNum="phone" @confirm="onSubmitConfirm"></Captcha>
+
+    <MyDialog :show="cancelConfirm" :isClose="false" :confirmButtonText="`确定`" :cancelButtonText="`取消`" @cancel="cancelConfirm = false" @con="unbindConfirm">
+      <p slot="content" class="dialog-content">
+        执行此操作将会解绑手机号，是否继续？
+      </p>
+    </MyDialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { Amount, InputItem } from "mand-mobile";
+import { Popup, Cell, CellGroup, Toast, Switch } from "vant";
+import mInput from "@/components/Input/bankCardNum";
+import Captcha from '@/components/Popup/Captcha'
+import PopupRound from "@/components/PopupRound";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { mapState , mapMutations } from 'vuex'
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    mInput,
+    [Switch.name]: Switch,
+    Captcha,
+    [Toast.name]: Toast,
+    [Cell.name]: Cell,
+    [CellGroup.name]: CellGroup,
+    PopupRound,
+    MyDialog: Dialog
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      tempItem: {},
+      accountI: true,
+      checked: false,
+      icon: {
+        active: require("@/assets/checked.png"),
+        inactive: require("@/assets/unchecked.png"),
+      },
+      icon2: {
+        active: require("@/assets/electronicAccounts/icon_xueli_xuanze@2x.png"),
+        inactive: ""
+      },
+      captchaShow: false,
+      // selectItem: {},
+      popupShow: false,
+      isOpen: this.phoneBinded,
+      cancelConfirm: false,
+      loading:false,
+      timer: '',
+    };
+  },
+  computed: {
+    ...mapState('transferAccounts', ['phoneConfig','phoneBinded']),
+    disabled() {
+      let disabled = true;
+      if (!this.phoneBinded && this.checked) {//首次 未绑定 且未勾选协议
+        disabled = false;
+      } else {
+        disabled = true;
+      }
+      return disabled
+    },
+    canSwitch(){
+      let disabled = true;
+      if(this.phoneBinded){//已绑定状态则不可随意切换
+        disabled = true;
+      }else{
+        disabled = false;
+      }
+      return disabled
+    },
+    selectItem(){
+      if(this.phoneConfig.selectItem){
+        return this.phoneConfig.selectItem;
+      }else{
+        return {}
+      }
+    },
+    phone(){
+      return this.selectItem.Phone || ''
+    },
+  },
+  created() {
+    this.checkIsBind()
+    console.log(this.phoneConfig,this.phoneBinded,"ddd1")
+  },
+  mounted() {
+    this.isOpen = this.phoneBinded;
+   },
+  methods: {
+    ...mapMutations('transferAccounts',['PHONECONFIG',"PHONEBINDED"]),
+       // 查询账户是否绑定手机
+    checkIsBind() {
+      this.request('ByBindPhoneNoCheckQry').then(res => {
+        let open = false;
+        if (res.AddCard == 'Y') {
+          open = true;
+          let phoneConfig = {...this.phoneConfig};
+          this.PHONECONFIG(phoneConfig);
+          phoneConfig.cardNo = res.PayeeAcctNo;
+        } else {
+          open = false;
+        }
+        this.PHONEBINDED(open);
+        this.qryBindCard();
+      }).catch(err => {
+      })
+    },
+    // 查询该账户是否绑定一类卡
+    qryBindCard() {
+      this.request('ByBindAcNoQry').then(res => {
+        console.log('手机号查询绑卡', res);
+        let phoneConfig = {...this.phoneConfig}
+        phoneConfig.payeeCardList = res.List;
+        this.PHONECONFIG(phoneConfig);
+      }).catch(err => {
+        let phoneConfig = {...this.phoneConfig}
+        phoneConfig.payeeCardList = [];
+        this.PHONECONFIG(phoneConfig);
+      })
+    },
+    handleSelect(item) {
+      this.tempItem = { ...item };
+    },
+    handleConfirm() {
+      // this.selectItem = { ...this.tempItem };
+      let config = {...this.phoneConfig}
+      config.selectItem = {...this.tempItem};
+      this.PHONECONFIG(config)
+      this.popupShow = false;
+      // this.$emit("select", this.selectItem);
+    },
+    toUnbind(checked) {
+      if(this.phoneBinded){//绑定状态下 进行解绑操作判定
+        if(!checked){
+          this.cancelConfirm = true;
+          this.isOpen = true;
+          // config.open = true;
+          // this.PHONECONFIG(config)
+        }else{
+          // let config = {...this.phoneConfig}
+          // config.open = false;
+          // this.PHONECONFIG(config)
+        }
+      }
+     
+      // this.isOpen = false;
+      
+    },
+    // 解绑前进行后台数据校验 
+    unbindConfirm() {
+      let params = {
+        IdNo: this.selectItem.IdNo,
+        DeleBindAcNo: this.selectItem.AcNo,
+        IdType: this.selectItem.IdType == '1' ? 'IC00' : this.selectItem.IdType,
+        ChangFlag: 0,//0代表解绑，1代表更换
+      }
+      this.request( 'DeleteBindAcNoConfirm', params ).then(res =>{
+        params._tokenName = res._tokenName;
+        //校验成功 执行正式解绑
+        this.unbind(params);
+      }).catch(err=>{
+        this.cancelConfirm = false;
+      })
+    },
+    // 执行解绑
+    unbind(params) {
+      this.request( 'DeleteBindAcNo', params ).then(res =>{
+        // this.isOpen = false;
+        this.PHONEBINDED(false);
+        this.cancelConfirm = false;
+        this.$toast({
+          message: "解绑成功",
+          icon: require("@/assets/myAccount/addBankCard/ico_right@3x.png")
+        });
+      }).catch(err=>{
+        this.cancelConfirm = false;
+      })
+    },
+    bindPhone() {
+      this.captchaShow = true;
+    },
+    // 去绑定卡
+    toBindCard() {
+      let params = {
+        package: "addBankCard",
+        router: "",
+        routerDic: ""
+      };
+      window.NativeCall.goToPackage(params);
+      setTimeout(()=>{
+        this.$router.go(-1);
+      },1500)
+      // 账户加挂卡之后会返回到此页面，此时需要开启定时器，通过不断发送请求获取卡信息列表用来更新状态
+      // vue跳包不能接收参数，暂定用此方法临时解决问题。  定时调用接口并不是一个好方案
+      // clearInterval(this.timer); 
+      // this.timer = null;
+      // this.timer = setInterval(()=>{
+      //   if(this.phoneConfig.payeeCardList.length ==0 ){
+      //      this.request('ByBindAcNoQry',{},true).then(res => {
+      //       let phoneConfig = {...this.phoneConfig}
+      //       console.log('手机号查询绑卡', res);
+      //       phoneConfig.payeeCardList = res.List;
+      //       this.PHONECONFIG(phoneConfig);
+      //     }).catch(err => {
+      //       let phoneConfig = {...this.phoneConfig}
+      //       phoneConfig.payeeCardList = [];
+      //       this.PHONECONFIG(phoneConfig);
+      //     })
+      //   }else{
+      //     clearInterval(this.timer); 
+      //     this.timer = null;
+      //   }
+      // },1500)
+    },
+    onSubmitConfirm(data) {
+      this.loading = true;
+      console.log(data, "短信")
+      let params = {
+        ByBindAcNo: this.selectItem.AcNo,
+        IdNo: this.selectItem.IdNo,
+        IdType: this.selectItem.IdType == '1' ? 'IC00' : this.selectItem.IdType,
+        OTPPassword: data.code,
+        SmsNbr: data.SmsNbr,
+        BindFlag: 1,//绑定手机号时为1
+        Phone: this.selectItem.Phone
+      }
+      this.captchaShow = false;
+      this.request('BindAcNoConfirm', params).then(res => {
+        params._tokenName = res._tokenName
+        this.onSubmit(params);
+      }).catch(err => {
+        this.loading = false;
+      })
+
+    },
+    onSubmit(params) {
+      this.request('BindAcNo', params).then(res => {
+        this.$toast({
+          message: "绑定成功",
+          icon: require("@/assets/myAccount/addBankCard/ico_right@3x.png")
+        });
+        this.PHONEBINDED(true);
+        this.loading = false;
+      }).catch(err => {
+        this.loading = false;
+      })
+    },
+    goChange() {
+      this.$router.push({ name: 'changePhone', params: { selectItem: this.selectItem } })
+    },
+    openCardList() {
+      if (!this.phoneBinded) { //非绑定状态可选择收款账户
+        this.popupShow = true;
+      }
+    },
+   
+  },
+  beforeRouteEnter (to, from, next) {
+    // ...
+    if(from.name != 'config' &&　from.name != 'changePhone'){
+      Toast("非其他页面进入")
+    }
+    next();
+  },
+  beforeDestroy(){
+    clearInterval(this.timer)
+    this.timer = null;
+  },
+  watch:{
+    phoneBinded:{
+      handler(val){
+        this.isOpen = val;
+        console.log(val,"新设置")
+      },
+      deep: true
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.set-card {
+  .van-cell{
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .info {
+    font-size: px2vw(24);
+    color: #a8a8a8;
+    padding: px2vw(30) px2vw(40) px2vw(20);
+  }
+  .change {
+    color: #008bff;
+    float: right;
+  }
+  // .van-cell .van-switch{
+  //   width:px2vw(80);
+  //   height:px2vw(42);
+  //   font-size:px2vw(38);
+  //   .van-switch__node{
+  //     height:px2vw(38);
+  //     width:px2vw(38);
+  //   }
+  // }
+  /deep/ .van-hairline--top-bottom::after,
+  .van-hairline-unset--top-bottom::after {
+    border: none;
+  }
+  .payee {
+    /deep/ .van-cell__value {
+      justify-content: flex-end;
+    }
+    .iconfont{
+      font-size:px2vw(12);
+      color:#999CA0;
+    }
+  }
+  .binded {
+    color: $color-text;
+  }
+}
+.bind-btn {
+  margin-top: px2vw(107);
+}
+// 是否阅读条款
+.terms {
+  font-size: px2vw(24);
+  color: #a8a8a8;
+  padding: px2vw(30) px2vw(40);
+  img {
+    width: px2vw(32);
+    height: px2vw(32);
+  }
+  a {
+    color: #008bff;
+  }
+}
+.tip {
+  margin: px2vw(40);
+  color: #7d7d7d;
+  font-size: px2vw(22);
+  line-height: px2vw(30);
+  font-family: PingFangSC;
+  font-weight: 400;
+}
+/deep/ .md-field-item-content:before {
+  border: none;
+}
+/deep/ .payee-card-popup {
+  .van-cell {
+    height: px2vw(110);
+    padding: 0 px2vw(40);
+  }
+}
+//付款卡选择
+/deep/ .payee-card__select {
+  line-height: initial;
+  .van-cell__title {
+    flex: none;
+    align-items: center;
+    display: flex;
+  }
+  .bank-icon_wrap {
+    width: px2vw(64);
+    height: px2vw(64);
+    align-items: center;
+    margin-right: px2vw(20);
+    img {
+      height: 100%;
+    }
+  }
+  .van-cell__value {
+    text-align: left;
+    align-items: center;
+    display: flex;
+    .card {
+      font-size: $font-size;
+      color: $color-text;
+      margin-bottom: px2vw(14);
+      line-height: 1.2;
+    }
+    .balance {
+      font-size: px2vw(24);
+      color: #7d7d7d;
+      line-height: 1.2;
+    }
+  }
+}
+.phoneSwicth{
+  .van-switch--disabled{
+    opacity: 1;
+  }
+  .van-cell__title{
+    width: auto;
+  }
+  .van-cell__value{
+    justify-content: flex-end;
+  }
+}
+
+
+</style>

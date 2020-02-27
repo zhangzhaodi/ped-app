@@ -1,0 +1,212 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :backgroundColor="backgroundColor"
+      :isWhite="isWhite"
+    ></Myheader>
+    <MyContent :data="list[this.index]"></MyContent>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import MyContent from "../components/content.vue";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      backgroundColor: "transparent",
+      isWhite: true,
+      index: null,
+      list: [
+        //酒店
+        {
+          topImgUrl: this.BaseUrl + "/jiudian/img_jingdainxiangqing.png",
+          title1: "礼遇方式",
+          title2: "礼遇细则",
+          detailImg: this.BaseUrl + "/jiudian/img_liyu.png",
+          tab: [
+            {
+              text: "提前1天拨打 我行客服热线",
+              tel: "0911-678893",
+              img: this.BaseUrl + "/jiudian/icon_dainhua.png"
+            },
+            {
+              text: "预订成功后 查看短信提示",
+              img: this.BaseUrl + "/jiudian/icon_duanxin.png"
+            },
+            {
+              text: "凭身份证到 酒店验证即可",
+              img: this.BaseUrl + "/jiudian/icon_shenfenzheng.png"
+            }
+          ],
+          listTitle: "查看酒店列表",
+          listUrl: "https://cts.dangtoo.com/hotel_more.html",
+          bottomImg: this.BaseUrl + "/jiudian/bg-duibubeijing.png",
+          tipText: `<p>温馨提示</p>
+                    <p>1、该权益仅限持卡客户本人使用，单客户单月仅限一次，单酒店全年限一次；</p> 
+                    <p>2、周末（含周五、周六）需提前5天预订，法定节假日需提前15天预订；</p>`
+        },
+        //景区
+        {
+          topImgUrl: this.BaseUrl + "/jingqu/iimg_jingqu.png",
+          title1: "礼遇方式",
+          title2: "礼遇细则",
+          detailImg: this.BaseUrl + "/jingqu/img_liyuxize.png",
+          tab: [
+            {
+              text: "提前1天拨打 我行客服热线",
+              tel: "0911-678893",
+              img: this.BaseUrl + "/jiudian/icon_dainhua.png"
+            },
+            {
+              text: "预订成功后 查看短信提示",
+              img: this.BaseUrl + "/jiudian/icon_duanxin.png"
+            },
+            {
+              text: "凭身份证到 景区验证即可",
+              img: this.BaseUrl + "/jiudian/icon_shenfenzheng.png"
+            }
+          ],
+          listTitle: "查看景区列表",
+          listUrl: "https://cts.dangtoo.com/jingqu_more.html",
+          bottomImg: this.BaseUrl + "/jingqu/bg_beijing.png",
+          tipText: `<p>温馨提示</p>
+                    <p>1、该权益仅限持卡客户本人使用，单客户单月仅限一次，单酒店全年限一次；</p> 
+                    <p>2、门票预订成功后不可退票。</p>`
+        },
+        //贵宾厅
+        {
+          topImgUrl: this.BaseUrl + "/guibinting/img_jichangguibingting.png",
+          title1: "礼遇方式",
+          title2: "礼遇细则",
+          detailImg: this.BaseUrl + "/guibinting/img_liyuxize.png",
+          tab: [
+            {
+              text: "提前1天拨打 我行客服热线",
+              tel: "0911-678893",
+              img: this.BaseUrl + "/jiudian/icon_dainhua.png"
+            },
+            {
+              text: "预订成功后 查看短信提示",
+              img: this.BaseUrl + "/jiudian/icon_duanxin.png"
+            },
+            {
+              text: "凭身份证到 贵宾厅验证即可",
+              img: this.BaseUrl + "/jiudian/icon_shenfenzheng.png"
+            }
+          ],
+          listTitle: "查看机场列表",
+          listUrl: "https://cts.dangtoo.com/jichang_more.html",
+          bottomImg: this.BaseUrl + "/guibinting/img_dibubg.png",
+          tipText: `<p>温馨提示</p>
+                    <p>1、贵宾厅预订成功后不可取消。</p>`
+        },
+        //火车票
+        {
+          topImgUrl: this.BaseUrl + "/huochepiao/img_huichepiaoqiangpiao.png",
+          title1: "礼遇方式",
+          title2: "礼遇细则",
+          detailImg: this.BaseUrl + "/huochepiao/img_liyuxize.png",
+          tab: [
+            {
+              text: "提前1天拨打 我行客服热线",
+              tel: "0911-678893",
+              img: this.BaseUrl + "/jiudian/icon_dainhua.png"
+            },
+            {
+              text: "出票成功后支付相应火车票票款",
+              img: this.BaseUrl + "/jiudian/icon_duanxin.png"
+            },
+            {
+              text: "抢票成功后如发生退票占用一次权益",
+              img: this.BaseUrl + "/jiudian/icon_shenfenzheng.png"
+            }
+          ],
+          bottomImg:
+            this.BaseUrl + "/huochepiao/chiang-kuo-UPjNZSwkMAM-unsplash.png",
+          tipText: `<p>温馨提示</p>
+                    <p>1、优先出纸质车票并速递送票上门;</p>
+                    <p>2、卧铺车次可挑选中铺或下铺。</p>`
+        },
+        //航班
+        {
+          topImgUrl: this.BaseUrl + "/hangban/img_yanwuxian.png",
+          title1: "理赔步骤",
+          title2: "理赔标准",
+          detailImg: this.BaseUrl + "/hangban/img_xize.png",
+          tabImg: this.BaseUrl + "/hangban/img_lipei.png",
+          bottomImg: this.BaseUrl + "/hangban/bg_beijing.png",
+          hasButton: true,
+          listUrl:"https://cts.dangtoo.com/topic_hyx/cts_wx/hyx.html",
+          tipText: `<p>温馨提示</p>
+                    <p>1.赔付范围仅限持卡本人通过我行商旅服务预订机票并实际乘坐的航班。</p>
+                    <p>2.延误是指机场或航司最后正式发布的航班实际到达目的地着陆时间晚于计划到达目的地时间。</p>
+                    <p>3.如发生厌恶，持卡人应在乘机后10个工作日内提交相关索偿凭证。</p>
+                    <p>4.有下述情况之一的，不享有航班延误保险权益。</p>
+                    <p class="indent">(一) 航班发生厌恶后超过10个工作日未提供索偿凭证；</p>
+                    <p class="indent">(二) 在元航班未取消或未备降的情况下改签航班（含主动改签或被动改签）；</p>
+                    <p class="indent">(三) 原定航班被航空公司取消或备降；</p>
+                    <p class="indent">(四) 客票退票或客票未使用；</p>
+                    <p class="indent">(五) 由于自然灾害以外的原因导致的机场关闭；</p>
+                    <p class="indent">(六) 持卡人为该次旅程预定机票时已经知道或应该知道存在可能导致旅程厌恶的情况或条件，包括但不限于当时以及发生的任何恶劣天气或自然灾难；订购该机票前，航司已宣布该航班延误；</p>
+                    <p>5.持卡人在此申明已明确并了解细则，同意受其约束。</p>
+                    `
+        },
+        //直升机
+        {
+          topImgUrl: this.BaseUrl + "/zhishengji/img_zhishengji.png",
+          title1: "礼遇方式",
+          title2: "礼遇细则",
+          detailImg: this.BaseUrl + "/zhishengji/img_xize.png",
+          tabImg: this.BaseUrl + "/zhishengji/img_fanwei.png",
+          bottomImg: this.BaseUrl + "/zhishengji/bg_beijing.png",
+          tipText: `<p>截止目前布机全国28个省（含直辖市、自治区）并开展救援活动，布机范围包括以下省份（含直辖市、自治区）:北京市、天津市、上海市、重庆市、河北省、山西省、辽宁省、吉林省、</p>`
+        }
+      ]
+    };
+  },
+  created() {
+    this.index = this.$route.query.index;
+    // console.log(this.list[this.index]);
+  },
+  components: {
+    Myheader: Header,
+    MyContent
+  },
+  methods: {
+    scroll() {
+      //屏幕滚动时修改header的背景
+      let content = document.getElementsByClassName("content")[0];
+      // console.log(content)
+      let _this = this;
+      content.onscroll = function() {
+        // console.log(content.scrollTop)
+        if (content.scrollTop > 0) {
+          _this.backgroundColor = "#fff";
+          _this.isWhite = false;
+        } else {
+          _this.backgroundColor = "transparent";
+          _this.isWhite = true;
+        }
+      };
+    }
+  },
+  mounted() {
+    this.scroll();
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+</style>

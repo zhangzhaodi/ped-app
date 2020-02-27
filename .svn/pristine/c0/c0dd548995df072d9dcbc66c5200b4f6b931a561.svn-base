@@ -1,0 +1,151 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div class="cellGroup">
+      <van-cell-group>
+        <van-field v-model="addPayerForm.payAccount" placeholder="中旅银行一类卡" label="付款账号" />
+      </van-cell-group>
+      <van-cell-group>
+        <van-field v-model="addPayerForm.payAccountBank" label="付款账号开户行" />
+      </van-cell-group>
+      <van-cell-group>
+        <van-field v-model="addPayerForm.reservedPhone" label="预留手机号">
+          <van-button
+            slot="button"
+            v-show="count_down"
+            size="small"
+            type="primary"
+            @click="startCountdown"
+          >{{verCode}}</van-button>
+          <van-button
+            slot="button"
+            v-show="!count_down"
+            size="small"
+            type="primary"
+            @click="startCountdown"
+          >{{time_60}}秒后重新获取</van-button>
+        </van-field>
+      </van-cell-group>
+      <van-cell-group>
+        <van-field v-model="addPayerForm.msgCode" label="短信验证码" />
+      </van-cell-group>
+      <van-cell-group>
+        <van-checkbox v-model="addPayerForm.agreement">我同意相关协议</van-checkbox>
+      </van-cell-group>
+    </div>
+    <div class="cellGroup">
+      <van-button type="info" @click="doSubmit">提交</van-button>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Field, Cell, CellGroup, Button } from "vant";
+import { Checkbox, CheckboxGroup } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Field.name]: Field,
+    [Cell.name]: Cell,
+    [CellGroup.name]: CellGroup,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      },
+      headerBackRouter: {
+        name: "linkmanList"
+      },
+      verCode: "发送验证码",
+      addPayerForm: {
+        payAccount: "", //付款账号
+        payAccountBank: "", //付款账号开户行
+        reservedPhone: "", //预留手机号
+        msgCode: "", //短信验证码
+        agreement: false //协议
+      },
+      time_60: 60,
+      count_down: true
+    };
+  },
+  methods: {
+    startCountdown() {
+      if (this.count_down) {
+        this.count_down = false;
+        var timer = window.setInterval(() => {
+          this.time_60 -= 1;
+          if (this.time_60 <= 0) {
+            this.time_60 = 60;
+            this.count_down = true;
+            window.clearInterval(timer);
+          }
+        }, 1000);
+      }
+    },
+    doSubmit() {
+      alert("提交信息");
+      let payerAccountInfo = {
+        payerAccount: "张艺兴",
+        payerBank: "浦发银行",
+        payerPhone: "13549763218"
+      };
+      this.$router.push({
+        name: "index",
+        params: { accountInfo: payerAccountInfo, getAccountInfo: true }
+      });
+      
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/ .sel-m .van-cell {
+  padding: 0;
+  font-size: px2vw(32);
+  margin-bottom: px2vw(-6);
+}
+/deep/ .van-checkbox__icon {
+  font-size: 4.46667vw;
+}
+/deep/ .van-field__body {
+  height: 100%;
+  line-height: 100%;
+}
+/deep/ .van-hairline--top-bottom::after {
+  border-bottom-width: 2px;
+  border-top-width: 0px;
+}
+.cellGroup {
+  background-color: #fff;
+  width: 90%;
+  margin: 0 auto;
+  margin-top: px2vw(20);
+  border-radius: px2vw(15);
+}
+.cellTitle {
+  font-size: px2vw(28);
+  padding: 10px 15px;
+}
+/deep/ .van-cell {
+  background-color: transparent;
+}
+/deep/ .van-cell-group {
+  background-color: transparent;
+}
+/deep/ .van-button {
+  width: 100%;
+  border-radius: px2vw(10);
+  font-size: px2vw(30);
+}
+.cellGroup {
+  background-color: #fff;
+  width: 90%;
+  margin: 0 auto;
+  margin-top: px2vw(20);
+  border-radius: px2vw(15);
+}
+</style>

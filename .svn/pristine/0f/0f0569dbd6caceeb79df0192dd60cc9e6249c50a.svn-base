@@ -1,0 +1,980 @@
+<template>
+  <div class="popup">
+    <van-popup
+      v-model="show"
+      get-container="body"
+      round
+      position="bottom"
+      :close-on-click-overlay="false"
+      :style="{height:'62.29vh'}"
+    >
+      <div class="pupupTop">
+        <img src="@/assets/deposit/index/icon_guanbi@2x.png" @click="close" />
+        <p v-if="farmers">信息确认</p>
+        <p v-else-if="expensive">信息确认</p>
+        <p v-else-if="specialshow">信息确认</p>
+        <p v-else>确认支付</p>
+      </div>
+      <div class="dealInfo">
+        <li v-if="farmers">本金</li>
+        <li v-if="expensive">本金</li>
+        <p class="money">
+          <span class="icon">￥</span>
+          <span>{{this.form.money| Money}}</span>
+        </p>
+      </div>
+      <!-- 鑫农宝购买 -->
+      <div v-if="farmers" class="CardDataList">
+        <van-cell
+          title="账户"
+          :center="true"
+        >{{this.form.bank.bankName || '中旅银行'}} | ({{this.form.bank.vouId | CardNoFour}})</van-cell>
+      </div>
+      <!-- 特色存款赎回 -->
+      <div v-if="specialshow" class="CardDataList">
+        <van-cell
+          title="账户"
+          :center="true"
+        >{{this.user.bankName || '中旅银行'}} | ({{this.user.CardNo  | CardNoFour}})</van-cell>
+      </div>
+      <!-- //大额存单购买 -->
+      <div v-if="bigreceipt" class="CardDataList">
+        <van-cell
+          title="账户"
+          :center="true"
+        >{{this.form.bankName || '中旅银行'}} | ({{this.form.vouId | CardNoFour}})</van-cell>
+      </div>
+      <!-- 大额存单赎回 -->
+      <div v-if="bigDataList" class="CardDataList">
+        <van-cell
+          title="账户"
+          :center="true"
+        >{{this.user.bankName || '中旅银行'}} | 借记卡({{this.user.PayerAcNo  || this.user.BillAcctNo  ||  this.user.CardNo |  CardNoFour}})</van-cell>
+      </div>
+      <!-- 整存整取购买 -->
+      <div v-if="Cardreceipt" class="CardDataList">
+        <van-cell
+          title="账户"
+          :center="true"
+        >{{this.form.bank.bankName || '中旅银行'}} | ({{ this.form.bank.vouId | CardNoFour}})</van-cell>
+      </div>
+      <!-- 整存整取赎回 -->
+      <div v-if="CardDataList" class="CardDataList">
+        <van-cell
+          title="账户"
+          :center="true"
+        >{{this.user.bankName || '中旅银行'}} | 借记卡({{this.user.CardNo | CardNoFour}})  </van-cell>
+      </div>
+      <!-- 通知存款购买 -->
+      <div v-if="Noticereceipt" class="CardDataList">
+        <van-cell
+          title="账户"
+          :center="true"
+        >{{this.form.bank.bankName || '中旅银行'}} | ({{ this.form.bank.vouId | CardNoFour}})</van-cell>
+      </div>
+      <!-- 通知存款赎回 -->
+       <!-- <div v-if="CardDataList" class="CardDataList">
+        <van-cell
+          title="账户"
+          :center="true"
+        >{{this.user.bankName || '中旅银行'}} | 借记卡({{this.user.CardNo | CardNoFour}})</van-cell>
+      </div> -->
+
+      <!-- <div class="line"></div> -->
+      <!-- <div class="safeTool">
+        <van-cell :value="form.tool" title="安全工具" :center="true">
+          <template slot="right-icon">
+            <img src="~@/assets/LifePay/arrow.png" class="rightIcon" />
+          </template>
+        </van-cell>
+      </div>-->
+      <!-- <div class="line"></div> -->
+      <!-- 宝类产品 -->
+      <!-- 特色购买 -->
+      <!-- 鑫农宝 -->
+      <div v-if="farmers" class="btn button">
+        <van-button type="default" @click="confirmfarmers">确认</van-button>
+      </div>
+      <!-- 鑫贵宝 -->
+      <div v-if="expensive" class="btn but">
+        <van-button type="default" @click="confirmfarmers">确认</van-button>
+      </div>
+      <!-- 特色赎回 -->
+      <div v-if="specialshow" class="btn">
+        <van-button type="default" @click="confirmspecial">确认</van-button>
+      </div>
+      <!-- 大额存单 -->
+      <!-- 购买 -->
+      <div v-if="bigreceipt" class="btn">
+        <van-button type="default" @click="confirmbigreceipt">确认</van-button>
+      </div>
+      <!-- 赎回 -->
+      <div v-if="bigDataList" class="btn">
+        <van-button type="default" @click="confirmbig">确认</van-button>
+      </div>
+      <!-- //整存整取 -->
+      <!-- 购买 -->
+      <div v-if="wholeDeposit" class="btn">
+        <van-button :disabled="forbidden"  type="default" @click="confirmCardreceipt">确认</van-button>
+      </div>
+      <!-- 赎回 -->
+      <div v-if="CardDataList" class="btn">
+        <van-button type="default" @click="confirmCard">确认</van-button>
+      </div>
+      <!-- 通知存款 -->
+        <!-- 购买 -->
+      <div v-if="Noticereceipt" class="btn">
+        <van-button type="default" @click="confirmNoticereceipt">确认</van-button>
+      </div>
+      <!-- 赎回 -->
+      <div v-if="CardDataList" class="btn">
+        <van-button type="default" @click="confirmCard">确认</van-button>
+      </div>
+        <!-- 手机验证码  整存整取-->
+      <!-- <div v-if="Cardreceipt" class="phonecode">
+            <div class="sel-item">
+        <div class="sel-m">
+          <div class="input-box">
+            <v-input
+              @input="submit"
+              type="verify"
+              :value="verify"
+              v-model="verify"
+              :useKeyboard="false"
+              placeholder="请输入短信验证码"
+            ></v-input>
+          </div>
+          <div class="verify">
+            <span  @click="sendHandle" v-if="showTime">发送验证码</span>
+            <van-count-down  @finish="finish" v-else :time="time" format="sss后重发" />
+          </div>
+        </div>
+        <div v-if="toast" class="toast">
+            验证码错误，请重新输入
+          </div>
+      </div>
+      </div> -->
+      <!-- 短信验证码大额赎回 -->
+      <div v-if="phonecode " class="phonecode">
+            <div class="sel-item">
+        <div class="sel-m">
+          <div class="input-box">
+            <v-input
+              @input="submit"
+              type="verify"
+              :value="verify"
+              v-model="verify"
+              :useKeyboard="false"
+              placeholder="请输入短信验证码"
+            ></v-input>
+          </div>
+          <div class="verify">
+            <span  @click="sendHandle" v-if="showTime">发送验证码</span>
+            <van-count-down  @finish="finish" v-else :time="time" format="sss后重发" />
+          </div>
+        </div>
+      </div>
+      <div v-if="toast" class="toast">
+            验证码错误，请重新输入
+          </div>
+      </div>
+    </van-popup>
+  </div>
+</template>
+
+<script>
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+import { Popup, Cell, Icon, Button } from "vant";
+import { Amount, InputItem } from "mand-mobile";
+import vInput from "@/components/Input/v-input/";
+import myDialog from '@/components/Dialog/Dialog'
+export default {
+  components: {
+    [Popup.name]: Popup,
+    [Cell.name]: Cell,
+    [Icon.name]: Icon,
+    [Button.name]: Button,
+    myDialog,
+    vInput,
+  },
+  props: {
+    popupFlag: {
+      require: true,
+      default: false
+    }
+  },
+  data() {
+    return {
+      form: null,
+      show: true,
+      toast:false,//短信错误提示
+      forbidden:true,//按钮辨别
+      farmers:false,//鑫农宝购买
+      expensive:false,//鑫贵宝购买
+      specialshow:false,//特色存款赎回
+      bigreceipt: false, //大额购买
+      Cardreceipt: false, //整存购买
+      wholeDeposit:false,//整存按钮显示
+      Noticereceipt:false,//通知购买
+      CardDataList: false, //赎回
+      bigDataList: false,
+      Choose:'',//区分整存 通知
+      SmsNbr:'',//短信
+      UserSmsId:'',//短信
+      SmsCode:'',//短信
+      verify: "", //验证码
+      phonecode:false,//短信显示
+      //验证码倒计时
+      showTime: true,
+      time: 180 * 1000,
+      tokenName:'',
+      phone:'',
+    };
+  },
+  created() {
+      //获取手机号
+      window.NativeCall.getUserInfo(params => {
+        let par=JSON.parse(params)
+        this.phone = par.MobilePhone;
+    });
+
+    // console.log(this.$store.state.params);
+    this.form = this.$store.state.params;
+    console.log(this.form, this.user,this.userInfo,this.Setuserinfo);
+    if(this.form.specialshow){
+      this.specialshow =true
+    }
+    if(this.form.farmers){
+      this.farmers = true
+    }
+    if(this.form.expensive){
+      this.expensive = true
+    }
+    if (this.form.bigreceipt) {
+      this.bigreceipt = true;
+    }
+    if (this.form.Cardreceipt) {
+      this.Cardreceipt = true;
+      this.wholeDeposit = true;
+      this.forbidden = false;
+    }
+    if (this.form.Noticereceipt) {
+      this.Noticereceipt = true;
+    }
+    if (this.form.CardDataList) {
+      this.CardDataList = true;
+    }
+    if (this.form.bigDataList) {
+      this.bigDataList = true;
+    }
+    if (this.form.CardShow == true){
+      this.Choose = '1'
+    }
+    if (this.form.CardShow == false){
+      this.Choose = '0'
+    }
+  },
+  mounted(){
+
+  },
+  computed: {
+    ...mapState("deposit", { user: "info"}),
+    ...mapGetters('deposit',['Setuserinfo']),
+    ...mapState("common", ["userInfo"]),
+  },
+  watch: {
+    popupFlag: {
+      handler(val) {
+        this.show = val;
+      }
+    }
+  },
+  methods: {
+      // 调用actions
+    ...mapActions("deposit", ["setuserinfo"]),
+    ...mapActions("common", ["getUserInfo"]),
+    close() {
+      this.$parent.popupFlag = false;
+    },
+    confirm() {
+      //      this.$emit("toResult");
+    },
+    //特色购买
+    confirmfarmers(){
+      this.request("XGBSignConfirm",{
+        BankId: this.form.BankId || '9999',
+        BranchId:  this.userInfo.BranchId || "1999",
+        ChnlId: this.userInfo.ChnlId || "62",
+        MainAccount:this.form.bank.vouId,
+        TransAmt:this.form.money,
+        PayerAccount:this.form.bank.vouId,
+        OpenAccAmt:this.form.money,
+      },true)
+          .then(res=>{
+            console.log(res)
+            console.log(res._tokenName);
+          let aa = res._tokenName;
+          if (res._RejCode == "000000") {
+            window.NativeCall.SecureKeyboard(params => {
+              console.log(params);
+              this.request("XGBSign", {
+                BankId: this.form.BankId || '9999',
+                BranchId:  this.userInfo.BranchId || "1999",
+                ChnlId: this.userInfo.ChnlId || "62",
+                ChannelType:'0310' || '',
+                BusinessType:'PHNE' || '',
+                ProductNo:this.user.PrdCode || this.Setuserinfo.PrdCode || '',
+                InterestType:this.user.InterestType || this.Setuserinfo.InterestType ||'',
+                OpenAccAmt:this.form.money || '',
+                TransAmt:this.form.money || '',
+                PayerAccount:this.form.bank.vouId || '',
+                PayerName:this.form.bank.acctName || '',
+                AccountName:this.form.bank.acctName || '',
+                MainAccount:this.form.bank.vouId || '',
+                PrdMode:'1'  || '',
+                PrdTerm:'1' || '',
+                TrsAcNo:this.form.bank.vouId || '',
+                Password: params || '',
+                _tokenName: aa
+              })
+              .then(res => {
+                console.log(res);
+                this.$router.push({
+                  path: "/farmersTreasureRollinResult",
+                  query: {
+                    bigreceipt: true,
+                    money: this.form.money
+                  }
+                });
+              })
+              .catch(error => {
+                  console.log(error);
+                  var modul = "1"
+                  this.$emit("toResult",modul);
+                });
+            });
+          }
+          })
+          .catch(error=>{
+            console.log(error)
+          var modul = "1"
+          this.$emit("toResult",modul);
+          })
+    },
+    //特色赎回
+    confirmspecial(){
+      this.request("XGBPartialDrawingConfirm",{
+        BankId: this.form.BankId || '9999',
+        BranchId:  this.userInfo.BranchId || "1999",
+        ChnlId: this.userInfo.ChnlId || "62",
+        TransAmt:this.form.money,
+        Balance:this.form.money,
+      },true)
+          .then(res=>{
+            console.log(res)
+            console.log(res._tokenName);
+          let aa = res._tokenName;
+          if (res._RejCode == "000000") {
+            window.NativeCall.SecureKeyboard(params => {
+              console.log(params);
+              this.request("XGBPartialDrawing", {
+                BankId: this.form.BankId || '9999',
+                BranchId:  this.userInfo.BranchId || "1999",
+                ChnlId: this.userInfo.ChnlId || "62",
+                TransAmt:this.form.money,
+                Balance:this.form.money,
+                ChannelType:"0310" || '',
+                AccSeq:"1" || "",
+                MainAccount:this.user.CardNo ||'',
+                TrsAcNo:this.user.CardNo ||'',
+                RecverAccount:this.user.CardNo ||'',
+                BusinessType:"3b00" || '',
+                MediaCode:"0016" || '',
+                TransMediaType:"0016" || '',
+                AcctNum: this.user.AcctSeqNo || ' ' ,
+                Balance: this.form.money,
+                Pin: params || '',
+                _tokenName: aa
+              })
+              .then(res => {
+                console.log(res);
+                this.$router.push({
+                  path: "/win",
+                  query: {
+                    TransAmt: this.form.money,
+                    Rate: this.user.Rate,
+                    confirmCard: true
+                  }
+                });
+              })
+              .catch(error => {
+                  console.log(error);
+                  var modul = "1"
+                  this.$emit("toResult",modul);
+                });
+            });
+          }
+          })
+          .catch(error=>{
+            console.log(error)
+          var modul = "1"
+          this.$emit("toResult",modul);
+          })
+    },
+    //大额存单购买
+    confirmbigreceipt() {
+      this.request("LargeDepRecBuyConfirm", {
+        BankId: this.form.BankId || '9999',
+        BranchId:  this.userInfo.BranchId || "1999",
+        ChnlId: this.userInfo.ChnlId || "62",
+        MinimumIncrementalAmount: this.user.MinimumIncrementalAmount,
+        MinimumSubscriptionAmount: this.user.MinimumSubscriptionAmount,
+        CurrentBalance: this.user.CurrentBalance,
+        TrsAcNo: this.form.vouId,
+        Amt: this.form.money,
+        AcctNo: this.form.vouId,
+        BillSerial: this.user.DepositCode
+        // PassWord:"111111",
+      },true)
+        .then(res => {
+          console.log(res);
+          console.log(res._tokenName);
+          let aa = res._tokenName;
+          if (res._RejCode == "000000") {
+            window.NativeCall.SecureKeyboard(params => {
+              console.log(params);
+              this.request("LargeDepRecBuy", {
+                BankId: this.form.BankId || '9999',
+                BranchId:  this.userInfo.BranchId || "1999",
+                ChnlId: this.userInfo.ChnlId || "62",
+                MinimumIncrementalAmount: this.user.MinimumIncrementalAmount,
+                MinimumSubscriptionAmount: this.user.MinimumSubscriptionAmount,
+                CurrentBalance: this.user.CurrentBalance,
+                TrsAcNo: this.form.vouId,
+                Amt: this.form.money,
+                AcctNo: this.form.vouId,
+                BillSerial: this.user.DepositCode,
+                Password: params,
+                _tokenName: aa
+              })
+              .then(res => {
+                console.log(res);
+                this.$router.push({
+                  path: "/win",
+                  query: {
+                    bigreceipt: true,
+                    money: this.form.money
+                  }
+                });
+              })
+              .catch(error => {
+                  console.log(error);
+                  var modul = "1"
+                  this.$emit("toResult",modul);
+                });
+            });
+          }
+        })
+        .catch(error => {
+          console.log(error);
+          var modul = "1"
+          this.$emit("toResult",modul);
+        });
+    },
+    //大额赎回验证
+    confirmbig() {
+      var modul = "big";
+      this.$emit("toResult",modul);
+      // this.request("LargeDepRecWithdrawalConfirm", {
+      //   BankId: this.form.BankId || '9999',
+      //   BranchId:  this.userInfo.BranchId || "1999",
+      //   ChnlId: this.userInfo.ChnlId || "62",
+      //   BillAcctNo: this.user.BiAcctNo ,
+      //   Amt: String(this.form.money),
+      //   RefAcctNo: this.user.PayerAcNo || this.user.BillAcctNo  ,
+      //   MinimumSubscriptionAmount:this.Setuserinfo.MinIncrementalAmount || "",
+      //   Balance: this.user.Balance,
+      // })
+      //   .then(res => {
+      //     console.log(res);
+      //     console.log(res._tokenName);
+      //     this.tokenName = res._tokenName;
+      //     if (res._RejCode == "000000") {
+              // // this.$emit("toResult", this.tokenName)
+              // this.phonecode = true;
+              // this.showTime = true;
+          //   window.NativeCall.SecureKeyboard(params => {
+          //     console.log(params);
+          // this.request("LargeDepRecWithdrawal", {
+          //   BankId: "9999",
+          //   BranchId: "62",
+          //   ChnlId: "3419",
+          //   BillAcctNo: this.user.DepAcct,
+          //   Amt: this.form.money,
+          //   RefAcctNo: this.user.AcctNo,
+          //   Balance: this.user.Balance,
+          //   _tokenName: aa
+          // }).then(res => {
+          //   console.log(res);
+          //   this.$router.push({
+          //     path: "/win",
+          //     query: {
+          //       TransAmt: this.form.money,
+          //       Rate: this.user.Rate,
+          //       confirmCard: true
+          //     }
+          //   });
+          // });
+          // });
+          // }
+        // })
+        // .catch(error => {
+        //   console.log(error);
+        //   var modul = "1"
+        //   this.$emit("toResult",modul);
+        // });
+    },
+    //点击发送验证码
+      sendHandle() {
+        this.showTime = false;
+        this.SendSmsPwd()
+    },
+    //计时
+    finish() {
+      this.showTime = true;
+    },
+      //发送短信验证码
+      SendSmsPwd(){
+          this.request('SendSmsOtp',
+          {
+            // ApprTyp: "1",
+            BankId: this.form.BankId || '9999',
+            BranchId:  this.userInfo.BranchId || "1999",
+            ChnlId: this.userInfo.ChnlId || "62",
+            // VerifyTag: 'N',
+            SmsTransType:'1' || '',
+            PhoneNbr:this.phone,
+            MobilePhone:this.phone,
+            // VerifyScene: '1',
+          }, true
+          ).then((res) => {
+          this.SmsNbr=res.SmsNbr,
+          this.UserSmsId=res.UserSmsId
+          if(this.Cardreceipt == true){
+            this.wholeDeposit = true
+          }
+          console.log(res,"验证码已发送")
+          }).catch((error) => {
+            console.log(error)
+          })
+        },
+        submit(code){
+        console.log(code);
+        if(code.length == 6 && this.wholeDeposit == true){
+          this.SmsCode=code
+          this.forbidden = false
+        }else if( code.length == 6 && this.wholeDeposit == false ){
+          this.SmsCode=code
+          this.confirmBig()
+        }
+    },
+    //大额赎回确认
+    confirmBig(){
+      this.request("LargeDepRecWithdrawal", {
+            BankId: this.form.BankId || '9999',
+            BranchId:  this.userInfo.BranchId || "1999",
+            ChnlId: this.userInfo.ChnlId || "62",
+            ApprTyp: "2" || '',
+            PhoneNbr:this.phone,
+            Phone:this.phone,
+            MobilePhone:this.phone,
+            BillAcctNo: this.user.DepAcct,
+            Amt: this.form.money,
+            RefAcctNo: this.user.PayerAcNo || this.user.BillAcctNo,
+            Balance: this.user.Balance,
+            SmsCode :this.SmsCode,
+            SmsNbr :this.SmsNbr,
+            OTPPassword:this.SmsCode,
+            UserSmsId : this.UserSmsId,
+            _tokenName:this.tokenName,
+          })
+          .then(res => {
+            console.log(res);
+            this.$router.push({
+              path: "/win",
+              query: {
+                TransAmt: this.form.money,
+                Rate: res.Rate,
+                InterestAmt:res.InterestAmt,
+                confirmBig: true
+              }
+            })
+          })
+          .catch(error=>{
+          var modul = "1"
+          this.$emit("toResult",modul);
+          })
+      },
+        //活转定-整存
+    confirmCardreceipt() {
+      var modul = "1";
+      this.$emit("toResult",modul);
+    //   this.request(
+    //     "SaveToRegularConfirm",
+    //     {
+    //       BankId: this.form.BankId || '9999',
+    //       BranchId:  this.userInfo.BranchId || "1999",
+    //       ChnlId: this.userInfo.ChnlId || "62",
+    //       PhoneNbr:this.phone,
+    //       MobilePhone:this.phone,
+    //       Phone:this.phone,
+    //       SmsCode :this.SmsCode,
+    //       SmsNbr :this.SmsNbr,
+    //       OTPPassword:this.SmsCode,
+    //       UserSmsId : this.UserSmsId,
+    //       CustomerNo: this.form.bank.vouId,
+    //       TransAmt: String(this.form.money),
+    //       TermCode: this.form.TermCode,
+    //       ApprTyp:'2',
+    //       AutoDepositFlag: this.form.AutoDepositFlag,
+    //       DebtType:this.form.DebtType,
+    //     },true)
+    //     .then(res => {
+    //       console.log(res);
+    //       let aa = res._tokenName;
+    //       if (res._RejCode == "000000") {
+    //         window.NativeCall.SecureKeyboard(params => {
+    //           this.request(
+    //             "SaveToRegular",
+    //             {
+    //               BankId: this.form.BankId || '9999',
+    //               BranchId:  this.userInfo.BranchId || "1999",
+    //               ChnlId: this.userInfo.ChnlId || "62",
+    //               TrsAcNo: this.form.bank.vouId,
+    //               CustomerNo: this.form.bank.vouId,
+    //               TransAmt: String(this.form.money),
+    //               TermCode: this.form.TermCode,
+    //               DebtType:this.form.DebtType,
+    //               AutoDepositFlag: this.form.AutoDepositFlag,
+    //               PassWord:params,
+    //               _tokenName: aa,
+    //             },true)
+    //             .then(res => {
+    //               console.log(res);
+    //               this.$router.push({
+    //               path: "/win",
+    //               query: {
+    //                 Carddeposit: true,
+    //                 money: this.form.money
+    //               }
+    //             });
+    //             })
+    //             .catch(error => {
+    //               console.log(error);
+    //                 var modul = "1"
+    //               this.$emit("toResult",modul);
+    //             });
+    //         });
+    //       }
+    //     })
+    //     .catch(error => {
+    //       console.log(error);
+    //       var modul = "1"
+    //       this.$emit("toResult",modul);
+    //       // this.toast=ture
+    //       // this.forbidden=true
+    //     });
+      },
+    //活转定-通知
+    confirmNoticereceipt() {
+      this.request(
+        "SaveToRegularConfirm",
+        {
+          BankId: this.form.BankId || '9999',
+          BranchId:  this.userInfo.BranchId || "1999",
+          ChnlId: this.userInfo.ChnlId || "62",
+          CustomerNo: this.form.bank.vouId,
+          TransAmt: this.form.money,
+          TermCode: this.form.TermCode,
+          AutoDepositFlag: this.form.AutoDepositFlag,
+          DebtType:this.form.DebtType,
+        },true)
+        .then(res => {
+          console.log(res);
+          let aa = res._tokenName;
+          if (res._RejCode == "000000") {
+            window.NativeCall.SecureKeyboard(params => {
+              this.request(
+                "SaveToRegular",
+                {
+                  BankId: this.form.BankId || '9999',
+                  BranchId:  this.userInfo.BranchId || "1999",
+                  ChnlId: this.userInfo.ChnlId || "62",
+                  TrsAcNo: this.form.bank.vouId,
+                  CustomerNo: this.form.bank.vouId,
+                  TransAmt: this.form.money,
+                  TermCode: this.form.TermCode,
+                  DebtType:this.form.DebtType,
+                  AutoDepositFlag: this.form.AutoDepositFlag,
+                  PassWord:params,
+                  _tokenName: aa,
+                },true)
+                .then(res => {
+                  console.log(res);
+                  this.$router.push({
+                  path: "/win",
+                  query: {
+                    Calldeposit: true,
+                    money: this.form.money
+                  }
+                });
+                })
+                .catch(error => {
+                  console.log(error);
+                  var modul = "1"
+                  this.$emit("toResult",modul);
+                });
+            });
+          }
+        })
+        .catch(error => {
+          console.log(error);
+          var modul = "1"
+          this.$emit("toResult",modul);
+        });
+    },
+    //定转活-整存，通知
+    confirmCard() {
+      this.request("RegularToSaveConfirm", {
+        BankId: this.form.BankId || '9999',
+        BranchId:  this.userInfo.BranchId || "1999",
+        ChnlId: this.userInfo.ChnlId || "62",
+        CustomerNo: this.user.CardNo,
+        TransAmt: this.form.money,
+        AcctSeq: this.user.AcctSeqNo,
+        Balance: this.user.Balance,
+        Choose:this.Choose || '' ,
+        // TermCode:this.uesr.TermCode
+      })
+        .then(res => {
+          console.log(res);
+          console.log(res._tokenName);
+          let aa = res._tokenName;
+          if (res._RejCode == "000000") {
+            window.NativeCall.SecureKeyboard(params => {
+              console.log(params);
+              this.request("RegularToSave", {
+                BankId: this.form.BankId || '9999',
+                BranchId:  this.userInfo.BranchId || "1999",
+                ChnlId: this.userInfo.ChnlId || "62",
+                TransAmt: this.form.money,
+                PassWord: params,
+                // TermCode:this.uesr.TermCode,
+                TrsAcNo: this.user.CardNo,
+                CustomerNo: this.user.CardNo,
+                AcctSeq: this.user.AcctSeqNo,
+                Balance: this.user.Balance,
+                _tokenName: aa
+              }).then(res => {
+                console.log(res);
+                this.$router.push({
+                  path: "/win",
+                  query: {
+                    TransAmt: this.form.money,
+                    Rate: this.user.Rate,
+                    confirmCard: true
+                  }
+                });
+              })
+              .catch(error => {
+                console.log(error);
+                var modul = "1"
+                this.$emit("toResult",modul);
+              });
+            });
+          }
+        })
+        .catch(error => {
+          console.log(error);
+          var modul = "1"
+          this.$emit("toResult",modul);
+        });
+    },
+
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+// @import "vant/lib/icon/local.css";
+@import "@/styles/deposit/common.scss";
+.pupupTop {
+  display: flex;
+  height: px2vw(100);
+  padding: 0 px2vw(40);
+  flex-direction: row;
+  align-items: center;
+  img {
+    width: px2vw(44);
+    height: px2vw(44);
+  }
+  p {
+    flex: 1;
+    text-align: center;
+    color: #262626;
+    font-size: px2vw(34);
+    font-weight: 400;
+  }
+}
+.dealInfo {
+  height: px2vw(227);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  .top {
+    font-size: px2vw(30);
+    line-height: px2vw(30);
+    letter-spacing: px2vw(1);
+    margin-top: px2vw(30);
+  }
+  li{
+    height:px2vw(30);
+    font-size:px2vw(30);
+    font-family:PingFangSC-Regular,PingFang SC;
+    font-weight:400;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(30);
+  }
+  .money {
+    font-size: 0;
+    .icon {
+      font-size: px2vw(40);
+      font-weight: 500;
+      line-height: px2vw(56);
+    }
+    span {
+      font-size: px2vw(70);
+      font-weight: 500;
+      line-height: px2vw(98);
+    }
+  }
+}
+.orderInfo {
+  height: px2vw(100);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.safeTool {
+  height: px2vw(100);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: px2vw(28);
+  .rightIcon {
+    width: px2vw(12);
+    height: px2vw(22);
+  }
+  /deep/ .van-cell {
+    justify-content: space-between;
+  }
+  /deep/ .van-cell__title {
+    margin-right: px2vw(40);
+    flex: none;
+  }
+  /deep/ .van-cell__value {
+    width: px2vw(200);
+    flex: 1;
+    text-align: right;
+    margin-right: px2vw(20);
+    font-size: px2vw(28);
+  }
+}
+
+.btn {
+  padding: 0 px2vw(40);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: px2vw(19);
+}
+/deep/ .van-button {
+  width: 100%;
+  height: px2vw(90);
+  color: #fff;
+  background:linear-gradient(270deg,rgba(248,204,173,1) 0%,rgba(218,154,120,1) 100%);
+  font-size: px2vw(34);
+  border-radius: px2vw(45);
+}
+/deep/ .button .van-button{
+  width: 100%;
+  height: px2vw(90);
+  color: #fff;
+  background:linear-gradient(289deg,rgba(58,138,255,1) 0%,rgba(58,158,255,1) 100%);
+  font-size: px2vw(34);
+  border-radius: px2vw(45);
+}
+/deep/ .but .van-button{
+  width: 100%;
+  height: px2vw(90);
+  color: #fff;
+  background:linear-gradient(118deg,rgba(255,205,85,1) 0%,rgba(255,185,75,1) 100%);
+  font-size: px2vw(34);
+  border-radius: px2vw(45);
+}
+/deep/ .van-cell {
+  font-size: px2vw(28);
+  font-family: PingFangSC;
+  font-weight: 300;
+  line-height: px2vw(28);
+  /deep/ .van-cell__title {
+    color: #7d7d7d;
+  }
+  /deep/ .van-cell__value {
+    color: #000000;
+  }
+}
+/deep/ .van-cell__value{
+  flex:2
+}
+.phonecode{
+  box-sizing: border-box;
+  padding: 0 px2vw(40) 0;
+  width: 100%;
+  height: px2vw(30);
+}
+.sel-m{
+  display: flex;
+  justify-content: space-between;
+  font-size: px2vw(35);
+  font-family: PingFangSC;
+  font-weight: 300;
+  .input-box{
+    flex: 1;
+    width: 100%;
+    .v-input{
+    height: px2vw(50);
+    }
+  }
+  .verify{
+  color: #ff4040;
+  font-size: px2vw(28);
+  font-family: PingFangSC;
+  font-weight: 300;
+  }
+}
+.van-count-down {
+  color: #ff4040;
+  font-size: px2vw(28);
+  font-family: PingFangSC;
+  font-weight: 300;
+}
+ .toast{
+  color: #ff4040;
+  font-size: px2vw(28);
+  font-family: PingFangSC;
+  font-weight: 300;
+  margin-top: px2vw(10);
+  }
+</style>

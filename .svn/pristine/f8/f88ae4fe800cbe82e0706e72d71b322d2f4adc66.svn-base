@@ -1,0 +1,236 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller>
+      <div class="text-box">
+        <p>开户成功</p>
+        <img src="@/assets/bankIcon/icon_chenggong.png" alt />
+      </div>
+      <div class="card-box">
+        <img src="@/assets/bankIcon/bankofctsjz.png" alt />
+        <p>电子账户</p>
+        <h4>{{cardNumber | electronicAccounts}}</h4>
+        <h5>
+          开户机构
+          <span>焦作总行营业部</span>
+        </h5>
+      </div>
+      <div class="info-box">
+        <ul>
+          <li v-for="item in lists" :key="item.index">
+            <p>
+              {{item.title}}
+              <span>{{item.info | electronicAccounts}}</span>
+            </p>
+          </li>
+        </ul>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <button class="btn1" @click="goHomgPage">进入首页</button>
+        </div>
+        <div class="btn-box">
+          <button class="btn2" @click="goRecharge">立即充值</button>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    vInput
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      cardNumber: "6228482378775743",
+      lists: [
+        { title: "姓名", info: "蔡徐坤" },
+        { title: "开户机构", info: "焦作总行营业部" },
+        { title: "绑定卡号", info: "6228482378775743" },
+        { title: "电子账户", info: "6228482378775743477" }
+      ]
+    };
+  },
+  created() {},
+  methods: {
+    goHomgPage(){
+      // this.$router.push('index')
+      window.NativeCall.GoToNativeHome("张印真优秀");
+    },
+    goRecharge(){
+      console.log(this.$router)
+      // this.$router.push({ path: 'giro/index'})
+      window.location.href="http://localhost:8086/b#/homepage?123"
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.text-box {
+  margin-left: px2vw(60);
+  margin-top: px2vw(80);
+  height: px2vw(52);
+  font-size: px2vw(52);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(52);
+}
+.text-box p {
+  float: left;
+  display: block;
+  width: px2vw(216);
+}
+.text-box img {
+  width: px2vw(52);
+  float: left;
+  margin-left: px2vw(20);
+}
+.card-box {
+  margin: px2vw(50) px2vw(60);
+  width: px2vw(630);
+  height: px2vw(360);
+  background: linear-gradient(
+    321deg,
+    rgba(254, 236, 207, 1) 0%,
+    rgba(206, 134, 47, 1) 100%
+  );
+  box-shadow: 0px 15px 32px 0px rgba(77, 35, 0, 0.08);
+  border-radius: px2vw(20);
+}
+.card-box img {
+  width: px2vw(245);
+  height: px2vw(87);
+  margin-top: px2vw(30);
+  margin-left: px2vw(40);
+}
+.card-box p {
+  float: right;
+  height: px2vw(24);
+  font-size: px2vw(24);
+  font-family: PingFangSC-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  line-height: px2vw(24);
+  margin-top: px2vw(60);
+  margin-right: px2vw(40);
+}
+.card-box h4 {
+  // width: px2vw(496);
+  height: px2vw(60);
+  font-size: px2vw(48);
+  font-family: PingFangSC-Semibold;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 1);
+  line-height: px2vw(60);
+  text-shadow: 0px 2px 7px rgba(156, 107, 41, 0.23);
+  background: linear-gradient(
+    189deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(245, 235, 228, 1) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-top: px2vw(42);
+  // margin-left: px2vw(58)
+  text-align: center;
+}
+.card-box h5 {
+  height: px2vw(24);
+  font-size: px2vw(24);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+  line-height: px2vw(24);
+  margin-left: px2vw(40);
+  margin-top: px2vw(76);
+}
+.card-box h5 span {
+  margin-left: px2vw(19);
+}
+.info-box {
+  margin: px2vw(60) px2vw(60);
+  padding: px2vw(40) 0;
+  padding-left: px2vw(50);
+  background: rgba(250, 250, 250, 1);
+  border-radius: 16px;
+}
+.info-box li {
+  margin-bottom: px2vw(30);
+}
+.info-box li:first-child {
+  margin-left: px2vw(56);
+}
+.info-box li:last-child {
+  margin-bottom: 0;
+}
+.info-box li p {
+  height: px2vw(28);
+  font-size: px2vw(28);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(125, 125, 125, 1);
+  line-height: px2vw(28);
+}
+.info-box li p span {
+  font-size: px2vw(28);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(28);
+  margin-left: px2vw(40)
+}
+.footer-box {
+  width: px2vw(628);
+  box-sizing: border-box;
+  padding: 0 px2vw(40) 0;
+  display: flex;
+  justify-content: space-between;
+}
+.btn-box {
+  width: px2vw(290);
+}
+
+
+
+
+.footer-box .btn-box .btn1 {
+  width: 100%;
+  text-align: center;
+  background: #fff;
+  border-radius:px2vw(44);
+  border:1px solid rgba(62,143,255,1);
+  height: px2vw(90);
+  color: #3E8FFFFF;
+  font-size: px2vw(32);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  line-height: px2vw(32);
+}
+.btn2 {
+  width: 100%;
+  text-align: center;
+  background: rgba(249, 97, 89, 1);
+  border: 0;
+  border-radius: px2vw(6);
+  height: px2vw(90);
+  color: #fff;
+  font-size: px2vw(32);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  line-height: px2vw(32);
+}
+</style>

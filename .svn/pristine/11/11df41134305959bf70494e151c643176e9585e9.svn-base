@@ -1,0 +1,185 @@
+<template>
+  <div class="outer addInformation">
+    <Myheader
+      :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+    ></Myheader>
+    <Scroller>
+      <Pagetitle
+        class="page-title"
+        :title="title"
+        :notice="notice"
+      ></Pagetitle>
+      <div class="sel-item">
+        <div class="sel-m">
+          {{form.username}}
+        </div>
+      </div>
+      <div class="sel-item">
+        <div class="sel-m">
+          {{form.IDCard}}
+        </div>
+      </div>
+      <div class="sel-item">
+        <cell-select
+          class="sel-m"
+          :placeholder="'请选择学历信息'"
+          :title="form.eduBack"
+          @click="showEduRadio"
+        ></cell-select>
+      </div>
+      <div class="sel-item">
+        <cell-select
+          class="sel-m"
+          :title="form.job"
+          :placeholder="'请选择职业信息'"
+           @click="showProList"
+        ></cell-select>
+      </div>
+      <div class="sel-item">
+        <div class="sel-m">
+          <v-input
+            v-model="form.address"
+            :value="form.address"
+            label="联系地址"
+            placeholder="请输入个人常用联系地址"
+          ></v-input>
+        </div>
+      </div>
+      <div class="sel-item">
+        <div class="sel-m">
+          <v-input
+            v-model="form.workplace"
+            :value="form.workplace"
+            label="联系地址"
+            placeholder="请输入工作单位（选填）"
+          ></v-input>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="disabled"  @click="next">提交</van-button>
+        </div>
+      </div>
+    </Scroller>
+    <!-- 选择学历 -->
+    <edu-background @select="selectEdu" :show.sync="eduShow"></edu-background>
+    <!-- 选择职业 -->
+    <select-profession @select="selectPro" :show.sync="proShow"></select-profession>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Pagetitle from "./components/Pagetitle";
+import CellSelect from "@/components/CellSelect";
+import EduBackground from './components/EduBackground';
+import selectProfession from './components/selectProfession';
+import { Popup,Button } from "vant";
+import {mapGetters,mapActions} from 'vuex'
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    vInput,
+    Pagetitle,
+    CellSelect,
+    [Popup.name]: Popup,
+    EduBackground,
+    selectProfession,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      form:{
+        username: '',
+        IDCard: '',
+        eduBack: '',
+        workplace: '',
+        address: '',
+        job: '',
+      },
+      workplace: '',
+      address: '',
+      title: "填写附加信息",
+      notice: "完善个人相关信息，提高账户安全性",
+      eduShow: false,
+      proShow: false,
+      bankListShow: false,
+    };
+  },
+  computed:{
+    ...mapGetters('eleAccounts',[
+        "eleForm"
+    ]),
+    disabled(){
+      let disabled = true;
+      if(!this.form.eduBack){
+        disabled = true;
+      }else if(!this.form.job){
+        disabled = true;
+      }else if(!this.form.address){
+        disabled = true;
+      }else{
+        disabled = false;
+      }
+      return disabled
+    }
+  },
+  created() {
+    console.log("接受vuex",this.eleForm)
+    this.form = {...this.eleForm}
+  },
+  methods: {
+    ...mapActions('eleAccounts',[
+        "updateEleForm"
+    ]),
+    showEduRadio(){
+        this.eduShow = true;
+    },
+    showProList(){
+        this.proShow = true;
+    },
+    selectEdu(item){
+        this.form.eduBack = item.name;
+    },
+    selectPro(item){
+        this.form.job = item.name;
+    },
+    next(){
+     this.updateEleForm(this.form);
+      this.$router.push({name:"bindCard"});
+    }
+  }
+};
+</script>
+<style lang="scss" >
+.addInformation {
+  .page-title {
+    .header-box {
+      padding-top: px2vw(40);
+      padding-bottom: px2vw(80)
+    }
+  }
+}
+.addInformation .sel-m .van-cell {
+  padding: 0;
+  font-size: px2vw(32);
+}
+.footer-box{
+  display: flex;
+  justify-content: center;
+  .btn-box{
+    width: px2vw(670);
+  }
+}
+</style>

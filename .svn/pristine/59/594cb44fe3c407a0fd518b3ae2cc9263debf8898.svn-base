@@ -1,0 +1,117 @@
+> 首页的页面pick.vue
+```
+
+调用的列表数据的方法
+financialProductListQry(val);
+val=0 热销理财
+val=1 理财推荐
+
+列表通过item.vue 公用组件渲染
+分为四套模板，分别是：
+1102 预期收益 1303 封闭净值 1306周期净值 1307 货币净值
+
+1102展示预期收益率expectProfRate 
+1303展示业绩比较基准benchmark
+1306展示业绩比较基准benchmark
+1307展示7日年化yeild
+此套模板还引用在manageMoneyList 分类列表中
+
+首页列表的数据是查询本地库，接口返回数据是小驼峰，调用理财系统数据是大驼峰
+
+```
+>产品详情pick>detail
+```
+同item 不同模板展示不同字段
+
+详情页面会被原生app调用，路由拦截卸载router中，将原生的参数通过router返回到详情中，这里通过goNative控制是否返回到原生页面中，beforeRouteLeave生命周期函数来判断是否是返回原生。
+
+投资规则:
+1102            起息日          到期日          汇款到账
+                prodStartDate   prodEndDate    3个工作日之内
+1303            起息日          到期日          汇款到账
+                prodStartDate   prodEndDate    3个工作日之内
+1306(productState=1募集期 productState=0开放期)
+productState=1
+                份额确认日       到期日          回款到账
+                prodStartDate   prodEndDate     到期后3个工作日内
+productState=0  
+                份额确认日       到期日          回款到账
+                nextDate        确认日+N        到期后3个工作日内
+1307(productState=1募集期 productState=0开放期)
+productState=1           
+                确定日           到期日          收益到账日
+                prodEstabDate   prodEndDate     实时到账
+productState=0  
+                购买日           赎回            收益到账日
+                new Date()                      实时到账
+折线图：
+1102||1303 调用prdSeriesQry函数 期数
+1306||1307 调用FinaQuotationQry函数 inComeDate
+这里获取10条数据，筛选可用数据后截取7条数据，如果只有一条数据时，不展示折线图
+
+底部按钮
+isBuy=='0'||isBuy=='2'展示已购买 否则已售罄
+按钮点击后，先判断用户是否登录，未登录跳转原生登录页面，
+再判断用户是否已绑卡，未绑卡跳转到绑卡页面
+再判断用户是否签约，未签约判断是否是白名单，是跳转到白名单，负责弹出提示
+在判断用户风险等级是否过期，过期后跳转到风险评估
+
+```
+>产品购买页面，pick>apply
+```
+1303的产品需要展示周期到期方式和理财周期
+
+协议
+《焦作中旅银行理财产品客户权益须知》和《焦作中旅银行理财产品销售协议》都是固定文件，《焦作中旅银行理财产品说明书》需要调取接口，接口返回的是url，可能是PDF或者word文档，需要调用原生插件。
+
+```
+
+>产品净值pick>prodNetWorth
+```
+调用列表接口方法getData，接口中需要传入时间，时间为当前时间的前一天，查询的是前一天的净值产品，这里的搜索，没有调用接口，在前端进行筛选
+```
+
+>风险评估pick>assessment
+```
+风险评估的入口有两个地方，第一个是首页的风险评估，第二个是详情点击购买时，用户未评估或者用户等级不够
+
+这里可能出现问题的地方就是点击开始评估调用toAssessment这个方法，如果接口中出错或者未返回数据，会提示用户试题下载中,一般出现这个问题，基本上是接口有问题。
+```
+
+>签约页面hold>signInfo
+```
+签约的入口只有在购买时，用户未签约进入
+```
+
+>我的持仓hold>myPocket
+```
+从首页进入我的持仓时需要判断用户是否登录
+
+这里的持仓总额，在调用totalValue方法后，存入store，用户只有执行过赎回或者重新进入时才会进行刷新。
+
+进行tab切换时会将数据存储列表数据存储在store中
+
+tab切换时，由于持仓中和委托中接口不同，接口也很慢，所以每次切换会重新调用接口，这里会用store缓存数据
+
+列表渲染模板 pocketproduct.vue
+```
+>持仓详情hold>pocketDetail
+```
+持仓、委托这里是共用的是一套详情页面，持仓跟委托展示的字段也不相同，根据this.$store.state.manageMoney.productType（0持仓中|1委托中）
+
+在持仓详情中，会调用isAllowCancel来判断该流水是否可以撤销，
+同时也会调用详情判断该产品是否可以再次购买，可以就跳转到购买页面，1307产品可以进行赎回，跳转到赎回页面
+
+```
+
+>折线图通用组件testEcharts.vue
+```
+需要传入的参数：
+chartData折线图数据
+chartType yield prdValue incomeData(用来控制tip弹出框的数据格式、控制x轴的展示样式)
+
+当chartType为yield或prdValue时折线图chartData数据样式为[[时间撮,数据],[时间撮,数据]]，这里需要传递时间撮间隔interval，避免间隔过大
+
+当为incomeData时chartData数据样式为[[数据1,数据2],[数据1,数据2]]，如果数据1为数据时需要传入max、min,即数据1的最大和最小值，同时要传入interval，避免max和min差距过大，导致x轴数据太多
+```
+

@@ -1,0 +1,680 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="topT">
+        <div class="top">
+          <!-- 年利率 -->
+        <div class="top_left" @click="todownor">
+          年利率
+          <div v-if="Sortshow">
+            <div v-if="condition">
+              <img src="@/assets/deposit/index/icon_up_red@2x.png" alt />
+              <img src="@/assets/deposit/index/icon_down@2x.png" alt />
+            </div>
+            <div v-else>
+              <img src="@/assets/deposit/index/icon_up@2x.png" alt />
+              <img src="@/assets/deposit/index/icon_down_red@2x.png" alt />
+            </div>
+          </div>
+          <div v-else>
+              <div>
+                <img src="@/assets/deposit/index/icon_up@2x.png" alt />
+                <img src="@/assets/deposit/index/icon_down@2x.png" alt />
+              </div>
+          </div>
+        </div>
+          <!-- 期限 -->
+          <div class="top_left">
+            <md-drop-menu :data="data"  @change="change" />
+          </div>
+        <!-- 剩余额度 -->
+        <div class="top_left" @click="Todownor">
+          剩余额度
+          <div v-if="Downshow">
+            <div v-if="Condition">
+              <img src="@/assets/deposit/index/icon_up_red@2x.png" alt />
+              <img src="@/assets/deposit/index/icon_down@2x.png" alt />
+            </div>
+            <div v-else>
+              <img src="@/assets/deposit/index/icon_up@2x.png" alt />
+              <img src="@/assets/deposit/index/icon_down_red@2x.png" alt />
+            </div>
+          </div>
+          <div v-else>
+              <div>
+                <img src="@/assets/deposit/index/icon_up@2x.png" alt />
+                <img src="@/assets/deposit/index/icon_down@2x.png" alt />
+              </div>
+          </div>
+        </div>
+        </div>
+      </div>
+      <div class="main">
+      <!-- <md-scroll-view
+          ref="scrollView"
+          :scrolling-x="false"
+          @end-reached="$_onEndReached"
+        > -->
+        <div v-show="biglist.length>0">
+          <div  class="biglist" v-for="(itme,index) in biglist" >
+        <div class="mainList" @click="gotodetail(itme)" ref="test" >
+          <div class="name">
+            <p>
+              {{itme.DepositAllName}}<span v-if="itme.PayInterest == '2'">月月付息</span><span v-if="itme.PayInterest == '1'">利随本清</span>
+            </p>
+          </div>
+          <div class="bigliststyle">
+            <div class="left">
+              <p>
+                {{itme.EndIntRate | toFixedNumBer}}<span>%</span>
+              </p>
+              <h5 class="aa">年利率</h5>
+            </div>
+            <div class="middle">
+              <div v-if="itme.PeriodUnit == 'M'">
+                <h4>
+                  期限:
+                  <span class="day">{{itme.DepositPeriod}}个月</span>
+                </h4>
+                <h3>
+                  剩余额度:
+                  <span class="color">
+                    {{itme.CurrentBalance/itme.CurrentIssueQuota*100 | toFixedNum}}%
+                  </span>
+                </h3>
+              </div>
+              <div v-else>
+                <h4 >
+                  期限:
+                  <span class="day">{{itme.DepositPeriod}}年</span>
+                </h4>
+                <h3>
+                  剩余额度:
+                  <span class="color">
+                    {{itme.CurrentBalance/itme.CurrentIssueQuota*100 | toFixedNum}}%
+                  </span>
+                </h3>
+              </div>
+            </div>
+          </div>
+          <!-- <div v-if="itme.PayInterest == '2'" class="right">
+            <img src="@/assets/deposit/index/icon_yueyuefuxi@2x.png" alt />
+            <span>月月付息</span>
+          </div> -->
+        </div>
+      </div>
+      </div>
+      <!-- 加载更多 -->
+      <div v-if='MoreShow' class="MoreShow">
+        <div v-show="Biglist.length > biglist.length" class="more" @click="loadingMore">点击加载更多</div>
+      </div>
+      <div v-show="biglist.length == 0" class="empty">
+        <div class="img-box">
+          <img src="@/assets/deposit/index/img_kongzhuangtai@2x.png" alt />
+          <p>暂无记录</p>
+        </div>
+      </div>
+          <!-- <md-scroll-view-more
+            slot="more"
+            :is-finished="isFinished"
+          >
+          </md-scroll-view-more>
+        </md-scroll-view> -->
+    </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+import { ScrollView, ScrollViewRefresh, ScrollViewMore,DropMenu } from 'mand-mobile';
+export default {
+  components: {
+    Myheader: Header,
+    [ScrollView.name]: ScrollView,
+    [ScrollViewMore.name]: ScrollViewMore,
+    [DropMenu.name]: DropMenu,
+  },
+  data() {
+    return{
+      params: {
+        leftShow: false
+      },
+      condition: true,
+      Condition:true,
+      Sortshow:false,//排序
+      Downshow:false,//排序
+      MoreShow:true,//加载更多
+      data:[
+          {
+          text: '期限',
+          options: [
+            {
+              value: '0',
+              text: '期限',
+            },
+            ],
+          }
+      ],
+      gettime:null,//时间选择
+      biglist: [],
+      Biglist:[],//保存数据
+      showlist:[],
+      isFinished: false,
+    }
+  },
+  created() {
+    this.request("bigreceipt", {
+      BankId: "9999",
+      BranchId: "62"
+    },false)
+      .then(res => {
+        console.log(res);
+        this.biglist = res.List;
+        this.Biglist = res.List;
+        this.changeList()
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  },
+  mounted() {
+    // console.log(this.$route.query);
+  },
+  computed: {
+  ...mapGetters('deposit',['Setuserinfo']),
+  },
+  methods: {
+    ...mapActions("deposit", ["setuserinfo"]),
+    //更改数据
+        changeList(){
+          if(this.Biglist.length>0){
+            var that = this
+            // 插入费率
+            for(var i=0;i<this.Biglist.length;i++){
+            var rate="rate"
+            var setNumber= (this.Biglist[i].CurrentBalance/this.Biglist[i].CurrentIssueQuota)*100
+            this.$set(this.Biglist[i],rate,setNumber )
+            }
+            // 插入日期
+            for(var i =0; i<this.Biglist.length;i++){
+              var time='time'
+              if(this.Biglist[i].PeriodUnit=='M'){
+                var setTime = this.Biglist[i].DepositPeriod + '个月'
+              }
+              if(this.Biglist[i].PeriodUnit=='Y'){
+                var setTime = this.Biglist[i].DepositPeriod + '年'
+              }
+              // var setTime = this.Biglist[i].DepositPeriod + this.Biglist[i].PeriodUnit
+                this.$set(this.Biglist[i],time,setTime)
+            }
+            this.biglist = this.Biglist
+            console.log(this.biglist)
+            this.choosetime()
+          }
+        },
+      //剩余额度选择
+    todownor() {
+      let that = this
+      this.Sortshow = true
+      this.Downshow = false
+      this.condition = !this.condition;
+        if(!that.condition){
+          if(that.biglist.length>0){
+            var data=that.biglist.sort(that.comparee("EndIntRate"))
+            this.biglist = data
+          }
+        }
+        if(that.condition){
+            if(that.biglist.length>0){
+            var data=that.biglist.sort(that.compare("EndIntRate"))
+            this.biglist = data
+          }
+        }
+    },
+    //费率选择
+    Todownor(){
+        let that = this
+      this.Sortshow = false
+      this.Downshow = true
+      this.Condition = !this.Condition;
+        if(!that.Condition){
+          if(that.biglist.length>0){
+            var data=that.biglist.sort(that.comparee("rate"))
+            this.biglist = data
+          }
+        }
+        if(that.Condition){
+            if(that.biglist.length>0){
+            var data=that.biglist.sort(that.compare("rate"))
+            this.biglist = data
+          }
+        }
+    },
+        // //上滑加载更多
+    // $_onEndReached() {
+    //   if (this.isFinished) {
+    //     return
+    //   }
+    //   // async data
+    //   setTimeout(() => {
+    //     this.biglist.length += 10
+    //     if (this.biglist.length >= this.Biglist.length) {
+    //       this.isFinished = true
+    //     }
+    //     this.$refs.scrollView.finishLoadMore()
+    //   }, 1000)
+    // },
+    //对象排序 大小
+    comparee(prop){
+        return function (obj1, obj2) {
+        var val1 = obj1[prop];
+        var val2 = obj2[prop];
+        if (!isNaN(Number(val1)) && !isNaN(Number(val2))) {
+            val1 = Number(val1);
+            val2 = Number(val2);
+        }
+        if (val1 < val2) {
+            return 1;
+        } else if (val1 > val2) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+    },
+    //对象排序 小大
+    compare(prop){
+        return function (obj1, obj2) {
+        var val1 = obj1[prop];
+        var val2 = obj2[prop];
+        if (!isNaN(Number(val1)) && !isNaN(Number(val2))) {
+            val1 = Number(val1);
+            val2 = Number(val2);
+        }
+        if (val1 < val2) {
+            return -1;
+        } else if (val1 > val2) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+    },
+    // 日期选择
+    change(barItem, listItem){
+      console.log(barItem, listItem)
+      this.Sortshow = false
+      this.Downshow = false
+      if(listItem.value == 0 ){
+        this.MoreShow = true
+        this.biglist = this.Biglist
+      }else{
+        if(this.Biglist.length !== 0){
+          this.MoreShow = false
+          let ListdataOut=[]
+          for(let item of this.Biglist){
+            if(item.time == listItem.text){
+              ListdataOut.push(item);
+            }
+          }
+          this.biglist =  ListdataOut
+        }
+      }
+    },
+         // 显示期限
+    choosetime(){
+          var newStr=[];
+          var StrMounth = [];
+          var StrYear = [];
+          var UserList=[]
+              if(this.Biglist.time !== ''){
+                for(var i=0;i<this.Biglist.length;i++){
+                  if(newStr.indexOf(this.Biglist[i].time)==-1){
+                      newStr.push(this.Biglist[i].time);
+                  }
+                }
+                console.log(newStr)
+                if(newStr.length>0){
+                  for(let j of newStr){
+                  if(j.indexOf("月") > 0 ){
+                      StrMounth.push(j);
+                    }else if(j.indexOf("年") > 0 ){
+                      StrYear.push(j);
+                    }
+                  }
+                }
+                var SArr = StrMounth.sort((a,b) => a.match(/\d+/)[0] -  b.match(/\d+/)[0])
+                var Sarr = StrYear.sort((a,b) => a.match(/\d+/)[0] -  b.match(/\d+/)[0])
+                console.log(SArr,Sarr)
+                var Slist = [...SArr,...Sarr]
+                for(var i=0; i<Slist.length;i++){
+                  var obj={
+                    value: i+1,
+                    text: Slist[i],
+                  }
+                UserList.push(obj)
+              }
+              this.data[0].options=[...this.data[0].options,...UserList]
+                console.log(this.Biglist)
+                  if (this.Biglist.length <= 10) {
+                    this.biglist = this.Biglist;
+                  } else {
+                    this.page = 0;
+                    this.biglist = this.Biglist.slice(
+                      this.page * 10,
+                      this.page * 10 + 10
+                    );
+                  }
+
+              // console.log(UserList,this.data[0].options)
+              }else{
+                console.log(this.Biglist,'错误')
+              }
+    },
+    //跳转详情
+    gotodetail(e) {
+      this.setuserinfo({ ...e });
+      console.log(e);
+      var Info= JSON.stringify(e)
+      this.$router.push({
+        path: "/detail",
+        query: {
+          Info,
+          e
+        }
+      });
+    },
+    //点击加载更多
+    loadingMore() {
+      let arr = [];
+      this.page++;
+      console.log(this.page);
+      if (this.Biglist.length > this.page * 10 + 10) {
+        arr = this.Biglist.slice(this.page * 10, this.page * 10 + 10);
+        console.log(arr);
+      } else {
+        arr = this.Biglist.slice(this.page * 10);
+        console.log(arr);
+      }
+      this.biglist.push(...arr);
+      console.log(this.biglist, this.biglist.length, this.Biglist.length);
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  background: #fff;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  padding: 0 px2vw(40) 0;
+}
+//头部
+.topT{
+  margin-left:px2vw(-40) ;
+  background: #fff;
+    z-index: 100;
+}
+.top {
+  position:fixed;
+  display: flex;
+  height: px2vw(24);
+  width: 100%;
+  align-items: center;
+  justify-content: space-around;
+  height: px2vw(90);
+  background: rgba(255, 255, 255, 1);
+  font-size: px2vw(24);
+  font-family: PingFangSC-Regular, PingFangSC;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(24);
+  .iconfont {
+    font-size: px2vw(22);
+  }
+  .top_left {
+    display: flex;
+    align-items: center;
+    div {
+      display: flex;
+      flex-direction: column;
+      img {
+        height: px2vw(8);
+        width: px2vw(12);
+        margin-left: px2vw(10);
+      }
+    }
+  }
+}
+//详情
+.biglist {
+  .mainList{
+    height: px2vw(236);
+    .name{
+      height:px2vw(32);
+      font-size:px2vw(32);
+      font-family:PingFangSC-Regular,PingFang SC;
+      font-weight:400;
+      color:rgba(38,38,38,1);
+      line-height:px2vw(32);
+      span{
+          background:rgba(62,143,255,0.1);
+          border-radius:px2vw(4);
+          color:#3E8FFFFF;
+          font-size: px2vw(22);
+          height:px2vw(32);
+          line-height:px2vw(32);
+          margin-left: px2vw(10);
+        }
+    }
+  }
+  .bigliststyle {
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-scart;
+    justify-content: end;
+    height: px2vw(164);
+    width: 100%;
+    // padding-top:px2vw(40) ;
+    border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+    h5 {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+      margin-top: px2vw(28);
+    }
+    h4{
+      margin-top: px2vw(40);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+    }
+    h3{
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+      margin-top: px2vw(25);
+    }
+    .left {
+      p {
+        height: px2vw(46);
+        font-size: px2vw(54);
+        font-family: PingFangSC-Medium, PingFangSC;
+        font-weight: 500;
+        color: rgba(247, 90, 80, 1);
+        line-height: px2vw(46);
+        margin-top: px2vw(40);
+        span {
+        font-size:px2vw(36);
+        font-family:PingFangSC-Medium,PingFang SC;
+        font-weight:500;
+        color:rgba(247,90,80,1);
+        }
+      }
+    }
+    .middle {
+      height: px2vw(46);
+      font-size: px2vw(32);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(46);
+      margin-left: px2vw(85);
+      display: flex;
+      flex-direction: column;
+      p{
+        height:px2vw(46);
+        font-size:px2vw(32);
+        font-family:PingFangSC-Regular,PingFang SC;
+        font-weight:400;
+        color:rgba(38,38,38,1);
+        line-height:px2vw(46);
+        display: flex;
+        align-items: center;
+        span{
+          background:rgba(62,143,255,0.1);
+          border-radius:px2vw(4);
+          color:#3E8FFFFF;
+          font-size: px2vw(22);
+          margin-left: px2vw(10);
+        }
+      }
+      .yuexi {
+        width: 100%;
+        height: px2vw(28);
+        background: linear-gradient(
+          155deg,
+          rgba(58, 138, 255, 0.1) 0%,
+          rgba(58, 180, 255, 0.1) 100%
+        );
+        border-radius: px2vw(4);
+        font-size: px2vw(20);
+        line-height: px2vw(28);
+        font-weight: 400;
+        color: rgba(62, 143, 255, 1);
+        padding: px2vw(4) px2vw(8);
+        margin-left: px2vw(10);
+      }
+      .day {
+        margin-right: px2vw(20);
+        color: #F75A50FF;
+      }
+      span {
+        color: rgba(38, 38, 38, 1);
+         height: px2vw(40);
+         line-height: px2vw(40);
+      }
+      .color{
+        color: #F75A50FF;
+      }
+    }
+    .right {
+      img {
+        width: px2vw(22);
+        height: px2vw(22);
+      }
+      margin-top: px2vw(40);
+      display: flex;
+      color: rgba(62, 143, 255, 1);
+      align-items: center;
+      justify-content: flex-end;
+      height: px2vw(24);
+      font-size: px2vw(18);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      width:px2vw(106);
+      height:px2vw(28);
+      background:linear-gradient(155deg,rgba(58,138,255,0.1) 0%,rgba(58,180,255,0.1) 100%);
+      line-height: px2vw(18);
+    }
+  }
+}
+.main{
+  margin-top: px2vw(120);
+}
+// 下拉框
+/deep/ .md-drop-menu{
+  position: static;
+  border:none;
+  height: px2vw(90);
+}
+/deep/   .md-drop-menu-bar:before{
+  border:none;
+}
+/deep/ .md-popup-box .md-slide-down{
+  position: static;
+
+}
+/deep/  .md-slide-down{
+    margin-top: px2vw(80);
+}
+/deep/ .md-drop-menu-bar .bar-item.selected{
+  color: rgba(38, 38, 38, 1);
+}
+/deep/ .md-drop-menu-bar .bar-item span{
+  font-size: px2vw(24);
+}
+// 点击加载
+.more{
+      height: px2vw(44);
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(44);
+      text-align: center;
+}
+// 空白
+.empty {
+  .img-box {
+    width: px2vw(300);
+    margin: px2vw(86) auto 0;
+    img {
+      width: 100%;
+    }
+    p {
+      font-size: px2vw(28);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(40);
+      text-align: center;
+      margin-top: px2vw(26);
+    }
+  }
+}
+</style>

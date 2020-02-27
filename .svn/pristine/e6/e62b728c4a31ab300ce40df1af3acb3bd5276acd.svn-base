@@ -1,0 +1,924 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader
+      :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'none'"
+      :isWhite="true"
+    >
+      <i slot="left" class="iconfont">&#xe63d;</i>
+    </Myheader>
+    <div class="content">
+      <div class="tempnone">
+        <!-- //头部 -->
+        <div class="topone">
+          <div class="left">
+            <p>
+              持有金额(元)
+              <i slot="left" class="iconfont iconicon_chicang-"></i>
+            </p>
+            <p>人民币存单</p>
+            <p>{{dataprice | Money}}</p>
+          </div>
+          <div class="right">
+            <p @click="gotodepositdetail">
+              存款明细
+              <span slot="left" class="iconfont iconicon_more_red-"></span>
+            </p>
+          </div>
+        </div>
+        <div class="tempcontent">
+          <van-tabs v-model="active" animated type="line" @click="onClickTab">
+            <!-- 特色存款 -->
+            <van-tab title="特色存款" class="tempcontent_tese">
+              <div v-if="Baodeposit" v-for="(item,i) in BaoList" class="listdata">
+                <div class="top_tem">
+                  <div class="top_t">
+                    <p class="left">
+                      <img class="img" src="@/assets/deposit/index/icon_yinhangka_44@2x.png" alt />
+                      <span>银行卡({{ item[0].AcctNo || '' | CardNoFour }})</span>
+                    </p>
+                    <p @click="gotocarddetail(item[0].AcctNo || '' )" class="right">
+                      更多
+                      <span slot="left" class="iconfont icongengduo-"></span>
+                    </p>
+                  </div>
+                </div>
+                <div v-for="(itemI,j) in item" @click="goToreceipt(itemI)" class="temlist">
+                  <div class="temlist_data">
+                    <div class="temlist_left">
+                      <p class="p">{{itemI.ProductName}}</p>
+                    </div>
+                    <div class="temlist_middle"></div>
+                    <div class="temlist_right">
+                      <p>存入本金(元)</p>
+                      <p>{{itemI.Balance| Money }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </van-tab>
+            <!-- 大额存单 -->
+            <van-tab title="大额存单" class="tempcontent_big">
+              <div v-if="Bigdeposit" v-for="(item,i) in BigAmountList" class="listdata">
+                <div class="top_tem">
+                  <div class="top_t">
+                    <p class="left">
+                      <img class="img" src="@/assets/deposit/index/icon_yinhangka_44@2x.png" alt />
+                      <span>银行卡({{ item[0].PayerAcNo || '' | CardNoFour }})</span>
+                    </p>
+                    <p @click="gotocarddetailbig(item[0].PayerAcNo || '' )" class="right">
+                      更多
+                      <span slot="left" class="iconfont icongengduo-"></span>
+                    </p>
+                  </div>
+                </div>
+                <!-- 内容 -->
+                <div v-for="(itemI,j) in item" @click="goTobigreceipt(itemI)" class="temlist">
+                  <div class="temlist_data">
+                    <div class="temlist_left">
+                      <!-- <p v-if="itemI.TermType == 'M'">{{itemI.DepositTerm}}个月存期</p>
+                      <p v-if="itemI.TermType == 'Y'">{{itemI.DepositTerm}}年存期</p>-->
+                      <p>{{itemI.PrdName}}</p>
+                      <p>{{itemI.EndDate | DateChange }}</p>
+                    </div>
+                    <div class="temlist_middle">
+                      <p>利率</p>
+                      <p>{{itemI.PrdInt | toFixedNumBer }}%</p>
+                    </div>
+                    <div class="temlist_right">
+                      <p>存入本金(元)</p>
+                      <p>{{itemI.PayerAmt| Money }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </van-tab>
+            <!-- //大额存单结束 -->
+            <!-- 整存整取 -->
+            <van-tab title="整存整取" class="tempcontent_zhengcun">
+              <div v-if="WholeStodeposit" v-for="(item,i) in WholeStoList" class="listdata">
+                <div class="top_tem">
+                  <div class="top_t">
+                    <p class="left">
+                      <img class="img" src="@/assets/deposit/index/icon_yinhangka_44@2x.png" alt />
+                      <span>银行卡({{ item[0].AcctNo || '' |CardNoFour}})</span>
+                    </p>
+                    <p @click="gotocarddetail(item[0].AcctNo || '')" class="right">
+                      更多
+                      <span slot="left" class="iconfont icongengduo-"></span>
+                    </p>
+                  </div>
+                </div>
+                <div v-for="(itemI,j) in item" @click="goToreceipt(itemI)" class="temlist">
+                  <div class="temlist_data">
+                    <div class="temlist_left">
+                      <p class="p">{{itemI.ProductName}}</p>
+                    </div>
+                    <div class="temlist_middle"></div>
+                    <div class="temlist_right">
+                      <p>存入本金(元)</p>
+                      <p>{{itemI.Balance | Money }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </van-tab>
+            <!-- 通知存款 -->
+            <van-tab title="通知存款" class="tempcontent_tongzhi">
+              <div v-if="Noticltdeposit" v-for="(item,i) in NoticltList  " class="listdata">
+                <div class="top_tem">
+                  <div class="top_t">
+                    <p class="left">
+                      <img class="img" src="@/assets/deposit/index/icon_yinhangka_44@2x.png" alt />
+                      <span>银行卡({{item[0].AcctNo || '' | CardNoFour }})</span>
+                    </p>
+                    <p @click="gotocarddetail(item[0].AcctNo || '' )" class="right">
+                      更多
+                      <span slot="left" class="iconfont icongengduo-"></span>
+                    </p>
+                  </div>
+                </div>
+                <div v-for="(itemI,j) in item" @click="goToreceipt(itemI)" class="temlist">
+                  <div class="temlist_data">
+                    <div class="temlist_left">
+                      <p class="p">{{itemI.ProductName}}</p>
+                    </div>
+                    <div class="temlist_middle"></div>
+                    <div class="temlist_right">
+                      <p>存入本金(元)</p>
+                      <p>{{itemI.Balance| Money }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </van-tab>
+          </van-tabs>
+        </div>
+      </div>
+    </div>
+    <!-- </div> -->
+    <!-- 足部 -->
+    <div class="foot">
+      <div :class="activeClass == 0? 'active':''" @click="qh(true,0)">
+        <img v-if="activeClass == 0" src="@/assets/deposit/index/icon_tabbar_jingxuan@2x.png" alt />
+        <img v-else src="@/assets/deposit/index/icon_tabbar_jingxuan_nor@2x.png" alt />
+        <p>精选</p>
+      </div>
+      <div :class="activeClass == 1? 'active':''" @click="qh(false,1)">
+        <div class="foot_right">
+          <img v-if="activeClass == 1" src="@/assets/deposit/index/icon_wodecunkuan_sel@2x.png" alt />
+          <img v-else src="@/assets/deposit/index/icon_wodecunkuan_nor@2x.png" alt />
+          <p>我的存款</p>
+        </div>
+      </div>
+    </div>
+    <!-- 提示 -->
+    <MyDialog
+      :showCancel="showCancel"
+      @cancel="cancel"
+      title="提示"
+      :show="alertShow"
+      :isClose="false"
+      @con="config"
+    >
+      <p slot="content" class="dialog-content">{{dialogText}}</p>
+    </MyDialog>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { Button, Tab, Tabs, Swipe, SwipeItem, Grid, GridItem } from "vant";
+import { parse } from "url";
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+import { error } from "util";
+export default {
+  components: {
+    Myheader: Header, //头部组件
+    [Button.name]: Button,
+    MyDialog: Dialog
+  },
+  data() {
+    return {
+      dataprice: "",
+      activeClass: 1, // 0为默认选择第一个，-1为不选择
+      active: 1,
+      activetese: 2, //特殊轮播
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      title: "",
+      IDcode: {},
+      biglist: [], //大额产品信息
+      Baodeposit: false, //宝类显示
+      BaoAmount: [],
+      BaoList: [], //宝类产品
+      Bigdeposit: false, //大额显示
+      BigAmount: [], //大额存单遍历
+      BigAmountList: [], //大额存单
+      Noticltdeposit: false, //通知显示
+      NoticltAmountList: [],
+      NoticltList: [], //通知存款
+      WholeStodeposit: false, //整存显示
+      WholeStoAmount: [],
+      WholeStoList: [], //整存整取
+      numb: "1", //tab数字
+      alertShow: false, //是否显示
+      showCancel: false, //弹框显示
+      isLogin: false, //判断登陆
+      dialogText: "请登录"
+    };
+  },
+  created() {
+    // this.checkwin();
+  },
+  beforeMount() {
+    this.initData();
+  },
+  mounted(){
+  },
+  computed: {
+    ...mapState("deposit", {
+      user: "info"
+    }),
+    ...mapGetters("deposit", ["Setuserinfo"]),
+    ...mapState("common", ["userInfo"])
+  },
+  methods: {
+    // 调用actions
+    ...mapActions("deposit", ["setuserinfo"]),
+    ...mapActions("common", ["getUserInfo"]),
+    // 获取用户数据
+    async initData() {
+      await this.getUserInfo();
+      await this.getbig();
+      await this.getdepositdata();
+      // await this.getbigdata();
+    },
+    //结果页跳转
+    checkwin() {
+      let that = this;
+      // that.$nextTick(function() {
+        if (this.$route.query.watch == true) {
+          this.active == Number(this.$route.query.info.Nbr);
+        }
+      // });
+    },
+      //未登录跳转登陆
+    config() {
+      // this.alertShow = false;
+      // window.NativeCall.goToNativePage({
+      //   name: "login"
+      // });
+    },
+    //隐藏dialog
+    cancel() {
+      this.alertShow = false;
+    },
+    // //大额存单产品信息
+    // getbigdata() {
+    //   this.request("bigreceipt", {
+    //     BankId: "9999",
+    //     BranchId: "62"
+    //   })
+    //     .then(res => {
+    //       console.log(res);
+    //       if(res.List.length >2 ){
+    //          this.biglist = [res.List[0],res.List[1]]
+    //          console.log(this.biglist)
+    //       }
+    //       else{
+    //          this.biglist =res.List
+    //       }
+    //     })
+    //     .catch(error => {
+    //       console.log(error);
+    //     });
+    // },
+    //获取大额存款已购买
+    getbig() {
+        this.request(
+          "CusOfLargeDepRecPrdListQry",
+          {
+            BranchId: "1999",
+            BankId: "9999"
+          },
+          false
+        )
+          .then(res => {
+            // console.log(res);
+            for (var i in res.map) {
+              if (res.map[i].length > 0) {
+                this.Bigdeposit = true;
+                this.BigAmount.push(res.map[i]);
+                // console.log(this.BigAmount)
+              }
+            }
+            for (var j in this.BigAmount) {
+              if (this.BigAmount[j].length > 2) {
+                this.BigAmountList.push(this.BigAmount[j].slice(0, 2));
+                // console.log(this.BigAmountList)
+              } else {
+                this.BigAmountList.push(this.BigAmount[j]);
+                // console.log(this.BigAmountList)
+              }
+            }
+          })
+          .catch(error => {
+            console.log(error);
+          });
+    },
+    //获取购买存款产品
+    getdepositdata() {
+        this.request(
+          "CusNoticeDepositPrdListQry",
+          {
+            BranchId: "1999",
+            BankId: "9999"
+          },
+          false
+        )
+          .then(res => {
+            console.log(res);
+            this.dataprice = res.TotalAmt; //全部余额
+            //宝类存款
+            for (var i in res.Baomap) {
+              if (res.Baomap[i].length > 0) {
+                this.Baodeposit = true;
+                this.BaoAmount.push(res.Baomap[i]);
+              }
+            }
+            for (var j in this.BaoAmount) {
+              if (this.BaoAmount[j].length > 2) {
+                this.BaoList.push(this.BaoAmount[j].slice(0, 2));
+              } else {
+                this.BaoList.push(this.BaoAmount[j]);
+              }
+            }
+            //通知存款
+            for (var i in res.Noticltmap) {
+              if (res.Noticltmap[i].length > 0) {
+                this.Noticltdeposit = true;
+                this.NoticltAmountList.push(res.Noticltmap[i]);
+              }
+            }
+            for (var j in this.NoticltAmountList) {
+              if (this.NoticltAmountList[j].length > 2) {
+                this.NoticltList.push(this.NoticltAmountList[j].slice(0, 2));
+              } else {
+                this.NoticltList.push(this.NoticltAmountList[j]);
+              }
+            }
+            //整存整取
+            for (var i in res.WholeStomap) {
+              if (res.WholeStomap[i].length > 0) {
+                this.WholeStodeposit = true;
+                this.WholeStoAmount.push(res.WholeStomap[i]);
+              }
+            }
+            for (var j in this.WholeStoAmount) {
+              if (this.WholeStoAmount[j].length > 2) {
+                this.WholeStoList.push(this.WholeStoAmount[j].slice(0, 2));
+              } else {
+                this.WholeStoList.push(this.WholeStoAmount[j]);
+              }
+            }
+          })
+          .catch(error => {
+            console.log(error);
+          })
+    },
+    //控制显示滑块
+    qh(e, t) {
+        console.log(e, t);
+        this.activeClass = t;
+        if(t == '0'){
+          this.$router.push(
+            {
+              path:"/index",
+              // query:{
+              //   id:'1'
+              // }
+              })
+        }
+    },
+    //显示tab
+    onClickTab(name, title) {
+      this.numb = String(name);
+      console.log(name);
+    },
+    // 跳转卡内存单
+    gotocarddetail(value) {
+      console.log(value);
+      this.$router.push({
+        path: "/carddetail",
+        query: {
+          title: "卡内存单",
+          Acct: value,
+          SortId: this.numb
+        }
+      })
+    },
+    // 跳转卡内大额存单
+    gotocarddetailbig(value) {
+      console.log(value);
+      var iteM = JSON.stringify(this.BigAmount);
+      this.$router.push({
+        path: "/carddetail",
+        query: {
+          title: "卡内存单",
+          Acct: value,
+          SortId: this.numb,
+          Item: iteM
+        }
+      })
+    },
+    //跳转存款明细
+    gotodepositdetail() {
+      // if (this.checkUser) {
+      this.$router.push({
+        path: "/depositdetail",
+        query: {
+          title: "存款明细"
+        }
+      });
+      // } else {
+      //   this.alertShow = true;
+      // }
+    },
+    //tab下跳转详情
+    goToreceipt(val) {
+      // if (this.checkUser) {
+      this.request(
+        "SubAcctQry",
+        {
+          BranchId: "1999",
+          BankId: "9999",
+          Acct: val.AcctNo,
+          SortId: this.numb,
+          AcctNum: val.AcctNum
+        },
+        true
+      )
+        .then(res => {
+          var item = JSON.stringify(res.Maps);
+          this.$router.push({
+            path: "/receipt",
+            query: {
+              title: "定期详情",
+              item,
+              val,
+              SortId: this.numb
+            }
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      // }
+    },
+    //大额存单持有单个详情
+    goTobigreceipt(value) {
+      // if (this.checkUser) {
+      this.request(
+        "LargeDepRecPrdInfo",
+        {
+          BranchId: "1999",
+          BankId: "9999",
+          BillAcctNo: value.BillAcctNo,
+          BillSerial: value.PrdCode,
+          Balance:value.PayerAmt,
+        },
+        true
+      )
+        .then(res => {
+          var item = JSON.stringify(res.List[0]);
+          var Val = JSON.stringify(value);
+          this.$router.push({
+            path: "/receipt",
+            query: {
+              title: "定期详情",
+              InterestAmt: res.InterestAmt,
+              item,
+              Val
+            }
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  background: url("~@/assets/deposit/index/bg_wodecunkuan@2x.png") no-repeat;
+  background-size: 100% px2vw(355);
+  -webkit-scrollbar {
+    display: none;
+  }
+  // .foot {
+  //   position: fixed;
+  //   width: 100%;
+  //   bottom: 0px;
+  //   z-index: 100;
+  // }
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.tempnone {
+  display: flex;
+  flex-direction: column;
+}
+.topone {
+  display: flex;
+  width: px2vw(750);
+  height: px2vw(228);
+  align-items: baseline;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding-left: px2vw(80);
+  margin-top: px2vw(40);
+  padding-bottom: px2vw(40);
+  .iconfont {
+    font-size: px2vw(22);
+  }
+  .left {
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    justify-content: flex-start;
+    margin-left: px2vw(-40);
+    p:nth-of-type(1) {
+      height: px2vw(26);
+      font-size: px2vw(26);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+      line-height: px2vw(26);
+    }
+    p:nth-of-type(2) {
+      height: px2vw(22);
+      font-size: px2vw(22);
+      font-family: PingFangSC-Light, PingFangSC;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 1);
+      line-height: px2vw(22);
+      margin-top: px2vw(50);
+    }
+    p:nth-of-type(3) {
+      height: px2vw(50);
+      font-size: px2vw(50);
+      font-family: PingFangSC-Medium, PingFangSC;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 1);
+      line-height: px2vw(50);
+      padding-top: px2vw(10);
+    }
+  }
+  .right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: px2vw(24);
+    font-size: px2vw(24);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: #DA9A78FF;
+    line-height: px2vw(24);
+    width: px2vw(182);
+    text-align: center;
+    height: px2vw(58);
+    background: rgba(255, 255, 255, 1);
+    border-radius: px2vw(29) 0px 0px px2vw(29);
+  }
+}
+.tempcontent {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  // flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+/deep/ .van-tabs__nav {
+  align-items: center;
+  width: px2vw(750);
+}
+/deep/ .van-ellipsis {
+  height: px2vw(30);
+  font-size: px2vw(28);
+  font-family: PingFangSC-Regular, PingFangSC;
+  font-weight: 400;
+  color: rgba(125, 125, 125, 1);
+  line-height: px2vw(30);
+}
+/deep/ .van-tab--active .van-ellipsis {
+  height: px2vw(34);
+  font-size: px2vw(30);
+  font-family: PingFangSC-Medium, PingFangSC;
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(34);
+}
+/deep/ .van-tabs__line {
+  background: #000;
+  margin-bottom: px2vw(16);
+  width: px2vw(40) !important;
+}
+// /deep/ .van-tabs__content {
+//   flex: 1 !important;
+// }
+
+//特色，通知，整存通用
+.tempcontent_tese,
+.tempcontent_tongzhi,
+.tempcontent_zhengcun {
+  .top_tem {
+    background: #fff;
+    .top_t {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: px2vw(750);
+      height: px2vw(102);
+      border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+    }
+    .left {
+      padding-left: px2vw(40);
+      height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(24);
+      p{
+        display: flex;
+        align-items: center;
+        span{
+          margin-left:px2vw(10);
+        }
+      }
+      .img {
+        width: px2vw(32);
+        height: px2vw(32);
+      }
+    }
+    .right {
+      padding-right: px2vw(40);
+      height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+      .iconfont {
+        font-size: px2vw(22);
+      }
+    }
+  }
+  .temlist {
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    width: 100vw;
+    height: px2vw(133);
+    background: #fff;
+    border-bottom: 0.13333vw #eff0f1 solid;
+    .temlist_data {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: px2vw(133);
+      width: 100%;
+      padding: 0 px2vw(40) 0;
+      // border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+            .temlist_right{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      }
+      .p {
+        height: px2vw(38);
+        font-size: px2vw(38);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(38);
+      }
+      p:nth-of-type(1) {
+        height: px2vw(30);
+        font-size: px2vw(24);
+        font-family:PingFangSC-Regular,PingFang SC;
+        font-weight: 400;
+        color:rgba(125,125,125,1);
+        line-height: px2vw(30);
+      }
+      p:nth-of-type(2) {
+        height: px2vw(30);
+        font-size: px2vw(28);
+        font-family: PingFangSC-Medium, PingFangSC;
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(30);
+        margin-top: px2vw(20);
+      }
+    }
+  }
+
+  .tempcontent_tese,
+  .tempcontent_tongzhi,
+  .tempcontent_zhengcun .temlist:last-child {
+    border-bottom: none;
+  }
+}
+.listdata .top_tem  .top_t{
+    p{
+        display: flex;
+        align-items: center;
+        span{
+          margin-left:px2vw(10);
+        }
+      }
+}
+//大额
+.tempcontent_big {
+  .top_tem {
+    background: #fff;
+    .top_t {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: px2vw(750);
+      height: px2vw(102);
+      border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+    }
+    .left {
+      padding-left: px2vw(40);
+      height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(24);
+      p{
+        display: flex;
+        align-items: center;
+        span{
+          margin-left:px2vw(10);
+        }
+      }
+      .img {
+        width: px2vw(32);
+        height: px2vw(32);
+      }
+    }
+    .right {
+      padding-right: px2vw(40);
+      height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+      .iconfont {
+        font-size: px2vw(22);
+      }
+    }
+  }
+  .temlist {
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    width: 100vw;
+    height: px2vw(133);
+    background: #fff;
+    border-bottom: 0.13333vw #eff0f1 solid;
+    .temlist_data {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: px2vw(133);
+      width: 100%;
+      padding: 0 px2vw(40) 0;
+      // border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+      .temlist_middle{
+                display: flex;
+    align-items: center;
+    flex-direction: column;
+      }
+        .temlist_right{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      }
+      p:nth-of-type(1) {
+        height: px2vw(22);
+        font-size: px2vw(24);
+        font-family:PingFangSC-Regular,PingFang SC;
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+        line-height: px2vw(22);
+      }
+      p:nth-of-type(2) {
+        height: px2vw(30);
+        font-size: px2vw(28);
+        font-family: PingFangSC-Medium, PingFangSC;
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(30);
+        margin-top: px2vw(20);
+      }
+    }
+  }
+
+  .tempcontent_big .temlist:last-child {
+    border-bottom: none;
+  }
+}
+.tempcontent_big .listdata {
+  margin-top: px2vw(20);
+}
+.listdata {
+  margin-top: px2vw(20);
+}
+// .tempcontent_big .listdata:first-child {
+//   margin-top: 0;
+// }
+
+//足部
+.foot {
+  height: px2vw(100);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #fff;
+  border-top: 1px rgba(239, 240, 241, 1) solid;
+  .foot_right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  img {
+    height: px2vw(54);
+    width: px2vw(54);
+  }
+  p {
+    text-align: center;
+    height: px2vw(20);
+    font-size: px2vw(20);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(98, 100, 106, 1);
+    line-height: px2vw(20);
+  }
+  .active p {
+    color:rgba(218,154,120,1);
+  }
+}
+</style>

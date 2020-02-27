@@ -1,0 +1,238 @@
+<template>
+  <van-popup v-model="show" position="bottom" round @closed="closed" :style="{ width: '100vw'}">
+    <div class="header">
+      <span class="iconfont iconicon_guanbi-" @click="goBack"></span>
+      <p class="title">{{title}}</p>
+    </div>
+    <div class="content">
+      <van-cell
+        v-for="(item,index) in cardLists"
+        :key="index"
+        @click="choose(index,item)"
+        :class="{'active':nowIndex==index}"
+      >
+        <template slot="title">
+          <div class="cardList">
+            <div class="item">
+              <div class="left">
+                <img src="http://188.177.155.83:8081/zl/bankIcons/313501080608.png" />
+              </div>
+              <div class="center">
+                <p class="bank">
+                  <span>{{item.bankName}}</span>
+                  <span>|</span>
+                  <span>{{item.vouId | CardNoFour}}</span>
+                </p>
+                <p class="money" v-if="item.balance">
+                  <span>可用余额：</span>
+                  <span>{{item.balance | Money}}</span>
+                  <span>元</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div slot="right-icon" class="iconfont iconcheck-" v-if="nowIndex==index"></div>
+      </van-cell>
+    </div>
+  </van-popup>
+</template>
+
+<script>
+import { Popup, Cell } from "vant";
+export default {
+  components: {
+    [Popup.name]: Popup,
+
+    [Cell.name]: Cell
+  },
+  props: {
+    selectAccountFlag: {
+      default: false,
+      required: true
+    }
+  },
+  data() {
+    return {
+      title: "请选择签约账户",
+      show: false,
+      nowIndex: null,
+      cardLists: []
+    };
+  },
+  watch: {
+    selectAccountFlag: {
+      handler(val) {
+        this.show = val;
+      }
+    }
+  },
+  created() {
+    this.accountLists();
+  },
+  methods: {
+    goBack() {
+      this.$parent.selectAccountFlag = false;
+    },
+    closed(){
+      this.$parent.selectAccountFlag = false;
+    },
+    choose(index, val) {
+      console.log(val);
+      this.nowIndex = index;
+      this.$parent.selectAccountFlag = false;
+      this.$parent.form.BankAcct =val
+      // this.$emit("pass");
+    },
+    bank(val,index) {
+      let params = {
+        BranchId: "2336",
+        ChnlId: "62",
+        AcctNbr: val
+      };
+      this.request("BankBinQuery", { ...params }).then(res => {
+        this.cardLists[index].bankName=res.PayeeBankName
+      });
+    },
+    accountLists() {
+      //付款账户
+      let params = {
+        BankId: "9999",
+        BranchId: "0101",
+        ChnlId: "62"
+      };
+      this.request("accountList", { ...params })
+        .then(res => {
+          // console.log(res);
+          this.cardLists = res.QueryAddAccount
+           res.QueryAddAccount.map((item,index)=>{
+             this.bank(item.vouId,index)
+           })
+           console.log(this.cardLists)
+        })
+        .catch(err => {
+          let str = err._RejMessage
+          this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+        });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.van-popup {
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  font-size: px2vw(34);
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  height: px2vw(100);
+  line-height: px2vw(100);
+  padding: 0 px2vw(40);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+  p {
+    // flex: 1;
+    width: px2vw(340);
+    text-align: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+  }
+  .iconfont {
+    font-size: px2vw(22);
+    font-weight: 300;
+    color: #666666;
+    line-height: px2vw(100);
+  }
+}
+.content {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: px2vw(10);
+  padding-bottom: px2vw(91);
+  .item {
+    // padding: 0 px2vw(40);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-weight: 400;
+    justify-content: space-between;
+    height: px2vw(110);
+    .iconfont {
+      font-size: px2vw(30);
+      color: #3e8fff;
+      font-weight: 400;
+    }
+    .left {
+      width: px2vw(55);
+      height: px2vw(55);
+      img {
+        width: 100%;
+        border-radius: 50%;
+      }
+    }
+    .center {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: px2vw(70);
+      flex: 1;
+      margin-left: px2vw(20);
+      .bank {
+        font-size: px2vw(30);
+        font-weight: 400;
+        color: #262626;
+        line-height: px2vw(30);
+        letter-spacing: px2vw(1);
+      }
+      .money {
+        font-size: px2vw(24);
+        font-family: PingFangSC;
+        font-weight: 300;
+        color: #7d7d7d;
+        line-height: px2vw(24);
+      }
+    }
+    .right {
+      width: px2vw(45);
+      color: #3e8fff;
+      .iconfont {
+        font-size: px2vw(24);
+        font-weight: 800;
+      }
+    }
+  }
+}
+.content::-webkit-scrollbar {
+  display: none;
+}
+/deep/ .van-cell:not(:last-child)::after {
+  position: absolute;
+  content: " ";
+  left: 0;
+  bottom: 0;
+  height: px2vw(1);
+  width: 100%;
+  background: #eff0f1;
+}
+/deep/ .van-cell {
+  padding: 0 px2vw(40);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  .iconfont {
+    color: #107aee;
+  }
+}
+.active {
+  background: #f4f5f7;
+}
+</style>

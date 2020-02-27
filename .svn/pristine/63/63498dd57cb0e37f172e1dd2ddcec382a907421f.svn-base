@@ -1,0 +1,120 @@
+<template>
+  <van-popup v-model="agreementShow" position="right" :style="{ height: '100vh',width:'100vw'}">
+    <p class="header">
+      <span class="iconfont iconic_back" @click="goBack"></span>
+    </p>
+    <div class="agreement">
+      <p class="title">焦作中旅银行资金归集服务协议</p>
+      <p>甲方： ____</p>
+      <p>乙方： 焦作中旅银行股份有限公司</p>
+      <p class="indent">甲乙双方本着自愿、平等、互利的原则，就乙方为甲方提供代收资金一事达成以下资金归集服务协议，双方承诺共同遵守：</p>
+      <p
+        class="indent"
+      >一．定义：资金归集服务是指乙方接受甲方通过包括但不限于乙方网上银行、手机银行等渠道在线提交的委托，按照甲方要求将甲方被归集账户资金归集到甲方在乙方开立的指定收款账户的服务。</p>
+      <p
+        class="indent"
+      >二．乙方将按照甲方指令进行资金归集，但受到被归集账户所属银行跨行支付协议所规定的约束条件包括但不限于交易限额、代收频率、代收期限等因素控制，乙方发起交易将不超过协议约定范围内容。</p>
+      <p class="indent">三.甲方收款账户、被归集账户注销时，应提前通过乙方提供的电子渠道或被归集账户银行解除本协议。未解除协议的，收款账户、被归集账户注销后，本协议自动失效。</p>
+      <p class="indent">四.甲方确认签约的被归集账户为本人所有，如因本人提供的信息不准确或后续发生变更导致交易失败，乙方不承担相应责任。</p>
+      <p class="indent">五.协议签署后，视同甲方授权（包括设置条件的自动扣划）乙方按照甲方的要求从甲方签约的本人被归集账户扣划指定金额，并转入指定的本人焦作中旅银行账户。</p>
+      <p
+        class="indent"
+      >六.乙方按照甲方要求从甲方签约的被归集资金账户划扣指定金额时，乙方有权根据需要选择通过中国银联或其他跨行转接方完成，交易是否成功将受到跨行转接方、被归集账户开户银行、乙方等相关参与方系统情况及各自的业务规则影响。</p>
+      <p class="indent">七.因资金归集转账涉及中国银联、其他银行的系统联网及清算，资金到账时间具有不确定性，一般情况下在操作后的下一工作日到账。</p>
+      <p class="indent">八.乙方因以下情况没有正确执行甲方提交的资金归集指令，不承担任何责任：</p>
+      <p class="indent1">1、 甲方在被归集账户所属银行及乙方预留信息变更后，未及时更新的。</p>
+      <p class="indent1">2、 甲方被归集账户余额不足或未达到归集条件</p>
+      <p class="indent1">3、归集金额及笔数高于被归集账户所属银行跨行支付协议约定范围。</p>
+      <p class="indent1">4、甲方被归集账户内资金被依法冻结或扣划。</p>
+      <p class="indent1">5、甲方被归集账户不符合开户行账户管理规定。</p>
+      <p class="indent1">6、甲方被归集账户开户行系统故障。</p>
+      <p class="indent1">7、甲方未能按照乙方的有关业务规定正确操作。</p>
+      <p class="indent1">8、网络、通讯发生故障。</p>
+      <p class="indent1">9、不可抗力或其他不属乙方过失的情况。</p>
+      <p class="indent">九.本协议如与国家新颁布的法律、法规、条例等相抵触，以国家新颁布的法律、法规、条例为准。</p>
+      <p
+        class="indent"
+      >十.乙方就其为甲方所提供的资金归集服务，有权收取手续费、汇费等相关服务费用，具体收费标准以乙方通过门户网站等途径正式对外公告为准，同时甲方将在公告规定的期限正式开始执行，不再另行通知。</p>
+      <p class="indent">十一.乙方保留对本服务协议修改的权利，如乙方对本协议进行修改，将通过门户网站、电子渠道等途径进行公告，修改后的条款于公告记载的生效日期生效。</p>
+      <p class="indent">十二.上述内容甲方已同意并知悉。</p>
+    </div>
+  </van-popup>
+</template>
+
+<script>
+import { Popup } from "vant";
+export default {
+  data() {
+    return {};
+  },
+  props: {
+    agreementShow: {
+      require: true
+    }
+  },
+  components: {
+    [Popup.name]: Popup
+  },
+  methods: {
+    goBack() {
+      this.$parent.agreementShow = false;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.van-popup {
+  display: flex;
+  flex-direction: column;
+}
+.agreement {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 px2vw(40) px2vw(40);
+  p {
+    font-size: px2vw(30);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(42);
+  }
+  .title {
+    font-size: px2vw(48);
+    font-family: PingFangSC-Semibold, PingFang SC;
+    font-weight: 600;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(48);
+    text-align: center;
+    margin-bottom: px2vw(65);
+  }
+  .indent {
+    text-indent: 2em;
+  }
+  .indent1 {
+    text-indent: 3em;
+  }
+}
+.agreement::-webkit-scrollbar {
+  display: none;
+}
+.header {
+  height: px2vw(88);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+  background: #fff;
+  width: 100%;
+  padding: 0 px2vw(40) 0 px2vw(20);
+  box-sizing: border-box;
+  .iconfont {
+    font-size: px2vw(30);
+    color: rgba(38, 38, 38, 1);
+    font-weight: bold;
+    text-indent: 0;
+    padding: px2vw(20)
+  }
+}
+</style>

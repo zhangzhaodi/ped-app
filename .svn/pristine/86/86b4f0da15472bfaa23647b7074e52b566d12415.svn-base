@@ -1,0 +1,22 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  components: {
+    Myheader: Header
+  },
+  data() {
+    return {
+    };
+  },
+  methods: {}
+};
+</script>
+
+<style lang="scss" scoped>
+</style>

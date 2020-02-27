@@ -1,0 +1,295 @@
+<template>
+  <!-- <van-popup :overlay-style="{background:'#fff',opacity: 0}" v-show="visible" v-model="visible" :style="{  height: '100%',width: '100%' }" position="right"> -->
+  <div class="outer optional-edit" v-show="visible">
+    <Myheader title="基金超市" :params="headerParams" @back="goBack">
+    </Myheader>
+    <Scroller ref="scroller">
+      <van-checkbox-group v-model="result" ref="checkboxGroup" v-if="fundData.length > 0">
+        <van-index-bar :z-index="1" :index-list="indexAnchor" highlight-color="#0085ff">
+          <div v-for="(item,index) in indexListData" :key="index">
+            <van-index-anchor :index="item.anchor">{{item.anchor}}</van-index-anchor>
+            <ul class="paddingLR40 index-group checkbox-wrapper">
+              <li class='payee-col' v-for="(child,index) in item.children" :key="index" :clickable="true">
+                <van-checkbox :name="child" ref="checkboxes">
+                  <div class="fund">
+                    <p class="fund-name">
+                      {{child.name}}
+                    </p>
+                    <p class="fund-num">
+                      {{child.number}}
+                    </p>
+                  </div>
+                  <img slot="icon" slot-scope="props" :src="props.checked ? icon.active : icon.inactive">
+                </van-checkbox>
+              </li>
+            </ul>
+          </div>
+        </van-index-bar>
+      </van-checkbox-group>
+      <div v-else class="nodata-box">
+          <img :src="require(`@/assets/fund/img_zanwudingtou@2x.png`)" alt />
+          <p class="text" style="color:#7d7d7d">暂无数据</p>
+          <!-- <div class="footer-box">
+            <div class="btn-box">
+              <van-button class="ghost">添加自选</van-button>
+            </div>
+          </div> -->
+      </div>
+    </Scroller>
+
+    <div class="footer">
+      <div class='left'>
+        <van-checkbox v-model="checkAll" @change="checkAllFund">
+          <img slot="icon" slot-scope="props" :src="props.checked ? icon.active : icon.inactive">
+          全选
+        </van-checkbox>
+      </div>
+      <van-button :disabled="!result.length > 0" class="delete-btn" type="danger" @click="handleSubmit">确认{{result.length > 0 ? `(${result.length})` : '' }}</van-button>
+    </div>
+
+  </div>
+  <!-- </van-popup> -->
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import Search from "@/components/Search";
+import tools from '@/tools/tools.js'
+import { IndexBar, IndexAnchor } from "vant";
+var Tools = tools;
+export default {
+  components: {
+    Search,
+    Scroller,
+    Myheader: Header,
+    [IndexBar.name]: IndexBar,
+    [IndexAnchor.name]: IndexAnchor,
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    // fundList:{
+    //   type:Array,
+    //   default: []
+    // }
+  },
+  data() {
+    return {
+      headerParams: {
+        backShow: false,
+        customBackShow: true,
+        leftShow: true,
+        rightShow: true
+      },
+      visible: this.show,
+      fundData: [],
+      fundList: [],
+      indexListData: [],
+      indexAnchor: [],
+      fundList1: [{
+        name: '天聚红利灵活1',
+        number: "001647",
+        newValue: "1.3722",
+        date: '08-15',
+        dayTrip: '29.34%',
+        monthTrip: '29.4262%',
+      }, {
+        name: '天聚红利灵活2',
+        number: "001647",
+        newValue: "2.3722",
+        date: '08-15',
+        dayTrip: '12.34%',
+        monthTrip: '40.4262%',
+      }, {
+        name: '天聚红利灵活3',
+        number: "001647",
+        newValue: "3.3722",
+        date: '08-15',
+        dayTrip: '31.34%',
+        monthTrip: '24.4262%',
+      }, {
+        name: '天聚红利灵活4',
+        number: "001647",
+        newValue: "1.4722",
+        date: '08-15',
+        dayTrip: '24.34%',
+        monthTrip: '28.4262%',
+      }],
+      department: {},
+      checkAll: false,
+      result: [],
+
+      icon: {
+        active: require("@/assets/fund/checked.png"),
+        inactive: require("@/assets/fund/unchecked.png"),
+      },
+    };
+  },
+  created() {
+    this.initData();
+  },
+  methods: {
+    goBack() {
+      this.$emit('update:show', false)
+    },
+    initData() {
+      // http://localhost:8088/pmobile/pweb-ifms.FundCompanyQry.do?BranchId=PHNE&ChnlId=62
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+      }
+      this.request("FundCompanyQry", params).then(res => {
+        console.log("res,介绍过", res)
+        this.fundData = res.List;
+        this.fundData.map(item => {
+          item.name = item.companyName
+        })
+        let indexRes = Tools.getIndexAnchor(this.fundData);
+        this.indexListData = indexRes.indexList;
+        this.indexAnchor = indexRes.indexAnchor;
+        // console.log(indexRes, "工具")
+      })
+
+    },
+    // //将checkbox 点击事件绑定至 li容器上
+    // toggle(child) {
+    //   console.log(this.$refs.checkboxes,child)
+    //   this.$refs.checkboxes[index].toggle();
+    // },
+    // 点击全选按钮
+    checkAllFund(value) {
+      this.$refs.checkboxGroup.toggleAll(this.checkAll);
+    },
+    // 选中基金公司
+    handleSubmit() {
+      // let newArr = [];
+      // this.fundList.forEach(item => {
+      //   if (this.result.indexOf(item) === -1) {
+      //     newArr.push(item)
+      //   }
+      // })
+      // // console.log(newArr,"新数组")
+      // //设置新列表并清除多选的数据
+      // // this.fundList = newArr;
+      // this.result = [];
+      this.visible = false;
+      this.$emit('submit', this.result)
+    },
+    clear(){
+      this.$refs.checkboxGroup.toggleAll(false);
+      this.$emit('submit', [])
+    }
+  },
+  watch: {
+    //监听父组件变化，并赋值
+    show: {
+      handler(val) {
+        this.visible = this.show;
+      }
+    },
+    visible: {
+      handler(val) {
+        if (this.indexListData.length == 0) {
+          this.initData();
+        }
+        this.$emit('update:show', val)
+      }
+    },
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.optional-edit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2020;
+  width: 100%;
+  background: #fff;
+  .scrollerBox {
+    background: #f5f6f8;
+  }
+  /deep/ .van-checkbox__icon {
+    width: px2vw(32);
+    // height: 100%;
+    // line-height:
+    img {
+      width: px2vw(32);
+    }
+  }
+  .tip {
+    // margin-top: px2vw(88);
+    height: px2vw(64);
+    line-height: px2vw(64);
+    width: 100%;
+    background: rgba(245, 246, 248, 1);
+    font-size: px2vw(24);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(168, 168, 168, 1);
+    span {
+      margin-left: px2vw(40);
+    }
+  }
+  .checkbox-wrapper {
+    padding: 0 px2vw(40);
+    background: #fff;
+    li {
+      height: px2vw(110);
+      display: flex;
+      align-items: center;
+      // border-bottom: px2vw(1) solid #ebeef0;
+      .van-checkbox{
+        width:100%;
+        height:100%;
+      }
+      /deep/ .van-checkbox__label {
+        margin-left: px2vw(15);
+        line-height: initial;
+        .fund-name {
+          font-size: px2vw(26);
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: $color-text;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+          margin-bottom: px2vw(8);
+        }
+        .fund-num {
+          font-size: px2vw(24);
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: rgba(125, 125, 125, 1);
+        }
+      }
+    }
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    width: 100%;
+    justify-content: space-between;
+    height: px2vw(120);
+    box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.05);
+    .left {
+      display: flex;
+      padding-left: px2vw(40);
+      align-items: center;
+      font-size: px2vw(28);
+    }
+    .delete-btn {
+      width: px2vw(260);
+      font-size: px2vw(34);
+      height: 100%;
+      background: #da9a78;
+      border-radius: 0;
+    }
+  }
+}
+</style>

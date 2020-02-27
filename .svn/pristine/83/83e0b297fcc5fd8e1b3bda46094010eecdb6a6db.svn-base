@@ -1,0 +1,163 @@
+<template>
+  <!-- 选择学历组件 -->
+  <van-popup
+    class="edu-popup"
+    round
+    v-model="visible"
+    position="bottom"
+  >
+    <div class="edu-popup-title">
+      <img
+        class="close-btn"
+        src="@/assets/electronicAccounts/icon_guanbi@2x.png"
+        @click="visible = false"
+        alt=""
+      >
+      请选择学历
+    </div>
+    <van-radio-group v-model="selectItem.id">
+      <van-cell-group>
+        <van-cell
+          v-for="(item,index) in eduList"
+          :key="index"
+          :title="item.name"
+          clickable
+          @click="handleSelect(item)"
+        >
+          <van-radio
+            slot="right-icon"
+            :name="item.id"
+          >
+            <img
+              slot="icon"
+              slot-scope="props"
+              v-show="props.checked"
+              class="check-icon"
+              :src="props.checked ? icon.active : icon.inactive"
+            >
+          </van-radio>
+        </van-cell>
+      </van-cell-group>
+    </van-radio-group>
+  </van-popup>
+</template>
+
+<script>
+import { Cell, CellGroup, Popup, TreeSelect } from "vant";
+
+export default {
+  components: {
+    [Cell.name]: Cell,
+    [CellGroup.name]: CellGroup,
+    [Popup.name]: Popup,
+    [TreeSelect.name]: TreeSelect
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    notice: {
+      type: String,
+      default: ""
+    }
+  },
+  data() {
+    return {
+      selectItem: {
+        name: "",
+        id: ""
+      },
+      radio: "",
+      visible: this.show,
+      icon: {
+        active: require("@/assets/electronicAccounts/icon_xueli_xuanze@2x.png"),
+        inactive: ""
+      },
+      eduList: [
+        {
+          name: "初高中",
+          id: "1"
+        },
+        {
+          name: "大专",
+          id: "2"
+        },
+        {
+          name: "本科",
+          id: "3"
+        },
+        {
+          name: "硕士",
+          id: "4"
+        },
+        {
+          name: "博士",
+          id: "5"
+        }
+      ]
+    };
+  },
+  computed: {
+    // visible(){
+    //   return this.show
+    // }
+  },
+  created() {},
+
+  methods: {
+    close() {
+      this.visible = false;
+      this.$emit("update:show", false);
+    },
+    handleSelect(item) {
+      this.selectItem = { ...item };
+      this.visible = false;
+      this.$emit("select", this.selectItem);
+    }
+  },
+  watch: {
+    //监听父组件变化，并赋值
+    show: {
+      handler(val) {
+        this.visible = this.show;
+      }
+    },
+    visible: {
+      handler(val) {
+        this.$emit("update:show", val);
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.edu-popup {
+  height: px2vw(660);
+  &-title {
+    text-align: center;
+    // height: px2vw(100);
+    line-height: px2vw(100);
+    text-align: center;
+    background: #fff;
+    color: #333;
+    font-size: px2vw(34);
+    .close-btn {
+      position: absolute;
+      left: 0;
+      padding: px2vw(30) 0 px2vw(30) px2vw(31);
+      width: px2vw(40);
+      height: px2vw(40);
+    }
+  }
+}
+/deep/ .van-cell {
+  height: px2vw(110);
+}
+/deep/ .van-hairline--top-bottom::after {
+  border-width: 0;
+}
+/deep/ .van-cell .van-cell__title{
+  padding: 0 px2vw(40) 0;
+}
+</style>

@@ -1,0 +1,188 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :backRouter="headerBackRouter"></Myheader>
+    <!-- <Pagetitle :title="titleInfo" :notice="noticeInfo"></Pagetitle> -->
+    <div class="form">
+      <div class="cellGroup">
+        <van-cell-group>
+          <van-field v-model="form.account" label="收款账户" disabled />
+        </van-cell-group>
+      </div>
+      <div class="cellGroup">
+        <van-cell-group>
+          <van-field
+            v-model="form.payerAccount"
+            label="付款人"
+            placeholder="选择付款人"
+            disabled
+            right-icon="arrow"
+            @click-right-icon="payerSelect"
+          />
+        </van-cell-group>
+        <van-cell-group v-if="$route.params.getAccountInfo">
+          <van-field v-model="form.payerBank" label="付款人开户行" placeholder="付款人开户行" disabled />
+        </van-cell-group>
+        <van-cell-group v-if="$route.params.getAccountInfo">
+          <van-field v-model="form.payerPhone" label="付款账号预留手机号" placeholder="付款账号预留手机号" disabled />
+        </van-cell-group>
+        <van-cell-group>
+          <p class="cellTitle">转账金额 (人民币)</p>
+          <md-amount :value="form.upperMoney" is-capital></md-amount>
+          <van-field
+            v-model="form.money"
+            placeholder="收款金额"
+            type="number"
+            @input="moneyChangeStart"
+            maxlength="6"
+          />
+        </van-cell-group>
+        <van-cell-group>
+          <van-field v-model="form.purpose" placeholder="选择收款用途" label="收款用途" />
+        </van-cell-group>
+      </div>
+      <div class="cellGroup">
+        <van-button type="info" @click="next">提交</van-button>
+      </div>
+      
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input";
+import CellSelect from "@/components/CellSelect";
+import Pagetitle from "../../electronicAccounts/pages/components/Pagetitle";
+import { Amount } from "mand-mobile";
+import request from "@/axios/http.js";
+import { Field, Cell, CellGroup, Icon, NumberKeyboard, button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    vInput,
+    CellSelect,
+    Pagetitle,
+    [Field.name]: Field,
+    [Cell.name]: Cell,
+    [CellGroup.name]: CellGroup,
+    [Amount.name]: Amount,
+    [Icon.name]: Icon
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      password: "",
+      titleInfo: "跨行收款",
+      noticeInfo: "",
+      form: {
+        account: "蔡徐坤",
+        money: "",
+        purpose: "",
+        upperMoney: null,
+        payerAccount: '',
+        payerBank: '',
+        payerPhone: '',
+      },
+      payerSelectDialog: false,
+      numberKeyboardShow: false,
+      showKeyboard: false,
+    };
+  },
+  mounted() {
+    // console.log(this.$router)
+    this.form ={...this.$route.params.accountInfo}
+  },
+  methods: {
+    payerSelect() {
+      this.payerSelectDialog = true;
+      this.$router.push({name:'linkmanList'})
+    },
+    moneyChangeStart(val) {
+      console.log(val);
+      // alert(val)
+      this.form.upperMoney = parseInt(this.form.money);
+    },
+    next() {
+      window.NativeCall.FaceRecognition(param => {
+        alert(param);
+        this.$router.push({ name: "addInformation" });
+      });
+    },
+    onInput(key) {
+      this.password = (this.password + key).slice(0, 6);
+    },
+    onDelete() {
+      this.password = this.password.slice(0, this.password.length - 1);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/ .sel-m .van-cell {
+  padding: 0;
+  font-size: px2vw(32);
+  margin-bottom: px2vw(-6);
+}
+/deep/ .van-checkbox__icon {
+  font-size: 4.46667vw;
+}
+/deep/ .van-field__body {
+  height: 100%;
+  line-height: 100%;
+}
+/deep/ .van-hairline--top-bottom::after {
+  border-bottom-width: 2px;
+  border-top-width: 0px;
+}
+.cellGroup {
+  background-color: #fff;
+  width: 90%;
+  margin: 0 auto;
+  margin-top: px2vw(20);
+  border-radius: px2vw(15);
+}
+.cellTitle {
+  font-size: px2vw(28);
+  padding: 10px 15px;
+}
+/deep/ .md-amount {
+  padding: 0 15px;
+  color: #f96159;
+}
+/deep/ .van-cell {
+  background-color: transparent;
+}
+/deep/ .van-cell-group {
+  background-color: transparent;
+}
+/deep/ .van-button {
+  width: 100%;
+  border-radius: px2vw(10);
+  font-size: px2vw(30);
+}
+.outer {
+  position: relative;
+}
+.mask {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: rgba(1, 1, 1, 0.1);
+}
+/deep/ .van-password-input {
+  margin-top: 57vh;
+  background-color: #fff;
+  animation-timing-function: ease-out;
+  padding-bottom: 3vh;
+}
+</style>

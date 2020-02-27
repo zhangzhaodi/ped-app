@@ -1,0 +1,349 @@
+<template>
+  <div class="outer">
+      <!-- 头部组件 -->
+    <Myheader
+      :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'none'"
+      :isWhite="true"
+    >
+      <i slot="left" class="iconfont">&#xe63d;</i>
+    </Myheader>
+    <div class="content">
+      <img src="@/assets/panda/visa_header.jpg" alt class="topimg" />
+      <div v-for="(item,i) in List" class="article">
+        <p class="title">◆{{item.VisaName}}◆</p>
+        <div @click="PandaVisa(item)">
+          <div class="imgbox">
+            <img :src="item.url" alt class="img" />
+          </div>
+          <div class="main">
+            <div class="left">
+              <p class="P_one">{{item.VisaContent}}</p>
+              <li class="li">
+                <p class="P_1">中旅专属折扣价</p>
+                <p class="P_2">
+                  <span>￥</span>{{item.SalePrice}}<span class="span">元</span>
+                </p>
+              </li>
+              <p class="P_3">
+                <del>原价￥{{item.OriginalPrice}}</del>
+              </p>
+            </div>
+            <div class="right">
+              <p class="P_1">{{item.ConsularDistrict}}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <img src="@/assets/panda/qianzheng.jpg" alt class="topimg"  @click="gengduo"/>
+    </div>
+  </div>
+</template>
+
+<script>
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+import Header from "@/components/Header/Header.vue";
+export default {
+  components: {
+    Myheader: Header,
+    // [Ruler.name]: Ruler,
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      userinfo: null,
+      LoadingMoreUrl: "https://m.11visa.com/?distributor_id=10002&theme=red&#/",
+      List:[
+        {
+          ConsularDistrict: "全国受理",
+          ImgName: "visa_taiwan",
+          OriginalPrice: "439",
+          SalePrice: "408",
+          VisaContent: "台湾地区入台证-超级简化",
+          VisaName: "台湾旅游签证",
+          ProductId: "12237",
+          url: require("@/assets/panda/visa_taiwan.jpg"),
+          RssUrl:"https://m.11visa.com/?distributor_id=10002&theme=red&#/product/12237",
+        },
+        {
+          ConsularDistrict: "北京领区",
+          ImgName: "visa_singapore",
+          OriginalPrice: "289",
+          SalePrice: "269",
+          VisaContent: "新加坡旅游签",
+          VisaName: "新加坡旅游签证",
+          ProductId: "10069",
+          url: require("@/assets/panda/visa_singapore.jpg"),
+          RssUrl:"https://m.11visa.com/?distributor_id=10002&theme=red&#/product/10069"
+        },
+        {
+          ConsularDistrict: "北京领区",
+          ImgName: "visa_thailand",
+          OriginalPrice: "289",
+          SalePrice: "269",
+          VisaContent: "除新疆、有延期/借境记录-全国受理",
+          VisaName: "泰国旅游签证",
+          ProductId: "10361",
+          url: require("@/assets/panda/visa_thailand.jpg"),
+          RssUrl:"https://m.11visa.com/?distributor_id=10002&theme=red&#/product/10069"
+        },
+        {
+          ConsularDistrict: "北京领区",
+          ImgName: "visa_japan",
+          OriginalPrice: "329",
+          SalePrice: "306",
+          VisaContent: "免提供机票酒店单",
+          VisaName: "日本旅游签证",
+          ProductId: "10076",
+          url: require("@/assets/panda/visa_japan.jpg"),
+          RssUrl:"https://m.11visa.com/?distributor_id=10002&theme=red&#/product/10076"
+        },
+        {
+          ConsularDistrict: "武汉领区",
+          ImgName: "visa_korea",
+          OriginalPrice: "409",
+          SalePrice: "380",
+          VisaContent: "韩国旅游签",
+          VisaName: "韩国旅游签证",
+          ProductId: "11862",
+          url: require("@/assets/panda/visa_korea.jpg"),
+          RssUrl:"https://m.11visa.com/?distributor_id=10002&theme=red&#/product/10076"
+        },
+        {
+          ConsularDistrict: "全国受理",
+          ImgName: "visa_malaysia",
+          OriginalPrice: "370",
+          SalePrice: "344",
+          VisaContent: "马来西亚旅游签-电子签E-VISA",
+          VisaName: "马来西亚旅游签证",
+          ProductId: "12184",
+          url: require("@/assets/panda/visa_malaysia.jpg"),
+          RssUrl:"https://m.11visa.com/?distributor_id=10002&theme=red&#/product/10076"
+        },
+        {
+          ConsularDistrict: "北京领区",
+          ImgName: "visa_us",
+          OriginalPrice: "1388",
+          SalePrice: "1291",
+          VisaContent: "美国旅游签-含EVUS登记-不含陪同",
+          VisaName: "美国旅游签证",
+          ProductId: "12242",
+          url: require("@/assets/panda/visa_us.jpg"),
+          RssUrl:"https://m.11visa.com/?distributor_id=10002&theme=red&#/product/12242"
+        },
+        {
+          ConsularDistrict: "全国受理",
+          ImgName: "visa_italy",
+          OriginalPrice: "269",
+          SalePrice: "250",
+          VisaContent: "申根意大利旅游签-免机酒行程预订单-赠旅游保险",
+          VisaName: "意大利旅游签证",
+          ProductId: "10183",
+          url: require("@/assets/panda/visa_italy.jpg"),
+          RssUrl:"https://m.11visa.com/?distributor_id=10002&theme=red&#/product/10183"
+        }
+      ]
+    };
+  },
+  created() {
+    //     //获取手机号
+    // window.NativeCall.getUserInfo(params => {
+    //   let par=JSON.parse(params)
+    //   this.userinfo = par
+    //   console.log(this.userinfo)
+    // });
+    this.getUserInfo();
+    console.log(this.userInfo);
+  },
+  mounted() {},
+  computed: {
+    ...mapState("common", ["userInfo"])
+  },
+  methods: {
+    ...mapActions("common", ["getUserInfo"]),
+    PandaVisa(data) {
+      this.request(
+        "PandaVisa",
+        {
+          BranchId: "1999",
+          BankId: "9999",
+          ChnlId: "62"
+        },
+        true
+      )
+        .then(res => {
+        let Index=data.RssUrl.indexOf("&the")
+        let begin= data.RssUrl.indexOf("10002")
+        let last = data.RssUrl.length
+        let name = data.RssUrl.substring(Index,last)
+        let first = data.RssUrl.substring(0,begin)
+        window.location.href = first+"&param="+res.param+name
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    gengduo(){
+       this.request(
+        "PandaVisa",
+        {
+          BranchId: "1999",
+          BankId: "9999",
+          ChnlId: "62"
+        },
+        true
+      )
+        .then(res => {
+        let Index=this.LoadingMoreUrl.indexOf("&the")
+        let begin= this.LoadingMoreUrl.indexOf("10002")
+        let last = this.LoadingMoreUrl.length
+        let name = this.LoadingMoreUrl.substring(Index,last)
+        let first = this.LoadingMoreUrl.substring(0,begin)
+        window.location.href = first+"&param="+res.param+name
+    })
+        .catch(error => {
+          console.log(error);
+        });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+ul,
+img,
+div,
+article {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  background: #e6464e;
+  -webkit-scrollbar {
+    display: none;
+  }
+  // touch-action: none;
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  // flex: 1;
+  overflow: auto;
+}
+.topimg {
+  width: 100%;
+  height: px2vw(700);
+}
+.article {
+  flex: 1;
+  font-family: PingFangSC-Medium, PingFangSC;
+  margin-top: px2vw(60);
+  .title {
+    line-height: px2vw(70);
+    height: px2vw(70);
+    font-size: px2vw(50);
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    margin-bottom: px2vw(20);
+  }
+  .imgbox {
+    width: 100%;
+    height: px2vw(420);
+    .img {
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .main {
+    padding: px2vw(40) px2vw(60);
+    background: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: PingFangSC-Medium, PingFangSC;
+    .left {
+      width: px2vw(365);
+      .P_one {
+        // margin-top: px2vw(20);
+        line-height: px2vw(40);
+        height: px2vw(40);
+        font-size: px2vw(30);
+        font-weight: 400;
+        color: #000;
+      }
+      .li {
+        margin-top: px2vw(40);
+        display: flex;
+        justify-content: start;
+        .P_1 {
+          color: #e6464e;
+          width: px2vw(120);
+          line-height: px2vw(35);
+          height: px2vw(35);
+          font-size: px2vw(25);
+        }
+        .P_2 {
+          line-height: px2vw(70);
+          height: px2vw(70);
+          font-size: px2vw(50);
+          color: #e6464e;
+          span {
+            line-height: px2vw(22);
+            height: px2vw(22);
+            font-size: px2vw(22);
+            color: #e6464e;
+          }
+          .span {
+            line-height: px2vw(35);
+            height: px2vw(35);
+            font-size: px2vw(30);
+            color: #e6464e;
+          }
+        }
+      }
+      .P_3 {
+        margin-top: px2vw(20);
+        line-height: px2vw(35);
+        height: px2vw(35);
+        font-size: px2vw(30);
+        color: rgba(125, 125, 125, 1);
+      }
+    }
+    .right {
+      border: #e6464e solid 1px;
+      background: #fff;
+      color: #e6464e;
+      line-height: px2vw(55);
+      height: px2vw(55);
+      font-size: px2vw(35);
+      width: px2vw(150);
+      text-align: center;
+      border-radius: px2vw(10);
+    }
+  }
+}
+</style>

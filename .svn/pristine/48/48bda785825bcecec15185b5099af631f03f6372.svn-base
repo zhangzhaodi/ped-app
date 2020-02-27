@@ -1,0 +1,171 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="top">
+        <div class="title">
+          <img src="@/assets/manageMoney/icon_licai@2x.png" alt />
+          <span>理财交易</span>
+        </div>
+        <div class="money">
+          <span class="icon">￥</span>
+          <span>{{data.AMT|Money}}</span>
+        </div>
+        <div
+          :class="['success',{'red':data.TransState=='4'||data.TransState=='9'||data.TransState=='F'
+},{'green':data.TransState=='8'||data.TransState=='S'}]"
+        >{{data.TransState|transState}}</div>
+      </div>
+      <div class="bottom">
+        <div class="cell">
+          <p class="label">交易说明</p>
+          <div class="text">{{data.ProductName}}</div>
+        </div>
+        <div class="cell">
+          <p class="label">买入类型</p>
+          <div class="text">{{type[data.LC_TransCode]}}</div>
+          <!-- <div class="text">{{data.Remark}}</div> -->
+        </div>
+        <!-- <div class="cell">
+          <p class="label">支付方式</p>
+          <div class="text">{{data.OriSenderSerNo}}</div>
+        </div>-->
+        <div class="cell">
+          <p class="label">买入金额</p>
+          <div class="text">{{data.AMT|Money}}元</div>
+        </div>
+        <div class="cell">
+          <p class="label">交易时间</p>
+          <div class="text">{{data.ConfirmDate|time}}</div>
+        </div>
+        <div class="cell">
+          <p class="label">订单编号</p>
+          <div class="text">{{data.SerialNum}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  components: {
+    Myheader: Header
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false,
+        rightShow: false
+      },
+      data: null,
+      type: {
+        100200: "购买",
+        100226: "份额增强",
+        100516: "赎回",
+        100202: "撤回",
+        100219: "客户撤单"
+      }
+    };
+  },
+  filters: {
+    time(value) {
+      let arr = [];
+      arr.push(value.slice(0, 4));
+      arr.push(value.slice(4, 6));
+      arr.push(value.slice(6));
+      return arr.join("-");
+    },
+    transState(val) {
+      let obj = {
+        2: "已撤单",
+        4: "失败",
+        9: "失败",
+        F: "失败",
+        8: "成功",
+        S: "成功"
+      };
+      return obj[val];
+    }
+  },
+  created() {
+    console.log(this.$route.params);
+    this.data = this.$route.params;
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  .top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    .title {
+      margin-top: px2vw(20);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      span {
+        font-size: px2vw(26);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        margin-top: px2vw(1);
+        margin-left: px2vw(11);
+      }
+      img {
+        width: px2vw(28);
+        height: px2vw(28);
+      }
+    }
+    .money {
+      margin-top: px2vw(33);
+      font-size: 0;
+      span {
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+        margin-top: px2vw(33);
+        font-size: px2vw(70);
+      }
+      .icon {
+        font-size: px2vw(35);
+      }
+    }
+    .success {
+      margin-top: px2vw(20);
+      font-size: px2vw(26);
+      font-weight: 400;
+      color: rgba(125, 125, 125, 1);
+    }
+    .red {
+      color: #f75a50;
+    }
+    .green {
+      color: #27cd6e;
+    }
+  }
+  .bottom {
+    margin-top: px2vw(60);
+    .cell {
+      padding: 0 px2vw(40);
+      height: px2vw(80);
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      .label {
+        font-size: px2vw(26);
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+      }
+      .text {
+        font-size: px2vw(26);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+      }
+    }
+  }
+}
+</style>

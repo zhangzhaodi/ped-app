@@ -1,0 +1,255 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="header">
+        <div class="way">
+          <div class="img-box">
+            <img src="@/assets/incomeExpendDetail/icon_zhuanzhang@2x.png" alt />
+          </div>
+          <p>转账-{{info.payeeBankName}}({{ info.payeeAcctNbr || cardNum | CardNoFour}})</p>
+        </div>
+        <div class="money">-{{info.transAmt | Money}}</div>
+        <p class="status warning" v-if="info.transStatus == 9 || info.transStatus == 5">{{getStatus(info.transStatus)}}</p>
+        <p class="status failure" v-else-if="info.transStatus == 1">{{getStatus(info.transStatus)}}</p>
+        <p class="status" v-else>{{getStatus(info.transStatus)}}</p>
+        <p class="wrong-info" v-if="info.transStatus == 1">{{info.returnMsg}}</p>
+
+      </div>
+      <div class="cell-top">
+        <div class="cell">
+          <p>付款账户</p>
+          <span>中旅银行({{info.payerAcctNbr || cardNum | CardNoFour}})</span>
+        </div>
+        <div class="cell">
+          <p>转账用途</p>
+          <span>{{info.transUsage}}</span>
+        </div>
+        <div class="cell">
+          <p>对方账户</p>
+          <span>{{info.payeeBankName}}({{info.payeeAcctNbr | CardNoFour}})</span>
+        </div>
+        <div class="cell">
+          <p>交易方式</p>
+          <span>{{getType(info.exTransTypCd)}}</span>
+        </div>
+      </div>
+      <div class="cell-bottom">
+        <div class="cell">
+          <p>创建时间</p>
+          <span>{{info.transTime}}</span>
+        </div>
+        <div class="cell">
+          <p>流水号</p>
+          <span>{{info.overallTransNbr}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import PopupRound from "@/components/PopupRound";
+export default {
+  components: {
+    Myheader: Header
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      info: this.$route.params.data || {},
+      imgText: "",
+      cardNum: "",
+    };
+  },
+  created() {
+    console.log(this.$route.params.data);
+    if (this.$route.params.res) {
+      this.initResData();
+    }
+    // this.cardNum = this.$route.query.cardNum;
+  },
+  methods: {
+    getType(extTransTypcd) {
+      let text = '';
+      switch (extTransTypcd) {
+        case "1102":
+          text = '银行账户转账';
+          break;
+        case "1103":
+          text = '手机号转账';
+          break
+        case "1103":
+          text = '手机号转账';
+          break
+        case "1221":
+          text = '预约转账';
+          break
+        case "1222":
+          text = '预约转账';
+          break
+        default:
+          text = "银行账户转账"
+      }
+      return text
+    },
+    getStatus(status) {
+      return this.tools.getTransStatus(status);
+      // let text = '';
+      // switch (status) {
+      //   case "0":
+      //     text = '交易成功';
+      //     break;
+      //   case "1":
+      //     text = '交易失败';
+      //     break
+      //   case "2":
+      //     text = '撤销';
+      //     break
+      //   case "3":
+      //     text = '部分退货';
+      //     break
+      //   case "4":
+      //     text = '全部退货';
+      //     break
+      //   case "5":
+      //     text = '处理中';
+      //     break
+      //   case "6":
+      //     text = '初始化(已录入)';
+      //     break
+      //   case "7":
+      //     text = '交易完成';
+      //     break
+      //   case "8":
+      //     text = '交易待扫码';
+      //     break
+      //   case "9":
+      //     text = '交易超时';
+      //     break
+      //   case "A":
+      //     text = '待授权';
+      //     break
+      //   case "B":
+      //     text = '落地待处理';
+      //     break
+      //   case "C":
+      //     text = '待处理';
+      //     break
+      //   case "D":
+      //     text = '授权完成';
+      //     break
+      //   case "E":
+      //     text = '授权处理中';
+      //     break
+      //   case "F":
+      //     text = '落地完成';
+      //     break
+      //   case "G":
+      //     text = '落地处理中';
+      //     break
+      //   default:
+      //     text = "转账"
+      // }
+      // return text
+    },
+    initResData() {
+      if (this.$route.params.res) {
+        this.res = this.$route.params.res;
+        this.info.payeeAcctNbr = this.res.PayeeAcctNbr;
+        this.info.payerAcctNbr = this.res.PayerAcctNbr;
+        this.info.exTransTypCd = this.res.ExtTransTypCd;
+        this.info.transTime = this.res.TransTime;
+        this.info.overallTransNbr = this.res.OverallTransNbr;
+        this.info.transUsage = this.res.TransUsage;
+        this.info.transStatus = this.res.TransStatus;
+        this.info.payeeBankName = this.res.payeeBankName;
+        this.info.transAmt = this.res.TransAmt;
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+}
+.wrong-info {
+  margin-top: px2vw(5);
+}
+.content {
+  margin-top: px2vw(40);
+  padding: 0 px2vw(40);
+  background: #fff;
+  .status {
+    &.failure {
+      color: rgba(249, 97, 89, 1);
+    }
+    &.warning {
+      color: #ffb52b;
+    }
+  }
+  .header {
+    .way {
+      display: flex;
+      justify-content: center;
+      .img-box {
+        width: px2vw(32);
+        margin-right: px2vw(10);
+        img {
+          width: 100%;
+        }
+      }
+      p {
+        padding-top: px2vw(3);
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+      }
+    }
+    .money {
+      padding-top: px2vw(30);
+      padding-bottom: px2vw(24);
+      text-align: center;
+      font-size: px2vw(70);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+    }
+    p {
+      font-size: px2vw(26);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(125, 125, 125, 1);
+      text-align: center;
+    }
+  }
+  .cell-top {
+    padding-bottom: px2vw(20);
+    border-bottom: $border-bottom;
+    margin-top: px2vw(60);
+  }
+  .cell-bottom {
+    margin-top: px2vw(20);
+  }
+  .cell {
+    height: px2vw(80);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: px2vw(26);
+    font-family: PingFangSC-Light, PingFang SC;
+    p {
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+    }
+    span {
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+}
+</style>

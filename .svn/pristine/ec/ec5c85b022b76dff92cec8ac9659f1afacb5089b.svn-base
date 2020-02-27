@@ -1,0 +1,383 @@
+<template>
+  <div class="outer">
+    <Myheader></Myheader>
+    <div class="tab">
+      <p @click="tab(1)">跨行收款</p>
+      <p class="active" @click="tab(2)">手机号收款</p>
+    </div>
+    <div class="top group">
+      <div class="left" @click="selectCard">
+        <img :src="'http://188.177.155.83:8081/zl/bankIcons/'+form.from.bankId+'.png'" />
+        <p class="name">付款卡</p>
+        <p class="bank">
+          <span>{{form.from.bankName}}(</span>
+          <span>{{form.from.PayerAcNo|CardNoFour}})</span>
+        </p>
+      </div>
+      <div class="center"></div>
+      <div class="right">
+        <img src="http://188.177.155.83:8081/zl/bankIcons/CTS.png" />
+        <p class="name">收款卡</p>
+        <p class="bank">
+          <span>{{form.to.bankName}}(</span>
+          <span>{{form.to.vouId|CardNoFour}})</span>
+        </p>
+      </div>
+    </div>
+    <div class="card group" @click="selectCard">
+      <van-cell value="内容" title="收款卡" is-link :center="true">
+        <template slot="default">
+          <p class="nowBank">
+            <span>{{form.to.bankName}}(</span>
+            <span>{{form.to.vouId| CardNoFour}})</span>
+            <!-- <span>- 买菜</span> -->
+          </p>
+          <p class="canUse">可用余额：¥{{form.to.balance | Money}}</p>
+        </template>
+      </van-cell>
+    </div>
+    <div class="money group">
+      <van-cell-group>
+        <p class="cellTitle">转账金额 (人民币)</p>
+        <div class="input">
+          <md-amount
+            :value="form.upperMoney"
+            is-capital
+            :style="{'visibility': form.money?'visible':'hidden'}"
+          ></md-amount>
+          <!-- <van-field v-model="value" placeholder="先输入" @input="moneyChangeStart" maxlength="10" /> -->
+          <div class="moneyInput">
+            <span class="icon">￥</span>
+            <md-input-item
+              type="money"
+              v-model="form.money"
+              @change="onInputChange"
+              placeholder="请输入"
+              maxlength="9"
+            ></md-input-item>
+          </div>
+        </div>
+      </van-cell-group>
+    </div>
+    <Mybutton :disabled="disabled" @click.native="next"></Mybutton>
+    <Myconfirm :form="form" :popupFlag="popupFlag" @toResult="toResult"></Myconfirm>
+    <MyPopup :show="bottomFlag" :cardType="cardType" @chooseCard="chooseCard"></MyPopup>
+    <Captcha
+      :title="Captcha.title"
+      :visible.sync="Captcha.visible"
+      :phoneNum="form.from.PayerPhoneNo"
+      @confirm="confirm"
+    ></Captcha>
+  </div>
+</template>
+
+<script>
+import header from "../../components/header";
+import button from "../../components/button";
+import { Field, Cell, CellGroup, Icon } from "vant";
+import { Amount, InputItem } from "mand-mobile";
+import Confirm from "../../components/confirm";
+import BottomPopup from "../../components/bottomPopup";
+import Captcha from "@/components/Popup/Captcha";
+export default {
+  components: {
+    Myheader: header,
+    Mybutton: button,
+    Myconfirm: Confirm,
+    MyPopup: BottomPopup,
+    [Field.name]: Field,
+    [Cell.name]: Cell,
+    [CellGroup.name]: CellGroup,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [Icon.name]: Icon,
+    Captcha
+  },
+  data() {
+    return {
+      nowIndex: 2,
+      disabled: false,
+      form: {},
+      bottomFlag: false, //控制底部付款卡选择弹框
+      cardType: 2, //1付款卡2收款卡
+      popupFlag: false,
+      Captcha: {
+        title: "请输入短信验证码",
+        visible: false
+      },
+      phoneNumber: null
+    };
+  },
+  methods: {
+    tab(val) {
+      //tab切换
+      if (val != this.$store.state.nowIndex) {
+        this.$store.state.nowIndex = val;
+        this.$router.push({ name: "index" });
+      }
+    },
+    onInputChange(name, value) {
+      this.form.upperMoney = parseFloat(value);
+    },
+    next() {
+      this.form.from.PayerAccount = this.form.from.PayerAcNo;
+      this.form.from.BankName = this.form.from.bankName;
+      this.popupFlag = true;
+      // console.log("弹出");
+    },
+    //确认弹框点击确认按钮
+    toResult(val) {
+      this.popupFlag = false;
+      let params = {
+        PayeeAcctNbr: this.form.to.vouId,
+        PayeeAcctName: this.form.to.acctName,
+        PayerAcctNbr: this.form.from.PayerAcNo,
+        PayerAcctName: this.form.from.PayerAcctName,
+        TransAmt: this.form.money,
+        PayerPhoneNo: this.form.from.PayerPhoneNo,
+        PayerDeptId: this.form.from.bankNbr
+      };
+      this.request("MobileCrossBankCollectionConfirm", params).then(res1 => {
+        console.log(res1);
+        this.request("MobileCrossBankCollection", {
+          ...params,
+          _tokenName: res1._tokenName
+        }).then(res => {
+          console.log(res);
+          this.secureKeyboard()
+        });
+      });
+    },
+    //弹出短信验证码键盘
+    secureKeyboard() {
+      console.log('调用短信键盘')
+      this.Captcha.visible = true;
+    },
+    //验证码输入完毕
+    confirm(val) {
+      let sms = {
+        SmsCode: val.code,
+        UserSmsId: val.UserSmsId,
+        SmsNbr: val.SmsNbr
+      };
+      console.log(sms)
+    },
+    selectCard() {
+      this.bottomFlag = true;
+    },
+    chooseCard(val) {
+      this.form.to = { ...val };
+      console.log(this.form);
+    }
+  },
+  created() {
+    this.form = {
+      from: { ...this.$route.params },
+      to: { ...this.$store.state.fundCollection.payeer },
+      methods: "手机号收款",
+      money: null,
+      tool: "手机验证码"
+    };
+    console.log(this.form);
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+@import "../../../../assets/IconFont/iconfont.css";
+.outer {
+  background-color: #f5f6f8;
+}
+.tab {
+  padding: 0 px2vw(40);
+  height: px2vw(90);
+  background-color: #fff;
+  display: flex;
+  flex-direction: row;
+  p {
+    font-size: px2vw(26);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: #7d7d7d;
+    line-height: px2vw(90);
+    flex: 1;
+    text-align: center;
+  }
+  .active {
+    font-size: px2vw(30);
+    font-weight: 500;
+    color: #262626;
+    position: relative;
+  }
+  .active::after {
+    content: "";
+    width: px2vw(32);
+    height: px2vw(4);
+    background-color: #262626;
+    border-radius: px2vw(2);
+    position: absolute;
+    bottom: px2vw(10);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+  }
+}
+.top {
+  height: px2vw(310);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  .left {
+    width: 40%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    img {
+      width: px2vw(86);
+      height: px2vw(86);
+      margin-bottom: px2vw(20);
+      margin-top: px2vw(67);
+    }
+    .name {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: #262626;
+      line-height: px2vw(30);
+      letter-spacing: px2vw(1);
+      margin-bottom: px2vw(16);
+    }
+    .bank {
+      font-size: px2vw(24);
+      color: #7d7d7d;
+      font-weight: 300;
+      line-height: px2vw(24);
+    }
+  }
+  .center {
+    width: px2vw(78);
+    height: px2vw(78);
+    background: url("~@/assets/transferAccounts/icon_to.png");
+    background-size: 100% 100%;
+    border-radius: 50%;
+    box-shadow: 0 px2vw(8) px2vw(39) rgba(146, 154, 196, 0.13);
+  }
+  .right {
+    width: 40%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    img {
+      width: px2vw(86);
+      height: px2vw(86);
+      margin-bottom: px2vw(20);
+      margin-top: px2vw(67);
+    }
+    .name {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: #262626;
+      line-height: px2vw(30);
+      letter-spacing: px2vw(1);
+      margin-bottom: px2vw(16);
+    }
+    .bank {
+      font-size: px2vw(24);
+      color: #7d7d7d;
+      font-weight: 300;
+      line-height: px2vw(24);
+    }
+  }
+}
+.card {
+  height: px2vw(110);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /deep/ .van-cell {
+    justify-content: space-between;
+  }
+  /deep/ .van-cell__title {
+    margin-right: px2vw(40);
+    flex: none;
+  }
+  /deep/ .van-cell__value {
+    flex: 1;
+    text-align: left;
+    padding: px2vw(20) 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .nowBank {
+    font-size: 0;
+    font-weight: 400;
+    color: #262626;
+    // line-height: px2vw(30);
+    letter-spacing: px2vw(1);
+    span {
+      font-size: px2vw(30);
+    }
+  }
+  .canUse {
+    font-size: px2vw(24);
+    font-weight: 300;
+    color: #7d7d7d;
+    line-height: px2vw(24);
+  }
+  /deep/ .van-icon-arrow:before {
+    content: "";
+    width: px2vw(12);
+    height: px2vw(22);
+    background: url("~@/assets/electronicAccounts/icon_home_more.png");
+    background-size: 100% 100%;
+  }
+  /deep/ .van-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+  }
+}
+.money {
+  height: px2vw(200);
+
+  .cellTitle {
+    height: px2vw(80);
+    line-height: px2vw(80);
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+  }
+  .input {
+    // padding-top: px2vw(20);
+    height: px2vw(120);
+    /deep/ .md-amount {
+      color: #ffb52b;
+      font-size: px2vw(24);
+    }
+    .moneyInput {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+  /deep/ .van-field__body {
+    width: px2vw(452);
+    font-size: px2vw(40);
+  }
+  /deep/ .md-field-item-content::before {
+    border-bottom: 0;
+  }
+  /deep/ .md-field-item-content {
+    min-height: none;
+  }
+  /deep/ .van-cell-group {
+    padding: 0 px2vw(40);
+  }
+}
+</style>

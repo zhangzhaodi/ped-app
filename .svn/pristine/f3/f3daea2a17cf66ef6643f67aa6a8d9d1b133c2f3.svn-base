@@ -1,0 +1,169 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div :class="['content',{'img1':type==1},{'img2':type==2},{'img3':type==3}]">
+      <div class="top">
+        <p class="text">评测结果您属于</p>
+        <p :class="['result',{'p1':type==1},{'p2':type==2},{'p3':type==3}]">{{option}}</p>
+      </div>
+      <div class="message">
+        <span>您的风险承受能力为</span>
+        <span class="p1" v-if="type==3">高等</span>
+        <span class="p2" v-else-if="type==2">中等</span>
+        <span class="p3" v-else>低等</span>
+        <span v-if="type==3">，在风险较高的情况下获得高额的收益是您的主要投资目的，在投资收益波动的情况下，愿意承担较大的风险，追求投资收益最大化。</span>
+        <span
+          v-else-if="type==2"
+        >，在风险较小的情况下获得一定的收益是您的主要投资目的，在做投资决定时，对风险总是客观存在的道理有清楚的认识，会仔细对即将面临的风险进行分析。</span>
+        <span v-else>，在不损失本金的情况下获得一定的收益是您的主要投资目的，在做投资决定时，注重资金安全，追求稳定收益。</span>
+      </div>
+      <div class="btn">
+        <van-button class="again" @click="again">重测</van-button>
+        <van-button class="final" @click="final">完成</van-button>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false,
+        rightShow: true
+      },
+      type: null
+    };
+  },
+  computed: {
+    option() {
+      let arr = {
+        1: '保守型',
+        2: '稳健性',
+        3: '平衡型',
+        4: '成长型',
+        5: '进取型'
+      };
+      return arr[this.$route.params.RiskGrade];
+    }
+  },
+  created() {
+    this.type = this.$route.params.type;
+    // this.type = 1;
+    console.log(this.type);
+  },
+  beforeRouteEnter(to,from,next){
+    next(vm=>{
+      if(vm.name=='index'){
+        // console.log('跳转到首页')
+        window.NativeCall.goBack();
+      }
+    })
+  },
+  methods: {
+    again() {
+      this.$router.replace("assessment");
+    },
+    final() {
+      // window.NativeCall.goBack();
+      // this.$router.push({ name: "index" });
+      if (this.$store.state.manageMoney.detailFlag) {
+        this.$router.go(-5);
+      } else {
+        this.$router.push({ name: this.$store.state.manageMoney.toRiskRouter });
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  .content {
+    // background-size: px2vw(288) px2vw(412);
+    background-position: top right;
+    flex: 1;
+    .top {
+      padding: 0 px2vw(55);
+      margin-top: px2vw(80);
+      .text {
+        font-size: px2vw(26);
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+      }
+      .result {
+        font-size: px2vw(70);
+        font-weight: 600;
+        margin-top: px2vw(20);
+      }
+    }
+    .message {
+      padding: 0 px2vw(55);
+      font-size: 0;
+      margin-top: px2vw(144);
+      span {
+        font-size: px2vw(26);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(40);
+      }
+    }
+    .btn {
+      height: px2vw(90);
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 0 px2vw(40);
+      margin-top: px2vw(100);
+      .van-button {
+        border-radius: px2vw(45);
+        width: px2vw(310);
+      }
+      .again {
+        border: px2vw(2) solid #3e8fff;
+        color: #3e8fff;
+        font-size: px2vw(30);
+        font-weight: 400;
+      }
+      .final {
+        background: linear-gradient(
+          270deg,
+          rgba(107, 171, 255, 1) 0%,
+          rgba(108, 138, 249, 1) 100%
+        );
+        color: #fff;
+        font-size: px2vw(30);
+        font-weight: 400;
+      }
+    }
+  }
+}
+.p1 {
+  color: #27cd6e !important;
+}
+.p2 {
+  color: #ffb52b !important;
+}
+.p3 {
+  color: #ff5500 !important;
+}
+.img3 {
+  background-size: px2vw(288) px2vw(412) !important;
+  background: url("~@/assets/riskAssessment/img_jijinxing@2x.png") no-repeat;
+}
+.img2 {
+  background-size: px2vw(223) px2vw(414) !important;
+  background: url("~@/assets/riskAssessment/img_wenjianxing@2x.png") no-repeat;
+}
+.img1 {
+  background-size: px2vw(295) px2vw(404) !important ;
+  background: url("~@/assets/riskAssessment/img_baoshouxing@2x.png") no-repeat;
+}
+</style>

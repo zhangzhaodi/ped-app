@@ -1,0 +1,115 @@
+<template>
+  <div class="outer">
+    <Mypick></Mypick>
+    <Mynav :nowIndex="nowIndex" @navChange="navChange"></Mynav>
+    <Mydialog
+      :type="dialog.type"
+      :show="dialog.show"
+      @confirm="confirm"
+      @cancel="cancel"
+      :confirmButtonText="dialog.text"
+    ></Mydialog>
+  </div>
+</template>
+<script>
+import Product from "../components/product.vue";
+import Nav from "../components/nav";
+import pick from "../components/pick";
+import DetailDialog from "../components/detailDialog.vue";
+import { userInfo } from "os";
+export default {
+  components: {
+    Mypick: pick,
+    Mynav: Nav,
+    Mydialog: DetailDialog
+  },
+  data() {
+    return {
+      nowIndex: 1,
+      flag: true,
+      dialog: {}
+    };
+  },
+  methods: {
+    navChange(val) {
+      // alert(JSON.stringify(this.$store.state.userInfo))
+
+      if (val == 2) {
+        window.NativeCall.getUserInfo(userInfo => {
+          this.$store.state.userInfo = JSON.parse(userInfo);
+          // alert(params);
+          if (!this.$store.state.userInfo.UserId) {
+            // this.dialog = {
+            //   type: "6",
+            //   show: true,
+            //   text: "登录"
+            // };
+            let params = {
+              ios: "DLoginVController",
+              ClassName:
+                "com.example.zlv_master.activity.login.login.LoginActivity"
+            };
+            window.NativeCall.goToNativePage(params,res=>{
+              this.$store.state.userInfo = JSON.parse(res);
+              this.$router.push({ name: "myPocket" });
+            });
+          } else {
+            this.$router.push({ name: "myPocket" });
+          }
+        });
+      } else {
+        this.$router.push({ name: "index" });
+      }
+      // if (val == 2 && this.$store.state.userInfo.UserId) {
+
+      // }
+    },
+    confirm() {
+      //点击弹出的确认按钮
+      this.dialog.show = false;
+      // console.log(1111);
+      if (this.dialog.type == "6") {
+        //用户未登录
+        let params = {
+          ios: "DLoginVController",
+          ClassName: "com.example.zlv_master.activity.login.login.LoginActivity"
+        };
+        window.NativeCall.goToNativePage(params);
+      }
+    },
+    cancel() {
+      this.dialog.show = false;
+    }
+  },
+  created() {
+    // window.NativeCall.getUserInfo(params => {
+    //   this.$store.state.userInfo = params;
+    //   // alert(params);
+    // });
+  }
+  // beforeRouteEnter: (to, from, next) => {
+  //   next(vm => {
+  //     if (vm.flag) {
+  //       window.NativeCall.goToRouter(res => {
+  //         let obj = JSON.parse(res);
+  //         // alert(res.router);
+  //         vm.$router.options.routes.map((item, index) => {
+  //           if (item.name == obj.router) {
+  //             item.meta.goToNative = true;
+  //             vm.$router.options.routes.splice(index, item);
+  //             next({ name: obj.router, params: obj.routerDic });
+  //           }
+  //         });
+  //       });
+  //       vm.flag = false;
+  //     }
+  //   });
+  // }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+}
+</style>

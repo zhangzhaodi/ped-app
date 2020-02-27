@@ -1,0 +1,52 @@
+<template>
+  <div>
+    <div class="header-box">
+      <h3>{{titleInfo}}</h3>
+      <p>{{noticeInfo}}</p>
+    </div>
+  </div>
+</template>
+
+  <script>
+export default {
+  props: {
+    title: {
+      type: String,
+      default: ""
+    },
+    notice: {
+      type: String,
+      default: ""
+    }
+  },
+  data() {
+    return {
+      titleInfo: this.title,
+      noticeInfo: this.notice
+    };
+  },
+  created() {},
+
+  methods: {}
+};
+</script>
+<style lang="scss" scoped>
+.header-box {
+  padding: px2vw(80) px2vw(60) px2vw(120);
+}
+.header-box h3 {
+  font-size: px2vw(54);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(54);
+  margin: 0 0 px2vw(30) 0;
+}
+.header-box p {
+  font-size: px2vw(31);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(125, 125, 125, 1);
+  line-height: px2vw(32);
+}
+</style>

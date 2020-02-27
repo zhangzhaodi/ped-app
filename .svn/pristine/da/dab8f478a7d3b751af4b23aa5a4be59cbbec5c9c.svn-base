@@ -1,0 +1,41 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue");
+Vue.use(Router);
+
+export default new Router({
+  linkActiveClass: 'active',
+  routes: [
+    {
+      path: "",
+      name: "index",
+      component: Index,
+      meta: {
+        keepAlive: false,
+        title: '利率查询'
+      },
+      redirect: '/depositRate',
+      children: [
+        {
+          path: 'depositRate',
+          name: 'depositRate',
+          meta: {
+            keepAlive: true
+          },
+          component: () => import("../pages/ratePages/depositRate.vue"),
+        },
+        {
+          path: 'loanRate',
+          name: 'loanRate',
+          meta: {
+            keepAlive: true
+          },
+          component: () => import("../pages/ratePages/loanRate.vue"),
+        }
+      ]
+    }
+
+  ]
+});

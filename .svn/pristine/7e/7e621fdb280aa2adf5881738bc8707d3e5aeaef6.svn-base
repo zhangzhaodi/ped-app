@@ -1,0 +1,243 @@
+<template>
+  <div class="result">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="top">
+      <div class="img">
+        <span class="iconfont iconcheck-"></span>
+      </div>
+      <p class="msg">您已成功转入100.00元</p>
+    </div>
+    <div class="line"></div>
+    <!-- <div class="content">
+      <div class="detail">
+        <div class="payer">
+          <p class="left">产品名称</p>
+          <p class="center">
+            <span>{{data.name}}</span>
+          </p>
+        </div>
+        <div class="money">
+          <p class="left">投资金额</p>
+          <p class="center">{{data.money | Money}}</p>
+        </div>
+        <div class="notice">
+          <div class="left">
+            <span>申请日期</span>
+          </div>
+          <div class="center">2019-08-09</div>
+        </div>
+      </div>
+    </div> -->
+    <div class="line"></div>
+    <div class="dealline">
+      <div class="img">
+        <!-- <img src="@/assets/travelTreasure/rollin/bianjieshu@2x.png" /> -->
+      </div>
+      <div class="time">
+        <div class="start">
+          <p class="text">转入成功</p>
+          <p class="p1">2019-08-22 周四 15:00:00</p>
+        </div>
+         <div class="conter">
+          <p class="text">开始计算收益</p>
+          <p class="p1">2019-08-26</p>
+        </div>
+        <div class="end">
+          <p class="text">收益到账</p>
+          <p class="p1">2019-08-27 周二</p>
+        </div>
+      </div>
+    </div>
+    <div class="btn">
+      <van-button type="default" class="again" @click="again">我的理财</van-button>
+      <!-- <van-button type="default" class="final" @click="final">完成</van-button> -->
+    </div>
+    <!-- 行业优先 -->
+    <div class="best">
+      <img src="@/assets/manageMoney/img_guanggao@2x.png">
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  props: {
+    data: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      }
+    };
+  },
+  methods: {
+    final() {
+      this.$router.push({ name: "index" });
+    },
+    again() {
+      this.$router.push({ name: "myPocket" });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+
+.top {
+  height: px2vw(348);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  .img {
+    height: px2vw(110);
+    width: px2vw(110);
+    background: linear-gradient(#27cd6f, #39df8d);
+    border-radius: 50%;
+    color: #fff;
+    line-height: px2vw(110);
+    text-align: center;
+    margin: 0 auto;
+    .iconfont {
+      font-size: px2vw(56);
+    }
+  }
+  .msg {
+    font-size: px2vw(40);
+    font-weight: 400;
+    color: #262626;
+    text-align: center;
+    line-height: px2vw(40);
+    margin-top: px2vw(40);
+  }
+}
+.content {
+  font-family: PingFangSC;
+  padding: px2vw(50) 0;
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer,
+    .money,
+    .notice {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        width: px2vw(152);
+        flex: none;
+        color: #7d7d7d;
+      }
+      .center {
+        flex: 1;
+        color: #000;
+        font-weight: 400;
+      }
+      .right {
+        color: #008bff;
+        flex: none;
+      }
+    }
+    .payer {
+      margin-top: 0;
+    }
+  }
+}
+.dealline {
+  height: px2vw(400);
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  padding: px2vw(51) px2vw(40) px2vw(70) px2vw(40);
+  .img {
+    box-sizing: border-box;
+    padding: px2vw(20) 0;
+    height: px2vw(250);
+    width: px2vw(30);
+    background: url('~@/assets/travelTreasure/rollin/bianjieshu@2x.png');
+    background-size: 100% 100%;
+    // img {
+    //   width: px2vw(15);
+    //   height: 100%;
+    // }
+  }
+  .time {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-left: px2vw(14);
+    .text {
+      font-size: px2vw(26);
+      font-weight: 400;
+      color: #262626;
+    }
+    .p1 {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #7d7d7d;
+      margin-top: px2vw(6);
+    }
+  }
+}
+.btn {
+  display: flex;
+  flex-direction: row;
+  // justify-content: space-between;
+  font-size: px2vw(30);
+  font-weight: 400;
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  /deep/ .van-button {
+    height: px2vw(90);
+    width: px2vw(310);
+    border-radius: px2vw(45);
+  }
+  .again {
+    width:100%;
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background-color: #fff;
+    border:1px solid rgba(255,159,8,1);
+    color:rgba(255,159,8,1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  .final {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background: linear-gradient(#ffdfc7, #d69f81);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+  }
+}
+.best{
+  padding: 0 px2vw(40);
+  margin-top: px2vw(80);
+  img{
+    width: 100%;
+  }
+}
+</style>

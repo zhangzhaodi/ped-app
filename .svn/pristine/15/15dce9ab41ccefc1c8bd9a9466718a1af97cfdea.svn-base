@@ -1,0 +1,60 @@
+<template>
+  <div class="list">
+    <div class="time" v-for="(item,index) in data" :key="index">
+      <p class="time_p">{{item.time}}</p>
+      <div class="item" v-for="(info,i) in item.list" :key="i">
+        <p class="title">{{info.title}}</p>
+        <p class="content">{{info.content}}</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    data: {
+      require: true
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.list {
+  .time {
+    margin: px2vw(50) auto px2vw(30);
+    .time_p {
+      text-align: center;
+    }
+    .item {
+      background: #fff;
+      margin: 0 px2vw(30);
+      padding: px2vw(40) px2vw(40) px2vw(30);
+      box-sizing: border-box;
+      border-radius: px2vw(16);
+      height: px2vw(192);
+      .title {
+        font-size: px2vw(30);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+      }
+      .content {
+        width: 100%;
+        height: px2vw(76);
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFangSC;
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+        line-height: px2vw(38);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: px2vw(16);
+      }
+    }
+    .item:not(frist-child) {
+      margin-top: px2vw(30);
+    }
+  }
+}
+</style>

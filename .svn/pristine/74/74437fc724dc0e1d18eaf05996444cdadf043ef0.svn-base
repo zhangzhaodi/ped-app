@@ -1,0 +1,128 @@
+<template>
+  <div class="outer">
+    <div class="router-view">
+      <router-view></router-view>
+    </div>
+    <van-tabbar v-model="active" :z-index="1001">
+      <van-tabbar-item @click="toFund">
+        <img slot="icon" slot-scope="props" :src="props.active ? icon.active : icon.normal">
+        <span>推荐</span>
+      </van-tabbar-item>
+      <van-tabbar-item @click="toMarket">
+        <img slot="icon" slot-scope="props" :src="props.active ? shichang.active : shichang.normal">
+        <span>市场</span>
+      </van-tabbar-item>
+      <van-tabbar-item @click="toOptional">
+        <img slot="icon" slot-scope="props" :src="props.active ? zixuan.active : zixuan.normal">
+        <span>自选</span>
+      </van-tabbar-item>
+      <van-tabbar-item @click="toPosition">
+        <img slot="icon" slot-scope="props" :src="props.active ? chicang.active : chicang.normal">
+        <span>持仓</span>
+      </van-tabbar-item>
+    </van-tabbar>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions } from "vuex";
+import { Tabbar, TabbarItem } from 'vant';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Tabbar.name]: Tabbar,
+    [TabbarItem.name]: TabbarItem,
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      activeNames: [],
+      icon: {
+        normal: require('@/assets/fund/icon_tuijian_nor@2x.png'),
+        active: require('@/assets/fund/icon_tuijian_press@2x.png')
+      },
+      shichang: {
+        normal: require('@/assets/fund/icon_shichang_nor@2x.png'),
+        active: require('@/assets/fund/icon_shichang_press@2x.png')
+      },
+      zixuan: {
+        normal: require('@/assets/fund/icon_zixuan_nor@2x.png'),
+        active: require('@/assets/fund/icon_zixuan_press@2x.png')
+      },
+      chicang: {
+        normal: require('@/assets/fund/icon_chicang_nor@2x.png'),
+        active: require('@/assets/fund/icon_chicang_press@2x.png')
+      },
+      active: 0
+    };
+  },
+  computed: {},
+  created() {
+    this.active = this.$route.meta.activeIndex;
+   },
+  mounted() { },
+  methods: {
+    toFund() {
+      this.$router.push({ name: 'fund' })
+      console.log("基金")
+    },
+    toMarket(){
+      this.$router.push({ name: 'market' })
+      console.log("自选")
+    },
+    toOptional(){
+      this.$router.push({ name: 'optional' })
+      console.log("自选")
+    },
+    toPosition(){
+      this.$router.push({ name: 'position' })
+      console.log("持仓")
+    },
+
+  },
+  watch:{
+    $route (to, from) {
+      // 执行ajax请求，但只希望在进入时请求，离开时不希望进行请求。
+      // console.log(to,"去")
+      this.active = to.meta.activeIndex;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  .router-view {
+    margin-bottom: px2vw(100);
+  }
+  /deep/ .van-tabbar {
+    height: px2vw(98);
+    .van-tabbar-item {
+      .van-tabbar-item__icon {
+        margin-bottom: px2vw(5);
+        img {
+          width: px2vw(54);
+          height: px2vw(54);
+        }
+      }
+    }
+    .van-tabbar-item--active {
+      .van-tabbar-item__text {
+        span{
+          color:#DA9A78;
+          font-size: px2vw(20);
+          font-weight: 400;
+          font-family: $font-family;
+        }
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,149 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :backgroundColor="color"
+      :isWhite="isWhite"
+      :params="params"
+    ></Myheader>
+    <div class="top" v-if="nowIndex==0">
+      <p class="title">风险评估问卷</p>
+      <p class="text">声明：本投资风险评估问卷的准确性视乎您所填写的答案而定，如有任何疑问，您可以对投资产品是否合适进行独立评估。</p>
+    </div>
+    <div class="top notFirst" v-else>
+      <div>
+        <span class="now">{{nowIndex+1}}</span>
+        <span>/</span>
+        <span>{{this.$store.state.assessment.assessmentList.length}}</span>
+      </div>
+    </div>
+    <cont :nowIndex="nowIndex"></cont>
+    <btn
+      :nowIndex="nowIndex"
+      @up="up"
+      @next="next"
+      :ExamPaperNum="this.$store.state.manageMoney.ExamPaperNum"
+    ></btn>
+    <Mydialog :show="this.$store.state.assessment.hasAssessment" @con="con">
+      <template slot="content">
+        <div class="title">提示</div>
+        <div
+          class="content"
+        >您好！向本行第一次申请任何理财投资产品前，请填写本问卷，并于每次过期后重新评估。本问卷旨在了解您可承受的风险程度、以及您的投资经验，借此协助您选择合适的理财产品类别，以达到您的投资目标。本行建议，当您的状况有重大转变时，应对您的投资组合进行检视，以确保您的理财投资决定与您可承受的投资风险程度一致。</div>
+      </template>
+    </Mydialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import cont from "../components/cont.vue";
+import btn from "../components/btn.vue";
+import dialog from "../components/dialog.vue";
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+export default {
+  components: {
+    Myheader: Header,
+    cont,
+    btn,
+    Mydialog: dialog
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false,
+        rightShow: true
+      },
+      color: "transparent",
+      isWhite: true,
+      nowIndex: 0
+    };
+  },
+  computed: {
+    ...mapState({
+      assessmentData: state => state.assessment.assessmentData
+    })
+  },
+  created() {
+    this.$store.state.assessment.hasAssessment = true;
+    this.ASSESSMENT_DATA(this.assessmentData);
+    console.log(this.$store.state.assessment);
+  },
+  methods: {
+    ...mapMutations("assessment", ["ASSESSMENT_DATA"]),
+    up() {
+      //上一题
+      this.nowIndex -= 1;
+      if (this.nowIndex == 0) {
+        this.isWhite = true;
+      }
+    },
+    next() {
+      //下一题
+      this.nowIndex += 1;
+      if (this.nowIndex != 0) {
+        this.isWhite = false;
+      }
+    },
+    con() {
+      // console.log(this.$store);
+      this.assessmentData.hasAssessment = false;
+      this.ASSESSMENT_DATA(this.assessmentData);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  .headerBox {
+    position: absolute;
+  }
+}
+.top {
+  width: 100%;
+  height: px2vw(540);
+  position: relative;
+  background: url("~@/assets/riskAssessment/img_bg@2x.png") no-repeat;
+  background-size: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .title {
+    font-size: px2vw(50);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 1);
+    margin-top: px2vw(128);
+  }
+  .text {
+    font-size: px2vw(22);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    line-height: px2vw(36);
+    text-align: center;
+    max-width: px2vw(660);
+    margin-top: px2vw(40);
+  }
+}
+.notFirst {
+  background: url("~@/assets/riskAssessment/img_wenjuan@2x.png") no-repeat;
+  background-size: px2vw(540) px2vw(576);
+  background-position-x: right;
+  display: block;
+  font-size: 0;
+  div {
+    margin-top: px2vw(147);
+    margin-left: px2vw(40);
+  }
+  span {
+    font-size: px2vw(24);
+    font-weight: 300;
+    color: #3e8fff;
+  }
+  .now {
+    font-size: px2vw(80);
+    font-weight: 400;
+    color: #8fbefe;
+  }
+}
+</style>

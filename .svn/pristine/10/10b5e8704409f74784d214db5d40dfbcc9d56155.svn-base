@@ -1,0 +1,467 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :isWhite="true" backgroundColor="linear-gradient(270deg,rgba(248,204,173,1) 0%,rgba(218,154,120,1) 100%)"></Myheader>
+    <div class="main-wrapper">
+      <div class="top">
+        <header class="fund-info">
+          <h2>{{selectFundPlan.ProductName}}<span class="iconfont">&#xe649;</span></h2>
+          <div class="num">【{{selectFundPlan.ProductNo}}】<span class="end-tag" v-if="selectFundPlan.FinishFlag == 1">已终止</span></div>
+          <div class="info">{{getCycle(selectFundPlan)}}定投{{selectFundPlan.AMT | Money}}元 <span>中旅银行({{selectFundPlan.BankAcct | CardNoFour}})</span></div>
+        </header>
+        <div class="mid-box">
+          <div class="item">
+            <div class="title">累计定投</div>
+            <div class="num">{{selectFundPlan.AMT | Money}}</div>
+          </div>
+          <div class="item">
+            <div class="title">已投期数</div>
+            <div class="num">{{recordList.length}}<span class="period">期</span></div>
+          </div>
+        </div>
+        <div class="next">
+          <img src="@/assets/fund/icon_shijian@2x.png" alt="">
+         
+          <div v-if="selectFundPlan.NextInvestDate">下次扣款日：{{getNextInvestDate(selectFundPlan.NextInvestDate)}} ({{getNextWeek(selectFundPlan.NextInvestDate)}}) 将转入{{selectFundPlan.AMT | Money}}元</div>
+          <div v-else>- -</div> 
+        </div>
+      </div>
+      <div class="divide">&nbsp;</div>
+      <Scroller class="record">
+        <div class="title">定投记录</div>
+        <van-list v-model="loading" :finished="finished" @load="getRecord">
+          <ul class="record-list"  v-if="recordList.length > 0">
+            <li v-for="(item,index) in recordList" class="list-item" :key="index">
+              <div class="date">{{item.openDate | dateFormat}}</div>
+              <div>{{item.AMT | Money}}元</div>
+              <div class="class">成功</div>
+            </li>
+          </ul>
+        </van-list>
+        <div v-if="recordList.length==0" class="nodata-box">
+          <img :src="require(`@/assets/fund/img_zanwudingtou@2x.png`)" alt />
+          <p class="text">暂无定投记录</p>
+        </div>
+      </Scroller>
+      <div class="footer-box">
+        <van-button class="reset" @click="cancelShow = true">终止</van-button>
+        <van-button class="edit"  @click="toEdit">修改</van-button>
+      </div>
+
+    </div>
+
+    <myDialog class="fund-dialog" :show.sync="cancelShow" title="终止定投" :isClose="false" :confirmButtonText="`确定`" @con="cancelConfirm">
+      <p slot="content" class="dialog-content" style="text-align:center;">
+        计划终止后将不再进行扣款且不能恢复
+      </p>
+    </myDialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+// import Footer from "../../components/Footer";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import { Sticky, List } from "vant";
+import dayjs from 'dayjs';
+import myDialog from '@/components/Dialog/Dialog'
+export default {
+  components: {
+    Myheader: Header,
+    [Sticky.name]: Sticky,
+    Scroller,
+    [List.name]: List,
+    myDialog
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      active: '',
+      recordList: [],
+      // recordList: [{ date: '2018-91-19', money: "10", status: "成功" }, { date: '2018-91-19', money: "100000", status: "成功" }, { date: '2018-91-19', money: "1000000", status: "成功" }, { date: '2018-91-19', money: "10", status: "成功" }],
+      pageNum: 1, //每页数据有多少条
+      page: 1,
+      loading: false,
+      finished: false,
+      data: this.selectFundPlan,
+      cancelShow: false,
+      params: {},
+    };
+  },
+  created() {
+    // this.data = this.selectFundPlan;
+    this.updateFund(this.selectFundPlan.ProductNo)
+  },
+  mounted() { },
+  computed: {
+    ...mapState('fund', ['selectFundPlan']),
+    ...mapState('common', ['userInfo']),
+    startNum() {
+      return (this.page - 1) * this.pageNum + 1
+    },
+  },
+  methods: {
+    ...mapActions('fund',['updateFund']),
+    getRecord() {
+      let productNo = this.selectFundPlan.ProductNo || ''
+      console.log(this.selectFundPlan, "选择的定投")
+      if (productNo) {
+        // http://localhost:8088/pmobile/pweb-fund.OwnerFundInverstList.do?CustomerIdentifyType=1&CustomerIdentify=12007657&PositionString=1&QueryRowsNum=10
+        let params = {
+          BranchId: "PHNE",
+          ChnlId: "62",
+          ProductNo: productNo,
+          CustomerIdentifyType: '1',
+          CustomerIdentify: this.userInfo.Cif.cifNo,
+          PositionString: this.startNum,
+          QueryRowsNum: this.pageNum,
+          EndFlag: 1,//结束定投标记
+        }
+        this.request("OwnerFundInverstList", params, false, true).then(res => {
+          console.log("res", res)
+          let resList = res.CurCommisList;
+          if (resList.length > 0) {
+            if (!this.recordList) {
+              this.recordList = resList;
+            } else {
+              this.recordList = [...this.recordList, ...resList];
+            }
+            if (resList.length < this.pageNum) {//获取的新数据小于每页数据量，则不需再次翻页
+              this.finished = true;
+            } else {
+              this.page++;
+            }
+          } else {
+            this.finished = true;
+          }
+          this.loading = false;
+
+        }).catch(err => {
+          this.loading = false;
+          this.finished = true;
+        })
+      }
+    },
+    getCycle(item) {
+      let cycle = '', period = item.InvestInterval, day = '', text = '';
+      if (item.InvestCycle == 0) {
+        // 月
+        cycle = '月'
+        day = item.InvestmentDay + '日'
+        if (period > 1) {
+          text = `每${period}月`
+        } else {
+          text = `每月${day}`
+        }
+      } else if (item.InvestCycle == 1) {
+        day = this.getWeek(Number(item.InvestmentDay));
+        text = `每周${day}(间隔${period}周)`
+      } else if (item.InvestCycle == 2) {
+        day = item.InvestmentDay
+        text = `每${period}天中的第${day}`
+      }
+      return text
+    },
+    getNextInvestDate(date){
+      if(!date) return '- -'
+      return dayjs(date).format("YYYY-MM-DD")
+    },
+    getNextWeek(date){
+      let day = dayjs(date).day()
+      return this.getWeek(day)
+    },
+    getWeek(week) {
+      let weekTxt = '';
+      switch (week) {
+        case 1:
+          weekTxt = '周一';
+          break
+        case 2:
+          weekTxt = '周二';
+          break
+        case 3:
+          weekTxt = '周三';
+          break
+        case 4:
+          weekTxt = '周四';
+          break
+        case 5:
+          weekTxt = '周五';
+          break
+        case 6:
+          weekTxt = '周六';
+          break
+        case 7:
+          weekTxt = '周日';
+          break
+        default:
+          weekTxt = ''
+      }
+      return weekTxt
+    },
+    cancelConfirm() {
+      console.log("执行撤单")
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        AIPNo: this.selectFundPlan.AIPNo,
+        CustomerIdentify: this.userInfo.Cif.cifNo,
+        CustomerIdentifyType: "1",
+        BankAcct: this.selectFundPlan.BankAcct,
+        TrsAcNo: this.selectFundPlan.BankAcct || '',
+      }
+      this.params = params;
+      this.request('OwnerFundInverstEndConfirm', params , true ).then(res => {
+        this.params._tokenName = res._tokenName;
+        this.passwordCheck();
+      })
+    },
+    // confirm接口后调用密码组件
+    passwordCheck() {
+      if (process.env.NODE_ENV == "development") {//随时删除
+        this.params.Password = 'MDAwMDAxNDABAgAAAWgAAACkAABjJ7se4jHpWVWyF97Z57ZKF+k3PC8DJs8wZAGNvR/Wha/4L/cVDMdiWS3Z1hU+Ctx9P08z/QjlCo/9MWfNZfhmucVIrPDLhBAuYobdsK+cuc5sgSz08oHraAKRvpf3UzNrJBwqEh8mb/b/Kr5z9GCH7omIiX97+abATsZAiWKxgzAwMDAwMjIzczX1rZcuLPzEnLYa9B0zGcF9sYpYwhAZdqN49WvCLrZA9p6VG/L6vn6sPHRtjnDJvRIrFUARFPCnIJ9M0Sw4kvLRK4g/o4WkYF9FpKqzrz+rNPN3UD3QSxNiP0VPDSfGD28VHHx7YhKOxFcxw6AQAa9X065dAJZ8NMS+x+QrlWlZVxgVUtfh87mxieP60EPHWh/kWPswnMjBeKZLpj+h23zBsqTCMu8vL22iB9YIDDNmEHiavPyHFG+chYdAtkG9EulXh7dzWk1PKoZPYBDWYv7BhbAN/d4WSFSYh3Caow==';//本地测试无法调用密码组件 写死
+        this.submit();
+      } else {
+        window.NativeCall.SecureKeyboard(param => {
+          this.params.Password = param;
+          // this.params.Password = '111111';
+          this.submit();
+        });
+      }
+    },
+    submit(){
+      this.request('OwnerFundInverstEnd', this.params).then(res => {
+        this.$router.push({name: "fundPlanCancelResult"})
+      })
+    },
+    toEdit(){
+      this.$router.push({name:"fundPlanEdit"})
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.main-wrapper {
+  margin-top: px2vw(88);
+  height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  background: #fff;
+  .nodata-box{
+    img{
+      margin-top: px2vw(10);
+    }
+  }
+}
+.outer {
+  position: relative;
+  .headerBox {
+    top: 0;
+    position: fixed;
+  }
+  .top {
+    background: linear-gradient(
+      270deg,
+      rgba(248, 204, 173, 1) 0%,
+      rgba(218, 154, 120, 1) 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 100% px2vw(341);
+    .fund-info {
+      color: #fff;
+      padding: px2vw(55) px2vw(40) 0 px2vw(40);
+      h2 {
+        font-size: px2vw(30);
+        font-family: $font-family;
+        font-weight: 500;
+        line-height: px2vw(36);
+        .iconfont {
+          float: right;
+          font-size: px2vw(12);
+        }
+      }
+      .num {
+        font-size: px2vw(28);
+        font-family: $font-family;
+        margin-top: px2vw(12);
+        font-weight: 500;
+        line-height: px2vw(30);
+        .end-tag {
+          display: inline-block;
+          height: px2vw(30);
+          background: #fff;
+          padding: 0 px2vw(14);
+          color: #f75a50;
+          font-size: px2vw(22);
+          font-family: $font-family;
+          font-weight: 400;
+        }
+      }
+      .info {
+        margin-top: px2vw(32);
+        font-size: px2vw(24);
+        font-family: $font-family;
+        font-weight: 400;
+        span {
+          margin-left: px2vw(20);
+        }
+      }
+    }
+    .mid-box {
+      margin: px2vw(60) px2vw(40) px2vw(35) px2vw(40);
+      background: rgba(255, 255, 255, 1);
+      border-radius: px2vw(16);
+      // box-shadow: 0px 2px 20px 0px rgba(168, 168, 168, 0.1);
+      box-shadow: 0px 10px 40px 0px rgba(0, 0, 0, 0.05);
+      height: px2vw(160);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .item {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: center;
+        .title {
+          margin-bottom: px2vw(10);
+          font-size: px2vw(24);
+          font-family: $font-family;
+          font-weight: 300;
+          color: #0f0b0b;
+        }
+        .num {
+          font-size: px2vw(50);
+          font-family: $font-family;
+          font-weight: 500;
+          color: #da9a78;
+          .period {
+            font-size: px2vw(22);
+            color: #7d7d7d;
+            font-weight: 300;
+            font-family: $font-family;
+            margin-left: px2vw(8);
+          }
+        }
+        &:first-child {
+          border-right: 1px solid rgba(245, 246, 248, 0.5);
+        }
+      }
+    }
+
+    .next {
+      display: flex;
+      padding: 0 px2vw(40);
+      margin-bottom: px2vw(32);
+      align-items: center;
+      justify-content: center;
+      font-size: px2vw(24);
+      font-weight: 300;
+      font-family: $font-family;
+      color: #7d7d7d;
+      img {
+        width: px2vw(30);
+        margin-right: px2vw(11);
+      }
+    }
+  }
+  .divide {
+    height: px2vw(20);
+    background: #f5f6f8;
+    width: 100%;
+    &::after {
+      content: " ";
+    }
+  }
+  .scrollerBox {
+    background: #f5f6f8;
+  }
+  .record {
+    padding: 0 px2vw(40);
+    background: #fff;
+    .title {
+      font-size: px2vw(32);
+      color: #262626;
+      font-family: $font-family;
+      font-weight: 500;
+      padding: px2vw(40) 0;
+    }
+    .record-list {
+      display: flex;
+      flex-direction: column;
+      .list-item {
+        display: flex;
+        justify-content: space-between;
+        height: px2vw(100);
+        align-items: center;
+        font-size: px2vw(28);
+        font-family: $font-family;
+        font-weight: 400;
+        color: #262626;
+        border-bottom: 1px solid rgba(235, 238, 240, 0.5);
+        &:last-child {
+          border-bottom: none;
+        }
+        div {
+          display: flex;
+          .success {
+            color: #27cd6e;
+          }
+          .fail {
+            color: #f75a50;
+          }
+        }
+      }
+    }
+  }
+  .footer-box {
+    // position: fixed;
+    // bottom: 0;
+    width: 100%;
+    display: flex;
+    box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.05);
+    .van-button {
+      flex: 1;
+      width: 50%;
+      height: px2vw(112);
+      font-size: px2vw(34);
+      font-weight: 400;
+      font-family: $font-family;
+      border-radius: 0;
+      &.reset {
+        color: #da9a78;
+      }
+      &.edit {
+        color: #fff;
+        background: linear-gradient(
+          270deg,
+          rgba(248, 204, 173, 1) 0%,
+          rgba(218, 154, 120, 1) 100%
+        );
+      }
+    }
+  }
+}
+
+/deep/ .fund-dialog {
+  .van-dialog {
+    .van-dialog__footer {
+      .van-dialog__confirm {
+        background: linear-gradient(
+          270deg,
+          rgba(248, 204, 173, 1) 0%,
+          rgba(218, 154, 120, 1) 100%
+        );
+      }
+      .van-dialog__cancel{
+        border:1px solid rgba(218,154,120,1);
+        color:#DA9A78;
+      }
+    }
+  }
+}
+</style>

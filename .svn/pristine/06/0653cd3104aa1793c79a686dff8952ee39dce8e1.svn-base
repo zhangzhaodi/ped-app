@@ -1,0 +1,101 @@
+<template>
+  <div :class="['content',{'notFirst':nowIndex!=0}]">
+    <div class="title">
+      <span>{{nowIndex+1+'. '}}</span>
+      <span>{{data[this.nowIndex].content.Remark}}</span>
+    </div>
+    <div class="item" v-for="(item,index) in data[this.nowIndex].options" :key="index">
+      <img src="@/assets/riskAssessment/icon_danxuan_xuanzhong@2x.png" v-if="nowCheck==index" />
+      <img src="@/assets/riskAssessment/icon_danxuan_normal@2x.png" v-else @click="check(item,index,item.QustionNum)" />
+      <span  @click="check(item,index,item.QustionNum)">{{item.Remark}}</span>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    nowIndex: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      data: null,
+      nowCheck: null
+    };
+  },
+  watch: {
+    nowIndex: {
+      handler(val) {
+        console.log(this.nowIndex)
+        this.nowCheck = this.$store.state.assessment.assessmentOptions[this.nowIndex]
+          ? this.$store.state.assessment.assessmentOptions[this.nowIndex].index
+          : null;
+        
+        // console.log(this.$store.state.assessment)
+      }
+    }
+  },
+  created() {
+    
+    this.data = this.$store.state.assessment.assessmentList;
+  },
+  methods: {
+    check(item,index,num) {
+      this.nowCheck = index;
+      // console.log(item,index,num)
+      this.$store.state.assessment.assessmentOptions[this.nowIndex] = {
+        check:num,
+        question:item.SelectItem,
+        index:index
+      };
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  width: px2vw(690);
+  border: px2vw(12);
+  box-shadow: 0 px2vw(8) px2vw(40) 0 rgba(121, 126, 139, 0.08);
+  margin: 0 auto;
+  margin-top: px2vw(-111);
+  border-radius: px2vw(12);
+  box-sizing: border-box;
+  // padding: 0 px2vw(30);
+  position: relative;
+  background: #fff;
+  -webkit-overflow-scrolling: touch;
+  .title {
+    margin: px2vw(40) px2vw(40) px2vw(20) px2vw(40);
+    font-size: 0;
+    span {
+      font-size: px2vw(30);
+      font-weight: 500;
+      color: rgba(51, 51, 51, 1);
+    }
+  }
+  .item {
+    height: px2vw(110);
+    padding-left: px2vw(40);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    img {
+      height: px2vw(32);
+      width: px2vw(32);
+    }
+    span {
+      margin-left: px2vw(20);
+    }
+  }
+}
+.notFirst {
+  margin-top: px2vw(-249);
+}
+</style>

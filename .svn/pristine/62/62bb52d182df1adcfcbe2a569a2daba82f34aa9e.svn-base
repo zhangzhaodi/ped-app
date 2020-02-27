@@ -1,0 +1,210 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller>
+      <Pagetitle :title="titleInfo" :notice="noticeInfo"></Pagetitle>
+      <div class="sel-item">
+        <div class="sel-m">
+          <!-- <v-input
+            @click.native="SecureKeyboard"
+            :maxlength="6"
+            v-model="tradersPsd"
+            :value="tradersPsd"
+            label="请输入交易密码"
+            placeholder="请输入交易密码"
+          ></v-input> -->
+          <van-field v-model="tradersPsd"  maxlength="6"  @click="SecureKeyboard" placeholder="请输入交易密码" />
+        </div>
+      </div>
+      <!-- <div class="sel-item">
+        <div class="sel-m">
+          <v-input
+            @click.native="SecureKeyboardAga"
+            :maxlength="6"
+            type="password"
+            :value="tradersPsdAga"
+            v-model="tradersPsdAga"
+            label="请确认交易密码"
+            placeholder="请确认交易密码"
+          ></v-input>
+        </div>
+      </div> -->
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :style="styleObject" :disabled="forbidden" @click="next">下一步</van-button>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Pagetitle from "./components/Pagetitle";
+import { Button, PasswordInput, NumberKeyboard,Field } from "vant";
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    vInput,
+    Pagetitle,
+    [Button.name]: Button,
+    [PasswordInput.name]: PasswordInput,
+    [NumberKeyboard.name]: NumberKeyboard
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      titleInfo: "交易密码验证",
+      noticeInfo: "为了您的账户安全请输入银行卡交易密码",
+      //是否禁用一下步按钮
+      forbidden: true,
+      styleObject: {
+        background: ""
+      },
+      //数字键盘
+      value: "",
+      showKeyboard: true,
+      //交易密码
+      password: "",
+      tradersPsd: "",
+      tradersPsdAga: ""
+    };
+  },
+  created(){
+  },
+  mounted() {
+  },
+  computed:{
+        // 使用对象展开运算符将此对象混入到外部对象中
+    ...mapState("eleAccounts", {
+      form: "eleForm"
+    })
+  },
+  methods: {
+    ...mapActions("eleAccounts", ["updateEleForm"]),
+    SecureKeyboard() {
+      document.activeElement.blur();
+      window.NativeCall.SecureKeyboard(param => {
+        if (param != "") {
+          this.password = param;
+          this.tradersPsd = "******";
+          this.forbidden = false;
+        } else {
+          this.tradersPsd = "";
+        }
+      });
+    },
+    // SecureKeyboardAga() {
+    //   document.activeElement.blur();
+    //   window.NativeCall.SecureKeyboard(param => {
+    //     this.tradersPsd = "******";
+    //     if (param != "") {
+    //       this.password = param;
+    //       this.tradersPsdAga = "******";
+    //     }
+    //     this.verifyCheck();
+    //   });
+    // },
+    // verifyCheck() {
+    //   if (this.tradersPsd && this.tradersPsdAga) {
+    //     this.forbidden = false;
+    //   }
+    // },
+    next() {
+            this.request("OpenEleAcNoConfirm",
+      {
+          Password:this.password || '',
+          BranchId:this.form.BranchId || "1666",
+          ChnlId:this.form.ChnlId || '62',
+          CustNm: this.form.username || '',
+          CertNo:this.form.IDCard || '',
+          CertType:"1" || '',
+          RelCardNbr:this.form.bankCard || "",
+          ContTypCd:"1" || '',
+          AcctOpenOrg:"70010" || '',
+          CardTypeNo:"1" || '',
+          OccupationTpCd:this.form.job || '',
+          ComAddress:this.form.Address ||  "",
+          ContAddr:this.form.Address ||  "",
+          Amt:'0' || '',
+          AcctTyp:'2' || '',
+          SmsCode: this.amountInWords ||  '',
+          UserSmsId:this.form.UserSmsId || '',
+          ApprTyp: "1" || '',
+          SmsNbr:this.form.SmsNbr || '',
+          IdVolk:this.form.IdVolk || '',
+          MobileNo:this.form.phone || '',
+          BeginDate:this.form.BeginDate || '',
+          EndDate:this.form.EndDate || '',
+          Rdtdmk:this.form.Rdtdmk||  "",
+          ComAddress:this.form.ComAddress ||  "",
+          IssueOffice:this.form.IssueOffice || '',
+          Sex:this.form. Sex|| '',
+          Folk:this.form.Folk || '',
+          Birthday:this.form.Birthday || '',
+      },true)
+            .then((res)=>{
+              console.log(res);
+          this._token=res._tokenName
+          let params = {
+          Password:this.password || '',
+          BranchId:this.form.BranchId || "1666",
+          ChnlId:this.form.ChnlId || '62',
+          CustNm: this.form.username || '',
+          CertNo:this.form.IDCard || '',
+          CertType:"1" || '',
+          RelCardNbr:this.form.bankCard || "",
+          ContTypCd:"1" || '',
+          AcctOpenOrg:"70010" || '',
+          CardTypeNo:"1" || '',
+          OccupationTpCd:this.form.job || '',
+          ComAddress:this.form.Address ||  "",
+          ContAddr:this.form.Address ||  "",
+          Amt:'0' || '',
+          AcctTyp:'2' || '',
+          ApprTyp: "1" || '',
+          IdVolk:this.form.IdVolk || '',
+          MobileNo:this.form.phone || '',
+          BeginDate:this.form.BeginDate || '',
+          EndDate:this.form.EndDate || '',
+          Rdtdmk:this.form.Rdtdmk||  "",
+          ComAddress:this.form.ComAddress ||  "",
+          Folk:this.form.Folk || '',
+          IssueOffice:this.form.IssueOffice || '',
+          Sex:this.form. Sex|| '',
+          AcctOpenOrg:this.form.AcctOpenOrg,
+          AcctOpenNam:this.form.AcctOpenNam,
+          _tokenName:res._tokenName || '',
+          Birthday:this.form.Birthday || '',
+      }
+      window.NativeCall.goSetPasswordVC(params);
+            })
+            .catch((error)=>{
+              console.log(error);
+            })
+
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/ .v-input__inner {
+  font-size: px2vw(40);
+}
+.footer-box{
+  display: flex;
+  justify-content: center;
+  .btn-box{
+    width: px2vw(670);
+  }
+}
+</style>

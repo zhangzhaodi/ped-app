@@ -1,0 +1,257 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue");
+const ManageMoneyList = () => import("../pages/pick/manageMoneyList.vue");
+const Detail = () => import("../pages/pick/detail.vue");
+const Apply = () => import("../pages/pick/apply.vue");
+const Result = () => import("../pages/pick/result.vue");
+const MyPocket = () => import("../pages/hold/MyPocket.vue");
+const PocketDetail = () => import("../pages/hold/pocketDetail.vue");
+const PocketResult = () => import("../pages/hold/pocketResult.vue");
+const ProdNetWorth = () => import('../pages/pick/prodNetWorth.vue');
+const NetWorthDetail = () => import('../pages/pick/netWorthDetail.vue');
+const History = () => import("../pages/history.vue");
+const StatementAccount = () => import("../pages/hold/statementAccount.vue");
+const SADetail = () => import('../pages/hold/sADetail.vue');
+const SignInfo = () => import('../pages/hold/signInfo.vue');
+const SignResult = () => import('../pages/hold/signResult.vue');
+const Bill = () => import('../pages/hold/bill.vue');
+const RiskIndex = () => import("../pages/riskIndex.vue");
+const Assessment = () => import("../pages/assessment.vue");
+const RiskResult = () => import("../pages/riskResult.vue");
+const PocketInput = () => import("../pages/hold/pocketInput.vue");
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "理财",
+        keepAlive: true,
+        goToNative: false
+      },
+      beforeEnter: (to, from, next) => {   // 单独守卫
+        // console.log(to.matched, Router)
+        //控制其他模块跳转路由
+        if (process.env.NODE_ENV == "production") {
+          to.matched[0].meta.flag = true
+          if (to.matched[0].meta.flag) {
+            window.NativeCall.goToRouter(res => {
+              let obj = JSON.parse(res);
+              if (!obj.router) {
+                next()
+              } else {
+                // router.options.routes.map((item, index) => {
+                //   if (item.name == obj.router) {
+                //     item.meta.goToNative = true;
+                //     router.options.routes.splice(index, item);
+                //   }
+                // });
+                next({ name: obj.router, params: obj.routerDic });
+                to.matched[0].meta.goToNative = false;
+              }
+            });
+          } else {
+            next()
+          }
+        } else {
+          next()
+        }
+      }
+    },
+    {
+      path: "/prodNetWorth",
+      name: "prodNetWorth",
+      component: ProdNetWorth,
+      meta: {
+        title: "产品净值",
+        keepAlive: true,
+        goToNative: false
+      }
+    },
+    {
+      path: "/netWorthDetail",
+      name: "netWorthDetail",
+      component: NetWorthDetail,
+      meta: {
+        title: "产品净值详情",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/manageMoneyList",
+      name: "manageMoneyList",
+      component: ManageMoneyList,
+      meta: {
+        title: "理财",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/detail",
+      name: "detail",
+      component: Detail,
+      meta: {
+        title: "产品详情",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/apply",
+      name: "apply",
+      component: Apply,
+      meta: {
+        title: "理财申请",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/result",
+      name: "result",
+      component: Result,
+      meta: {
+        title: "申请结果",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/myPocket",
+      name: "myPocket",
+      component: MyPocket,
+      meta: {
+        title: "我的持仓",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/pocketDetail",
+      name: "pocketDetail",
+      component: PocketDetail,
+      meta: {
+        title: "产品详情",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/history",
+      name: "history",
+      component: History,
+      meta: {
+        title: "历史记录",
+        keepAlive: true,
+        goToNative: false
+      }
+    },
+    {
+      path: "/bill",
+      name: "bill",
+      component: Bill,
+      meta: {
+        title: "账单",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/statementAccount",
+      name: "statementAccount",
+      component: StatementAccount,
+      meta: {
+        title: "理财对账单",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/sADetail",
+      name: "sADetail",
+      component: SADetail,
+      meta: {
+        title: "对账单详情",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/signInfo",
+      name: "signInfo",
+      component: SignInfo,
+      meta: {
+        title: "签约信息",
+        keepAlive: true,
+        goToNative: false
+      }
+    },
+    {
+      path: "/signResult",
+      name: "signResult",
+      component: SignResult,
+      meta: {
+        title: "签约结果",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/risk/index",
+      name: "riskIndex",
+      component: RiskIndex,
+      meta: {
+        title: "风险评估",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/risk/assessment",
+      name: "assessment",
+      component: Assessment,
+      meta: {
+        title: "问卷",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/risk/result",
+      name: "riskResult",
+      component: RiskResult,
+      meta: {
+        title: "风险评估",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/pocketInput",
+      name: "pocketInput",
+      component: PocketInput,
+      meta: {
+        title: "转活期",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/pocketResult",
+      name: "pocketResult",
+      component: PocketResult,
+      meta: {
+        title: "申请结果",
+        keepAlive: false
+      }
+    },
+  ]
+});

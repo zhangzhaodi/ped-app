@@ -1,0 +1,200 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <div class="outer-box">
+        <div class="sel-item">
+          <div class="left">卡/账号</div>
+          <div class="right">{{ bindCard || cardNum | CardHide }}</div>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button @click="next">{{ confirmText }}</van-button>
+        </div>
+      </div>
+      <MyDialog
+        @cancel="cancel"
+        :show="alertShow"
+        :isClose="false"
+        @con="confirm"
+        :confirmButtonText="confirmText"
+        cancelButtonText="我再想想"
+      >
+        <p v-if="type == '1'" slot="content" class="dialog-content">
+          确认减挂 “{{ cardNum | bankCardNum }}”账户？
+        </p>
+        <p v-else slot="content" class="dialog-content">
+          确认解绑 “{{ bindCard | bankCardNum }}”账户？
+        </p>
+      </MyDialog>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { Toast } from "vant";
+import { mapState } from "vuex";
+
+export default {
+  components: {
+    Myheader: Header,
+    mInput,
+    MyDialog: Dialog,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      cardNum: "",
+      type: "",
+      userAcctId: "",
+      userId: "",
+      confirmText: "解绑",
+      alertShow: false,
+      bindCard: ""
+    };
+  },
+  created() {
+    this.cardNum = this.$route.query.cardNum;
+    this.bindCard = this.$route.query.bindCard; //绑定卡
+    this.type = this.$route.query.type;
+    this.userAcctId = this.$route.query.userAcctId;
+    this.userId = this.$route.query.userId;
+    if (this.type == "1") {
+      this.confirmText = "减挂";
+    }
+  },
+  computed: {
+    ...mapState("myAccount", {
+      phoneNumber: state => state.loginInfo.MobilePhone,
+      userName: state => state.loginInfo.Name,
+      identity: state => state.loginInfo.Identity
+    })
+  },
+  methods: {
+    next() {
+      if (this.type == "1") {
+        this.alertShow = true;
+      } else {
+        this.BundCardUnbundlingConfirm();
+      }
+    },
+    //减挂
+    addAccountUnbundling() {
+      this.request("addAccountUnbundling", {
+        BankId: "9999",
+        BranchId: "0101",
+        ChnlId: "39",
+        Defendtyp: "2",
+        UserAcctId: this.userAcctId,
+        VouId: this.cardNum,
+        UserId: this.userId
+      })
+        .then(res => {
+          console.log(res);
+          Toast({
+            duration: 2000, // 持续展示 toast
+            message: "减挂成功",
+            icon: require("@/assets/myAccount/addBankCard/ico_right@3x.png")
+          });
+          setTimeout(() => {
+            this.$router.go(-2);
+          }, 2000);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //解除绑定卡confirm
+    BundCardUnbundlingConfirm() {
+      this.request("BundCardUnbundlingConfirm", {
+        BankId: "9999",
+        BranchId: "0101",
+        ChnlId: "39",
+        BindCardNo: this.bindCard, //绑定卡号
+        OtherAccount: this.cardNum, //二类户
+        PapersNum: this.identity.no, //证件号
+        PapersType: this.identity.type, //证件类型
+        PayerName: this.userName, //姓名
+        TelNo: this.phoneNumber //手机号
+      })
+        .then(res => {
+          console.log(res);
+          this.alertShow = true;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //解除绑定卡
+    BundCardUnbundling() {
+      this.request("BundCardUnbundling", {
+        BankId: "9999",
+        BranchId: "0101",
+        ChnlId: "39",
+        BindCardNo: this.bindCard,
+        OtherAccount: this.cardNum,
+        PapersNum: this.identity.no, //证件号
+        PapersType: this.identity.type, //证件类型
+        PayerName: this.userName, //姓名
+        TelNo: this.phoneNumber //手机号
+      })
+        .then(res => {
+          console.log(res);
+          Toast({
+            duration: 2000, // 持续展示 toast
+            message: "解绑成功",
+            icon: require("@/assets/myAccount/addBankCard/ico_right@3x.png")
+          });
+          setTimeout(() => {
+            this.$router.go(-3);
+          }, 2000);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //关闭Dialog
+    cancel() {
+      this.alertShow = false;
+    },
+    //弹出框确认事件
+    confirm() {
+      this.alertShow = false;
+      if (this.type == "1") {
+        this.addAccountUnbundling();
+      } else {
+        this.BundCardUnbundling();
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer-box {
+  margin-top: px2vw(20);
+  padding: 0 px2vw(40);
+  background: #fff;
+  .sel-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: px2vw(110);
+    font-size: px2vw(30);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    .left {
+      width: px2vw(160);
+    }
+    .right {
+      flex: 1;
+    }
+  }
+}
+.btn-box {
+  padding: 0 px2vw(40);
+}
+</style>

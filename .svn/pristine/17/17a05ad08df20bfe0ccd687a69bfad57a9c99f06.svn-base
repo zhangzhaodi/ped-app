@@ -1,0 +1,44 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+// const Index = () => import("../pages/index.vue");
+const Index = () => import("../pages/detail.vue");
+const ItemDetail = () => import("../pages/itemDetail.vue");
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/detail"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        // title:'臻享权益',
+        keepAlive: false
+      }
+    },
+    // {
+    //   path: "/detail",
+    //   name: "detail",
+    //   component: Detail,
+    //   meta: {
+    //     title:'',
+    //     keepAlive: true
+    //   }
+    // },
+    {
+      path: "/itemDetail",
+      name: "itemDetail",
+      component: ItemDetail,
+      meta: {
+        title:'',
+        keepAlive: true
+      }
+    }
+  ]
+});

@@ -1,0 +1,353 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"
+              :params="headerParams"
+              :backRouter="headerBackRouter"></Myheader>
+    <div class="content">
+      <div class="top">
+        <md-field>
+          <md-field-item solid
+                         title="币种"
+                         :content="currency"
+                         arrow
+                         @click="showcurrency = true" />
+          <md-input-item title="利率"
+                         type="money"
+                         v-model="ratedata"
+                         maxlength="5"
+                         @change="changeValue('ratedata',ratedata)"
+                         is-amount
+                         placeholder="请输入利率"
+                         align="left">
+            <div class="input-operator"
+                 slot="right">%</div>
+          </md-input-item>
+        </md-field>
+        <!-- 币种框 -->
+        <van-popup v-model="showcurrency"
+                   round
+                   position="bottom">
+          <van-picker show-toolbar
+                      title="币种选择"
+                      :columns="currencycolumns"
+                      @cancel="showcurrency = false"
+                      @confirm="onConfirmcurrency" />
+        </van-popup>
+        <van-popup v-model="showmold"
+                   round
+                   position="bottom">
+          <van-picker show-toolbar
+                      title="类型选择"
+                      :columns="moldcolumns"
+                      @cancel="showmold = false"
+                      @confirm="onConfirmMold" />
+        </van-popup>
+      </div>
+      <!-- 内容 -->
+      <div class="in">
+        <div class="article">
+          <p class="p">存多少(元)<i slot="left"
+               class="iconfont iconicon_bianji-"></i></p>
+          <md-input-item size="large"
+                         class="price"
+                         type="money"
+                         v-model="price"
+                         maxlength="8"
+                         align="center">
+          </md-input-item>
+          <div class="ruler">
+            <md-ruler :scope="scope"
+                      :step="1000"
+                      :unit="100"
+                      :max="100000"
+                      :min="100"
+                      v-model="goToprice"></md-ruler>
+          </div>
+          <p class="p">买多久(天)</p>
+          <div class="time_ding">
+            <md-input-item size="large"
+                           type="digit"
+                           v-model="days"
+                           maxlength="4"
+                           placeholder="请输入天数"
+                           align="center">
+            </md-input-item>
+          </div>
+          <p class="p">合计利息(元)</p>
+          <h4 v-if="!totalRate"><span></span>&nbsp;<span></span></h4>
+          <h4 v-if="totalRate">{{totalRate | Money}}</h4>
+          <li>计算收益不代表未来实际收益，市场有风险，投资需谨慎。</li>
+          <button @click="save">立即存入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Popup, Picker, DatetimePicker } from "vant";
+import { Ruler, Field, FieldItem, InputItem, Toast } from "mand-mobile"
+import { log } from 'util';
+export default {
+  components: {
+    Myheader: Header,
+    [Ruler.name]: Ruler,
+    [Field.name]: Field,
+    [FieldItem.name]: FieldItem,
+    [InputItem.name]: InputItem
+  },
+  data () {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      showmold: false,
+      showcurrency: false,
+      showPicker: false,
+      currencycolumns: ["人民币",],
+      moldcolumns: ["90", "180"],
+      ratecolumns: [],
+      ratedata: "",
+      currency: "人民币",
+      mold: "90",
+      price: 5000,
+      scope: [0, 100000],
+      days: 30,
+      much: true,
+      many: '',
+      alldata: [],
+    };
+  },
+  computed: {
+    goToprice: {
+      get () {
+        return Number(this.price)
+      },
+      set (val) {
+        if (val < 100) {
+          return this.price = 100
+        } else {
+          return this.price = val
+        }
+      }
+    },
+    totalRate () {
+      if (this.days < 0) {
+        return 0
+      }
+      return this.price * this.days * this.ratedata / 100 / 365
+    }
+  },
+  methods: {
+    changeValue (name, value) {
+      if (value >= 10) {
+        Toast.failed('年利率不超过10%')
+        this[name] = ''
+      }
+    },
+    onConfirmcurrency (value) {
+      this.currency = value;
+      this.showcurrency = false;
+    },
+    onConfirmMold (value) {
+      this.mold = value;
+      this.showmold = false;
+    },
+    onConfirmone (value) {
+      this.ratedata = value;
+      this.showPicker = false;
+    },
+    save () {
+      let params = {
+        package: "manageMoney",
+        router: "",
+        routerDic: ""
+      };
+      window.NativeCall.goToPackage(params);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+/deep/ .md-field {
+  padding: 0;
+}
+
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  -webkit-scrollbar {
+    display: none;
+  }
+  touch-action: none;
+}
+// 内部样式
+.content {
+  margin-top: px2vw(20);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  overflow: auto;
+  background-color: #ffffff;
+  .top {
+    width: 100%;
+    padding: 0 px2vw(40);
+    box-sizing: border-box;
+    /deep/ .md-field-item-content:before {
+      border-width: px2vw(2);
+    }
+  }
+}
+.price {
+  /deep/ .md-input-item-input {
+    color: rgba(214, 159, 129, 1);
+  }
+  /deep/ .md-field-item-content:before {
+    display: none;
+  }
+}
+// 内容
+.in {
+  margin-top: px2vw(20);
+  width: px2vw(750);
+  background: rgba(255, 255, 255, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .article {
+    display: flex;
+    flex-direction: column;
+    width: px2vw(670);
+    align-items: center;
+    .p {
+      height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(24);
+      margin-top: px2vw(40);
+    }
+    .inp {
+      font-size: px2vw(60);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      text-align: center;
+      color: rgba(214, 159, 129, 1);
+      line-height: px2vw(50);
+      margin-top: px2vw(30);
+    }
+    .ruler {
+      margin-top: px2vw(60);
+      height: px2vw(150);
+    }
+    /deep/ .md-ruler-cursor {
+      background: rgba(214, 159, 129, 1);
+      box-shadow: none;
+    }
+    /deep/ .md-ruler-arrow {
+      display: none;
+    }
+    h4 {
+      height: px2vw(50);
+      font-size: px2vw(60);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(50);
+      margin-top: px2vw(30);
+      span {
+        display: inline-block;
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        background: rgba(125, 125, 125, 1);
+        height: px2vw(10);
+        width: px2vw(40);
+      }
+    }
+    li {
+      height: px2vw(20);
+      font-size: px2vw(20);
+      font-family: PingFangSC-Light, PingFang SC;
+      font-weight: 300;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(20);
+      margin-top: px2vw(30);
+    }
+    button {
+      width: px2vw(670);
+      height: px2vw(90);
+      background: linear-gradient(
+        270deg,
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+      border-radius: px2vw(45);
+      text-align: center;
+      line-height: px2vw(90);
+      font-size: px2vw(34);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+      margin-top: px2vw(90);
+      margin-bottom: px2vw(20);
+    }
+  }
+}
+.time_ding {
+  padding-top: px2vw(30);
+  font-size: px2vw(60);
+  font-family: PingFangSC-Medium, PingFang SC;
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(50);
+  /deep/ .md-field-item-content:before {
+    display: none;
+  }
+}
+.time {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: px2vw(670);
+  margin-top: px2vw(30);
+  p {
+    height: px2vw(50);
+    font-size: px2vw(30);
+    font-family: PingFangSC-Light, PingFang SC;
+    font-weight: 300;
+    color: rgba(168, 168, 168, 1);
+    line-height: px2vw(30);
+  }
+  .left,
+  .right {
+    padding: 0 px2vw(26) px2vw(20);
+    p {
+      border-bottom: px2vw(1) solid #a8a8a8ff;
+    }
+  }
+}
+</style>

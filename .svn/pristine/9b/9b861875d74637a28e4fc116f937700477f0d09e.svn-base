@@ -1,0 +1,255 @@
+<template>
+  <div class="cont">
+    <p class="carrying">进行中</p>
+    <div class="items">
+      <div class="item" v-for="(item,index) in Lists" :key="index" @click="toDetail(item,index)">
+        <div class="title">
+          <!-- // QueryType 1定期 0实时
+          //TranType 0按日1按月2按星期3月末
+          //batchdate 具体时间-->
+          <div class="color" :style="{'backgroundColor':backgroundColor(item.contractPeriodTyp)}"></div>
+          <p v-if="item.contractPeriodTyp=='0'">{{item.createDate|dateFormat}}自动收款</p>
+          <p v-else-if="item.contractPeriodTyp=='1'">{{item.createDate|dateFormat}}自动收款</p>
+          <p v-else-if="item.contractPeriodTyp=='2'">每周{{item.contractPeriodVal|week}}自动收款</p>
+          <p v-else>每月{{item.contractPeriodVal|month}}自动收款</p>
+        </div>
+        <div class="content">
+          <div class="left">
+            <p class="gathering">收款金额(￥)</p>
+            <p class="money">{{item.transAmt|Money}}</p>
+          </div>
+          <div class="right">
+            <div class="from">
+              <p class="circle"></p>
+              <p class="bank">
+                <span>{{item.payerBankName}}</span>
+                <span class="bankAccount">({{item.payeeAcctNbr |CardNoFour}})</span>
+              </p>
+            </div>
+            <div class="center">
+              <div class="arrow"></div>
+            </div>
+            <div class="to">
+              <p class="circle"></p>
+              <p class="bank">
+                <span>焦作中旅银行</span>
+                <span class="bankAccount">({{item.payerAcctNbr |CardNoFour}})</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    Lists: {
+      type: Array,
+      required: true
+    }
+  },
+  data() {
+    return {};
+  },
+  filters: {
+    week(val) {
+      let obj = {
+        1: "一",
+        2: "二",
+        3: "三",
+        4: "四",
+        5: "五",
+        6: "六",
+        7: "日"
+      };
+      return obj[val];
+    },
+    month(val) {
+      if (val === "32") {
+        return "月末";
+      } else {
+        return val;
+      }
+    },
+    dateFormat(val) {
+      let str = val.replace(/-/g, ".");
+      return str.slice(0, 10);
+    }
+  },
+  watch: {
+    Lists(val) {
+      // console.log(val);
+      // val.map(item => {
+      //   console.log(item);
+      // });
+    }
+  },
+  methods: {
+    toDetail(val,index) {
+      this.$router.push({ name: "detail", params: {...val,index:index} });
+    },
+    bankName(bankAccount) {
+      let params = {
+        BranchId: "2336",
+        ChnlId: "62",
+        AcctNbr: bankAccount
+      };
+      let bank;
+      this.request("BankBinQuery", params, true).then(res => {
+        bank = res.PayeeBankName
+          ? res.PayeeBankName
+          : res.Banks[0].bankaliasname;
+      });
+      return bank;
+    },
+    backgroundColor(val) {
+      if (val == "1") {
+        return "#07C0A1";
+      } else if (val == "2") {
+        return "#3E8FFF";
+      } else {
+        return "#FFB52B";
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.cont {
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: #7d7d7d;
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  .carrying {
+    padding: 0 px2vw(30);
+    margin-top: px2vw(30);
+  }
+  .items {
+    margin-top: px2vw(12);
+    .item {
+      width: px2vw(690);
+      height: px2vw(235);
+      background-color: #fff;
+      margin: 0 auto;
+      margin-bottom: px2vw(30);
+      box-shadow: 0 px2vw(8) px2vw(40) 0 rgba(121, 126, 139, 0.08);
+      border-radius: px2vw(16);
+      .title {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        height: px2vw(59);
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        position: relative;
+        .color {
+          width: px2vw(8);
+          height: px2vw(36);
+          margin-right: px2vw(36);
+          border-top-right-radius: px2vw(16);
+          border-bottom-right-radius: px2vw(16);
+        }
+      }
+      .title::after {
+        content: " ";
+        position: absolute;
+        left: px2vw(10);
+        right: px2vw(10);
+        top: px2vw(59);
+        border-bottom: px2vw(1) solid #eff0f1;
+        z-index: 1000;
+      }
+      .content {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 0 px2vw(40);
+        .left {
+          margin-top: px2vw(38);
+          .gathering {
+            font-size: px2vw(22);
+            font-weight: 300;
+          }
+          .money {
+            margin-top: px2vw(12);
+            font-size: px2vw(46);
+            font-weight: 500;
+            color: #262626;
+          }
+        }
+        .right {
+          margin-top: px2vw(32);
+          .circle {
+            width: px2vw(10);
+            height: px2vw(10);
+            box-sizing: border-box;
+            background-color: transparent;
+            border: px2vw(3) solid #f96159;
+            border-radius: 50%;
+          }
+          .bank {
+            font-size: 0;
+            color: #262626;
+            font-weight: 400;
+            margin-left: px2vw(7);
+            span {
+              font-size: px2vw(26);
+            }
+          }
+          .bankAccount {
+            color: #7d7d7d;
+            font-weight: 400;
+            font-size: px2vw(24);
+            margin-left: px2vw(8);
+          }
+          .from,
+          .to {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+          }
+          .to {
+            .circle {
+              border-color: #07c0a1;
+            }
+          }
+          .center {
+            width: 100%;
+            height: px2vw(40);
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            .arrow {
+              width: px2vw(16);
+              height: px2vw(40);
+              background: url("~@/assets/fundCollection/icon_jiantou@2x.png");
+              background-size: 100% 100%;
+              margin-left: px2vw(-4);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+// .title ::after {
+//   content: " ";
+//   position: absolute;
+//   left: px2vw(10);
+//   right: px2vw(10);
+//   top: px2vw(-0.5);
+//   height: px2vw(1);
+//   background-color: #eff0f1;
+//   z-index: 100;
+// }
+</style>

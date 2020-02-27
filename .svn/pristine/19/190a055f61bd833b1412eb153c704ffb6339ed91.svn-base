@@ -1,0 +1,460 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params" v-show="!type"></Myheader>
+    <div class="mainContent">
+      <!-- 产品信息 -->
+      <div class="product white">
+        <p class="name">
+          <span>{{data.productName}}</span>
+          <span class="iconfont icongengduo-" @click="goBack"></span>
+        </p>
+        <p class="num">{{data.productNo}}</p>
+      </div>
+      <!-- 付款账户 -->
+      <div class="payCard top white">
+        <DebitCard @select="select"></DebitCard>
+      </div>
+      <!-- 输入金额 -->
+      <div class="money top white">
+        <p class="title">购买金额(人民币)</p>
+        <md-amount
+          :value="form.upperMoney"
+          is-capital
+          :style="{'visibility': form.money?'visible':'hidden'}"
+        ></md-amount>
+        <md-input-item
+          type="money"
+          v-model="form.money"
+          @change="onInputChange"
+          @blur="judgeMoney"
+          :placeholder="perFirstATM"
+          maxlength="9"
+        ></md-input-item>
+        <p class="toast" v-if="data.productState=='1102'||data.productState=='1303'">起息日{{data.prodStartDate|timeFormat1}}号</p>
+        <p class="toast" v-if="data.productState=='1'&&data.modulCode=='1306'">起息日{{data.prodStartDate|timeFormat1}}号</p>
+        <p class="toast" v-if="data.productState=='0'&&data.modulCode=='1306'">起息日{{data.nextDate|timeFormat1}}号</p>
+        <p class="toast" v-if="data.productState=='1'&&data.modulCode=='1307'">起息日{{data.prodStartDate|timeFormat1}}号</p>
+      </div>
+      <!-- 理财周期 -->
+      <!-- 测试 -->
+      <div :class="['period','top','white',{'act':periodSelect}]" v-if="data.modulCode=='1306'">
+        <div class="content">
+          <div class="left">理财周期</div>
+          <div class="right" @click="selectPeriod">
+            <p class="label" v-if="!period">理财周期越长，业界比较基准越高</p>
+            <p class="label" v-else-if="periodSelect&&period">
+              <span>当前选择周期</span>
+              <span class="num">{{period}}</span>
+              <span>业界比较基准</span>
+              <span class="num">{{data.benchmark|parseFloatTwo}}</span>
+              <!-- {{'当前选择周期'+period+' 业界比较基准'+data.benchmark}} -->
+            </p>
+            <p class="label" v-else-if="!periodSelect&&period">
+              <span class="selectEnd">{{period}}</span>
+              <!-- <span>(业界比较基准4.6%)</span>-->
+            </p>
+            <span :class="['iconfont',{'iconzhankai-':!periodSelect},{'iconshouqi':periodSelect}]"></span>
+          </div>
+        </div>
+        <div class="bottom" v-if="periodSelect">
+          <p
+            v-for="(item,index) in tabList"
+            :key="index"
+            @click="periodChange(item)"
+            :class="['item',{'active':item==period}]"
+          >{{item.slice(-1)=='天'?item:item+'天'}}</p>
+        </div>
+      </div>
+      <!-- 到期方式 -->
+      <!-- 测试modulCode==1306 -->
+      <div :class="['methods','white',{'act':methodSelect}]" v-if="data.modulCode=='1306'">
+        <div class="content">
+          <div class="left">周期到期方式</div>
+          <div class="right" @click="selectMethod">
+            <p class="label" v-if="!methodSelect&&!method">请选择</p>
+            <p class="label" v-else>
+              <span v-if="!method">请选择</span>
+              <span class="selectEnd">{{method}}</span>
+            </p>
+            <!-- <p class="label" v-else>请选择</p> -->
+            <span :class="['iconfont',{'iconzhankai-':!methodSelect},{'iconshouqi':methodSelect}]"></span>
+          </div>
+        </div>
+        <div class="bottom" v-if="methodSelect">
+          <p
+            v-for="(item,index) in methodsList"
+            :key="index"
+            @click="methodChange(item,index)"
+            :class="['item',{'active':item==method}]"
+          >{{item}}</p>
+        </div>
+      </div>
+      <!-- 推荐人 -->
+      <!-- <div class="referrer top white">
+        <p class="left">推荐人</p>
+        <div class="right">
+          <van-field v-model="artNumber" type="number" maxlength="20" placeholder="请输入推荐人工号(选填)" />
+        </div>
+      </div>-->
+      <!-- 我已阅读并愿意承担投资风险 -->
+      <div class="agree">
+        <div class="check" @click="changeCheck">
+          <span :class="['iconfont',{'iconcheck-':check}]"></span>
+        </div>
+        <div class="text">
+          <span>我已阅读并愿意承担投资风险</span>
+          <span class="agreement" @click="toAgreement('1')">《焦作中旅银行理财产品客户权益须知》、</span>
+          <span class="agreement" @click="toAgreement('2')">《焦作中旅银行理财产品销售协议》、</span>
+          <span class="agreement" @click="toAgreement('3')">《焦作中旅银行理财产品说明书》</span>
+        </div>
+      </div>
+      <!-- 确定 -->
+      <div class="btn">
+        <van-button @click="toConfirm">确定</van-button>
+      </div>
+
+      <!-- 提示 -->
+      <Mynotice></Mynotice>
+      <!-- 协议 -->
+      <Agreement :type='type'></Agreement>
+    </div>
+    <confirm
+      :popupFlag="popupFlag"
+      @toResult="toResult"
+      :confirmInfo="confirmInfo"
+      v-if="popupFlag"
+    ></confirm>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Notice from "../../components/notice.vue";
+import Confirm from "../../components/confirm.vue";
+// import BottomPopup from "../../components/bottomPopup.vue";
+import DebitCard from "@/components/Popup/DebitCard.vue";
+import { Amount, InputItem } from "mand-mobile";
+import { Field, Button } from "vant";
+import Agreement from '../../components/agreement'
+export default {
+  components: {
+    Myheader: Header,
+    Mynotice: Notice,
+    Confirm,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [Field.name]: Field,
+    [Button.name]: Button,
+    DebitCard,
+    Agreement
+  },
+  computed: {
+    perFirstATM() {
+      // let money = this.data.perFirstAMT;
+      return (
+        this.data.perFirstAMT + "元起投" + " " + this.data.paddAMT + "元递增"
+      );
+    }
+  },
+  filters: {
+    timeFormat1(value) {
+      let arr = [];
+      arr.push(value.slice(0, 4));
+      arr.push(value.slice(4, 6));
+      arr.push(value.slice(6));
+      return arr.join("-");
+    }
+  },
+  // watch: {
+  //   "form.money": {
+  //     handler(val, oldVal) {
+  //       let value = val.toString();
+  //       let old = oldVal ? oldVal.toString() : "";
+  //       if (value.length < old.length) {
+  //         this.isDel = true;
+  //       } else {
+  //         this.isDel = false;
+  //       }
+  //       if (value.indexOf(".") != -1) {
+  //         let arr = value.split(".");
+  //         let length = arr[1].length;
+  //         if (length > 2) {
+  //           // console.log(1)
+  //           this.form.money = arr[0] + "." + arr[1].slice(0, 2);
+  //         } else if (length == 1) {
+  //           this.form.money = arr[0] + "." + arr[1].slice(0, length);
+  //         } else if (length == 0 && this.isDel) {
+  //           this.form.money = arr[0];
+  //         }
+  //       }
+  //     }
+  //   }
+  // },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      bank: null,
+      form: {
+        money: null,
+        upperMoney: null
+      },
+      isDel: null,
+      check: false,
+      periodList: [],
+      // methodsList: ["1周期兑付", "0周期续作", "自动到期"],
+      methodsList: ["周期兑付", "周期续作"],
+      period: null,
+      method: null,
+      periodIndex: null,
+      methodIndex: null,
+      methodSelect: false,
+      periodSelect: false,
+      disabled: false,
+      artNumber: null, //人工号
+      popupFlag: true, //确认页显示
+      confirmFlag: true,
+      bottomFlag: false, //付款账户显示
+      Lists: [], //付款账户
+      confirmInfo: null, //付款信息
+      tabList: [],
+      type:null, //协议类型
+    };
+  },
+  created() {
+    this.data = this.$store.state.manageMoney.productInfo;
+    if (this.data.termTypeRange) {
+      this.tabList = this.data.termTypeRange.split(",");
+      console.log(this.tabList);
+    } else {
+      this.tabList = [this.data.cycleDays];
+    }
+    console.log(this.data);
+    window.scrollTo(0, 0);
+  },
+  methods: {
+    changeCheck() {
+      this.check = !this.check;
+    },
+    goBack() {
+      this.$router.go(-1);
+    },
+    //跳转到协议
+    toAgreement(val){
+      if(val=='3'){
+        let params = {
+          BranchId:'PHNE',
+          ChnlId:'62',
+          ProductNo:this.data.productNo
+        }
+        this.request('FinancialStatementQry',params).then(res=>{
+          // console.log(res)
+          let url = res.List[0].statementUrl
+          window.NativeCall.OpenDocument(url)
+        })
+      }else{
+        this.type = val
+      }
+    },
+    onInputChange(name, value) {
+      this.form.upperMoney = parseFloat(value);
+    },
+    judgeMoney() {
+      // console.log(this.form.money, this.data.pminRaiseAMT);
+      // if (parseFloat(this.form.money) < parseFloat(this.data.pminRaiseAMT)) {
+      //   this.$toast("金额不能小于起投金额");
+      //   this.disabled = true;
+      //   console.log(this.$children[3].focus());
+      // }else{
+      //   this.disabled = false;
+      // }
+    },
+    periodChange(val) {
+      this.periodSelect = false;
+      this.period = val;
+      this.periodIndex = parseInt(val);
+    },
+    methodChange(val, index) {
+      this.methodSelect = false;
+      this.method = val;
+      this.methodIndex = index;
+    },
+    select(item) {
+      //选择付款账户
+      this.bank = item;
+    },
+    selectPeriod() {
+      this.$toast.clear();
+      this.periodSelect = !this.periodSelect;
+    },
+    selectMethod() {
+      this.$toast.clear();
+      this.methodSelect = !this.methodSelect;
+    },
+    toConfirm() {
+      //弹出底部弹框
+      // this.$store.state.params = { ...this.form, ...this.data };
+      // this.$store.state.params.bank = { ...this.bank };
+      // console.log(1,this.form)
+      if (!this.form.money) {
+        this.$toast("请输入金额");
+      } else if (this.data.modulCode == "1306") {
+        if (this.periodIndex == null) {
+          this.$toast("请选择理财周期");
+        } else if (this.methodIndex == null) {
+          this.$toast("请选择周期到期方式");
+        } else if (this.check) {
+          this.popupFlag = true;
+          if (this.popupFlag) {
+            this.confirmInfo = {
+              productName: this.data.productName,
+              AMT: this.form.money,
+              bank: this.bank
+            };
+          }
+        } else {
+          this.$toast("请勾选");
+        }
+      } else if (this.check) {
+        this.popupFlag = true;
+        if (this.popupFlag) {
+          // this.confirmFlag = false;
+          this.confirmInfo = {
+            productName: this.data.productName,
+            AMT: this.form.money,
+            bank: this.bank
+          };
+        }
+      } else {
+        this.$toast("请勾选");
+      }
+    },
+    toResult() {
+      this.purchase();
+    },
+    purchase() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        ProductType: "1",
+        CustomerIdentifyType: "1",
+        //调取获取卡列表接口
+        BankAcct: this.bank.vouId,
+        CustomerIdentify: this.$store.state.userInfo.CifNo,
+        ProductNo: this.data.productNo,
+        AMT: this.form.money,
+        //账户输入密码
+        TrsAcNo: this.bank.vouId,
+        HoldDays: this.periodIndex, //持有天数
+        PerFirstAMT: this.data.perFirstAMT,
+        PAddAMT: this.data.paddAMT
+      };
+      console.log(this.data);
+      if (this.data.modulCode == "1306") {
+        let arr = [];
+        let date = this.data.nextDate
+          ? this.data.nextDate
+          : new Date().getFullYear() +
+            "" +
+            (new Date().getMonth() + 1) +
+            "" +
+            new Date().getDate();
+        arr.push(date.slice(0, 4));
+        arr.push(date.slice(4, 6));
+        arr.push(date.slice(6));
+        let time = new Date(
+          new Date(arr.join("-")).getTime() +
+            (this.periodIndex + 1) * 24 * 60 * 60 * 1000
+        );
+        let y = time.getFullYear(); // 年份
+        let m =
+          time.getMonth() + 1 < 10
+            ? "0" + (time.getMonth() + 1)
+            : time.getMonth() + 1; // 月份，不足10补0
+        let d = time.getDate() < 10 ? "0" + time.getDate() : time.getDate(); // 日，不足10补0
+        let nextTime = y + "" + m + "" + d;
+        params.RedEndTimes = this.methodIndex; //到期方式
+        params.RedEndDate = nextTime; //next+
+      }
+      // console.log(params)
+
+      this.request("financialPurchaseConfirm", { ...params })
+        .then(res1 => {
+          if (this.confirmFlag) {
+            this.confirmFlag = false;
+            window.NativeCall.SecureKeyboard(psd => {
+              this.request("financialPurchase", {
+                ...params,
+                _tokenName: res1._tokenName,
+                Password: psd
+              })
+                .then(res => {
+                  this.popupFlag = false;
+                  this.confirmFlag = true;
+                  this.$router.push({ name: "result", params: res });
+                })
+                .catch(err => {
+                  this.popupFlag = false;
+                  this.confirmFlag = true;
+                  let str = err._RejMessage;
+                  let length;
+                  if (str.indexOf(":") != -1 || str.indexOf("：") != -1) {
+                    if (str.indexOf(":") != -1) {
+                      length = str.indexOf(":");
+                    } else {
+                      length = str.indexOf("：");
+                    }
+                    this.$toast(str.slice(length + 1).trim());
+                  } else {
+                    this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+                  }
+                });
+            });
+          }
+        })
+        .catch(err => {
+          let str = err._RejMessage;
+          let length;
+          if (str.indexOf(":") != -1 || str.indexOf("：") != -1) {
+            if (str.indexOf(":") != -1) {
+              length = str.indexOf(":");
+            } else {
+              length = str.indexOf("：");
+            }
+            this.$toast(str.slice(length + 1).trim());
+          } else {
+            this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+          }
+          // this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+        });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+@import "@/styles/manageMoney/apply.scss";
+.btn {
+  .van-button {
+    width: 100%;
+    height: px2vw(90);
+    font-size: px2vw(34);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    background: linear-gradient(left, #ffdfc7, #da9a78);
+    border-radius: px2vw(45);
+  }
+}
+/deep/ .md-field-item-content {
+  flex: 1;
+}
+/deep/ .md-field-item-content:before {
+  border-bottom: 0;
+}
+/deep/ .payee-card__select .van-cell__value .account-box .left{
+  width: px2vw(150) !important;
+}
+/deep/ .van-popup{
+  z-index: 200000 !important;
+}
+</style>

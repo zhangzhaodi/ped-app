@@ -1,0 +1,329 @@
+<template>
+  <div class="outer">
+    <Myheader></Myheader>
+    <div class="gatheringInfo">
+      <div class="confirm">
+        <p class="transfer">额定转入(¥)</p>
+        <!-- <p class="iconfont iconicon_shezhi-"></p> -->
+      </div>
+      <div class="money">{{data.transAmt|Money}}</div>
+      <div class="bank">
+        <div class="left">
+          <p class="bankname">{{data.payerBankName}}</p>
+          <p class="bankAccount">{{data.payerAcctNbr |CardNoFour}}</p>
+        </div>
+        <div class="center"></div>
+        <div class="right">
+          <p class="bankname">焦作中旅银行</p>
+          <p class="bankAccount">{{data.payeeAcctNbr |CardNoFour}}</p>
+        </div>
+      </div>
+      <div class="line"></div>
+      <div class="time">
+        <p v-if="data.contractPeriodTyp=='0'" class="exeTime">{{data.contractPeriodVal}}自动收款</p>
+        <p v-else-if="data.contractPeriodTyp=='1'" class="exeTime">{{data.createDate}}自动收款</p>
+        <p
+          v-else-if="data.contractPeriodTyp=='2'"
+          class="exeTime"
+        >每周{{data.contractPeriodVal|week}}自动收款</p>
+        <p v-else class="exeTime">每月{{data.contractPeriodVal|month}}自动收款</p>
+        <p class="range">
+          <span>{{data.transDate|dateFormat}}</span>
+          <span>-</span>
+          <span>{{data.transTime|dateFormat}}</span>
+        </p>
+      </div>
+    </div>
+    <recordList :detailData="detailData" :data="data"></recordList>
+    <div class="btn" @click="dismiss">撤销预约</div>
+    <Mydialog
+      :show="dialog.show"
+      :confirmButtonText="dialog.confirmButtonText"
+      :cancelButtonText="dialog.cancelButtonText"
+      :isClose="dialog.isClose"
+      @con="con"
+      @cancel="cancel"
+    >
+      <template slot="content">
+        <p class="text">撤销后无法恢复,是否继续?</p>
+      </template>
+    </Mydialog>
+    <Captcha :title="Captcha.title" :visible.sync="Captcha.visible" :phoneNum="phone" @confirm="confirm"></Captcha>
+  </div>
+</template>
+
+<script>
+import header from "../components/header";
+import recordList from "../components/recordList";
+import dialog from "@/components/Dialog/Dialog";
+import Captcha from "@/components/Popup/Captcha";
+import { Toast } from "vant";
+const icon = require("@/assets/myAccount/addBankCard/ico_right@3x.png");
+export default {
+  components: {
+    Myheader: header,
+    Mydialog: dialog,
+    recordList,
+    Captcha,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      data: {},
+      TransList: [],
+      detailData: {},
+      dialog: {
+        show: false,
+        confirmButtonText: "撤销",
+        cancelButtonText: "我再想想",
+        isClose: false
+      },
+      Captcha: {
+        title: "请输入短信验证码",
+        visible: false
+      },
+      phone: "",
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      }
+    };
+  },
+  filters: {
+    week(val) {
+      let obj = {
+        1: "一",
+        2: "二",
+        3: "三",
+        4: "四",
+        5: "五",
+        6: "六",
+        7: "日"
+      };
+      return obj[val];
+    },
+    month(val) {
+      if (val === "32") {
+        return "月末";
+      } else {
+        return val;
+      }
+    },
+    dateFormat(val) {
+      let str = val.replace(/-/g, ".");
+      return str.slice(0, 10);
+    }
+  },
+  created() {
+    console.log(this.$route.params);
+    this.data = this.$route.params;
+  },
+  methods: {
+    dismiss() {
+      // alert("发起撤销请求");
+      this.dialog.show = true;
+    },
+    con() {
+      //调用短信验证码
+      this.phone = this.$store.state.userInfo.MobilePhone;
+      console.log(this.phone);
+      this.Captcha.visible = true;
+    },
+    cancel() {
+      console.log("关闭dialog");
+      this.dialog.show = false;
+    },
+    sendRequest(val) {
+      let params = {
+        BranchId: "7010",
+        ChnlId: "62",
+        PayeeAcNo: this.data.payeeAcctNbr,
+        PayeeAcName: this.data.payeeAcctName,
+        PayerAcNo: this.data.payerAcctNbr,
+        PayerAcName: this.data.payerAcctName,
+        ContractId: this.data.contractId,
+        PayerMobilePhone: this.$store.state.userInfo.MobilePhone,
+        QueryType: "1",
+        AddInfo: "summer",
+        SmsNbr: val.SmsNbr,
+        UserSmsId: val.UserSmsId,
+        SmsCode: val.code,
+        ApprTyp: "1"
+        // phoneNbr:this.item.TelephoneNum
+      };
+      this.request("TimingReceiptDel", params)
+        .then(res => {
+          let arr = this.$store.state.fundCollection.executeList;
+          arr.splice(this.data.index, 1);
+          this.$store.state.fundCollection.executeList = arr;
+          this.Captcha.visible = false;
+          this.dialog.show = false;
+          Toast({
+            message: "解约成功",
+            icon: icon
+          });
+        })
+        .catch(err => {
+          this.$toast(err._RejMessage);
+        });
+    },
+    //短信验证码输入完毕
+    confirm(val) {
+      // Toast({
+      //   message: "解约成功",
+      //   icon: icon
+      // });
+      // this.Captcha.visible = false;
+      // this.dialog.show = false;
+      this.sendRequest(val);
+    },
+    getDetailInfo() {
+      let params = {
+        ContractId: this.$route.params.contractId
+      };
+      this.request("QueryTransBookingDetail", params).then(res => {
+        // console.log(res)
+        this.detailData = res;
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+body,
+html {
+  background-color: #f5f6f8;
+}
+/deep/.header .title {
+  margin-left: 0;
+}
+.outer {
+  height: 100vh;
+}
+.gatheringInfo {
+  margin-top: px2vw(21);
+  background-color: #fff;
+  padding: 0 px2vw(40);
+  .confirm {
+    font-size: px2vw(22);
+    font-weight: 300;
+    color: #7d7d7d;
+    line-height: px2vw(24);
+    margin-top: px2vw(40);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    .iconfont {
+      width: px2vw(28);
+      height: px2vw(30);
+      line-height: px2vw(30);
+      color: #262626;
+    }
+  }
+  .money {
+    font-size: px2vw(46);
+    font-family: PingFangSC;
+    font-weight: 500;
+    color: #262626;
+    line-height: px2vw(46);
+    margin-top: px2vw(11);
+  }
+  .bank {
+    margin-top: px2vw(38);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    .center {
+      width: px2vw(78);
+      height: px2vw(78);
+      background: url("~@/assets/transferAccounts/icon_to.png") no-repeat;
+      background-size: 100% 100%;
+    }
+    .left,
+    .right {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      .bankAccount {
+        margin-top: px2vw(8);
+      }
+      .bankname {
+        font-size: px2vw(30);
+        font-weight: 400;
+        color: #262626;
+        line-height: px2vw(30);
+        letter-spacing: px2vw(1);
+      }
+      .bankAccount {
+        font-size: px2vw(26);
+        font-weight: 400;
+        color: #7d7d7d;
+        line-height: px2vw(26);
+      }
+    }
+  }
+  .line {
+    margin-top: px2vw(25);
+    position: relative;
+  }
+  .line::after {
+    content: " ";
+    height: px2vw(1);
+    position: absolute;
+    top: -px2vw(0.5);
+    left: 0;
+    right: 0;
+    background-color: #ebeef0;
+    z-index: 100;
+  }
+  .time {
+    height: px2vw(79);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    .exeTime {
+      font-size: px2vw(24);
+      font-weight: 300;
+      color: #262626;
+      line-height: px2vw(24);
+    }
+    .range {
+      font-size: px2vw(22);
+      font-weight: 400;
+      color: #7d7d7d;
+      line-height: px2vw(22);
+    }
+  }
+}
+.btn {
+  width: 100%;
+  height: px2vw(118);
+  box-shadow: px2vw(-5) px2vw(-5) px2vw(20) 0 rgba(69, 69, 83, 0.05);
+  font-size: px2vw(34);
+  line-height: px2vw(118);
+  background-color: #fff;
+  font-weight: 400;
+  color: #f96159;
+  position: fixed;
+  text-align: center;
+  bottom: 0;
+  left: 0;
+}
+/deep/.dialogOuter .van-dialog__content {
+  padding: 0 !important;
+  .text {
+    font-size: px2vw(26);
+    color: #262626;
+    text-align: center;
+    margin-top: px2vw(60);
+    margin-bottom: px2vw(50);
+  }
+}
+
+.van-icon {
+  font-size: px2vw(58);
+}
+</style>

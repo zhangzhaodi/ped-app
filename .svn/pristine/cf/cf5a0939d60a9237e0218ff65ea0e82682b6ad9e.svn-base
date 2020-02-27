@@ -1,0 +1,209 @@
+import Vue from "vue";
+import Router from "vue-router";
+import FarmersTreasure from './farmersTreasure'
+import ExpensiveTreasure from './expensiveTreasure'
+const Index = ()=>import("../pages/index.vue")
+const Mydeposit = ()=>import("../pages/mydeposit.vue")
+const Digreceipt = ()=>import("../pages/bigreceipt.vue")
+const Detail = ()=>import("../pages/detail.vue")
+const Win =()=>import("../pages/win.vue")
+const Carddetail =()=>import("../pages/carddetail.vue")
+const Call =()=> import("../pages/call.vue")
+const Wholedeposit =()=> import("../pages/wholedeposit.vue")
+const Depositdetail =() =>import("../pages/depositdetail.vue")
+const Receipt =()=>import("../pages/receipt.vue")
+const Current =()=>import("../pages/current.vue")
+const Specialdeposit =()=>import("../pages/specialdeposit.vue")
+Vue.use(Router);
+const router=new Router ({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "存款",
+        keepAlive: true,
+        flag:true,
+      },
+      beforeEnter: (to, from, next) => {   // 单独守卫
+        // console.log(to);
+        // console.log(from);
+        // console.log(next);
+        console.log(to.matched,router)
+        //控制其他模块跳转路由
+        if (process.env.NODE_ENV == "production") {
+        if(to.matched[0].meta.flag == true){
+          window.NativeCall.goToRouter(res => {
+            let obj = JSON.parse(res);
+            // alert(JSON.stringify(obj));
+            // alert(JSON.stringify(obj.router))
+            if(!obj.router){
+              next()
+            }else{
+            router.options.routes.map((item, index) => {
+              if (item.name == obj.router) {
+                item.meta.goToNative = true;
+                router.options.routes.splice(index, item);
+                next({ name: obj.router, params: obj.routerDic });
+              }
+            });
+            to.matched[0].meta.flag = false;
+            }
+          });
+        }else{
+          next()
+        }
+      }else{
+        next()
+      }
+    },
+    // activated(){
+    //   //开启了keepAlive:true后再次进入，以前的搜索条件和页数都不会变，无论什么情况都调用一下获取数据的接口，这样就能得到当前搜索条件和页数的最新数据
+    //   if(this.$route.meta.ifDoFresh){
+    //    //重置ifDoFresh
+    //     this.$route.meta.ifDoFresh = false;
+    // 　　//获取列表数据方法第一参数为是否重置搜索条件和页数
+    //         this.getData(true);
+    //     }else{
+    //         this.getData();
+    //     }
+    //   }
+    },
+    {
+      path:"/mydeposit",
+      name:"mydeposit",
+      component:Mydeposit,
+      meta:{
+        title: "我的存款",
+        keepAlive: false
+      }
+    },
+    {
+      path:"/win",
+      name:"win",
+      component:Win,
+      meta:{
+        title: "交易结果",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/detail",
+      name: "detail",
+      component: Detail,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/specialdeposit",
+      name: "specialdeposit",
+      component: Specialdeposit,
+      meta: {
+        title: "特色存款",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/bigreceipt",
+      name: "bigreceipt",
+      component: Digreceipt,
+      meta: {
+        title: "大额存单",
+        keepAlive: false
+      }
+    },
+    {
+      path:"/carddetail",
+      name:"carddetail",
+      component:Carddetail,
+      meta:{
+        title: "卡内存单",
+        keepAlive: false
+      }
+    },
+    {
+      path:"/call",
+      name:"call",
+      component:Call,
+      meta:{
+        title: "通知存款",
+        keepAlive: false
+      }
+    },
+    {
+      path:"/wholedeposit",
+      name:"wholedeposit",
+      component:Wholedeposit,
+      meta:{
+        title: "整存整取",
+        keepAlive: false
+      }
+    },
+    {
+      path:"/depositdetail",
+      name:"depositdetail",
+      component:Depositdetail,
+      meta:{
+        title: "存款明细",
+        keepAlive: false
+      }
+    },
+    {
+      path:"/receipt",
+      name:"receipt",
+      component:Receipt,
+      meta:{
+        title: "定期详情",
+        keepAlive: false,
+        // ifDoFresh:false
+      },
+    },
+    {
+      path:"/current",
+      name:"current",
+      component:Current,
+      meta:{
+        title: "转活期",
+        keepAlive: false
+      }
+    },
+    ...FarmersTreasure,
+    ...ExpensiveTreasure,
+  ]
+});
+router.beforeEach((to,from,next)=>{    //全局守卫
+  // console.log(to);
+  // console.log(from);
+  // if (from.path == '/win' ) {
+  //   to.meta.keepAlive = false;
+  // }else
+  // next(vm => { console.log(vm)})
+  // console.log(to.matched,router)
+  // if(to.matched[0].meta.flag == true){
+  //     window.NativeCall.goToRouter(res => {
+  //       let obj = JSON.parse(res);
+  //       // alert(res.router);
+  //       router.options.routes.map((item, index) => {
+  //         if (item.name == obj.router) {
+  //           item.meta.goToNative = true;
+  //           router.options.routes.splice(index, item);
+  //           next({ name: obj.router, params: obj.routerDic });
+  //         }
+  //       });
+  //     });
+  //     to.matched[0].meta.flag = false;
+  //   }
+  if(to.path== "/index"){
+    to.meta.keepAlive = true;
+  }
+  next()
+
+});
+export default router;

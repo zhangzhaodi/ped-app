@@ -1,0 +1,182 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <div class="header-box">
+        <p>请输入该卡交易密码</p>
+      </div>
+      <div class="outer-box">
+        <mInput
+          v-model="tradersPsd"
+          @input="verify"
+          @click.native="SecureKeyboard"
+          title="交易密码"
+          type="password"
+          placeholder="请输入该卡交易密码"
+          maxlength="6"
+        ></mInput>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">绑定</van-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import { Toast } from "vant";
+
+export default {
+  components: {
+    Myheader: Header,
+    mInput,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      cardNum: "",
+      userName: "",
+      tradersPsd: "",
+      password: "",
+      forbidden: true,
+      cifNo: "",
+      // bankNum: "",
+      index: "",
+      //confirm返回的数据
+      bankNbr: "",
+      bankName: "",
+      contTypCd: "",
+      acctTypCd: ""
+    };
+  },
+  created() {
+    this.cardNum = this.$route.query.cardNum;
+    this.userName = this.$route.query.userName;
+    this.cifNo = this.$route.query.cifNo;
+    this.index = this.$route.query.index;
+    //接受confirm返回的数据
+    this.bankNbr = this.$route.query.BankNbr;
+    this.bankName = this.$route.query.BankName;
+    this.contTypCd = this.$route.query.ContTypCd;
+    this.acctTypCd = this.$route.query.AcctTypCd;
+  },
+  methods: {
+    verify() {
+      if (this.tradersPsd.length == 6) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    },
+    ScanOcrBankCard() {
+      window.NativeCall.ScanOcrBankCard("", param => {
+        // alert(param);
+        this.bankCard = param;
+      });
+    },
+    //安全键盘
+    SecureKeyboard() {
+      document.activeElement.blur();
+      window.NativeCall.SecureKeyboard(param => {
+        this.password = param;
+        this.tradersPsd = "******";
+        this.verify();
+      });
+    },
+    //首次加挂验密
+    cardAcctAddZL() {
+      this.request("CardAcctAddZL", {
+        AcctName: this.userName,
+        VouId: this.cardNum,
+        PayPwd: this.password,
+        CifNo: this.cifNo,
+        TrsAcNo: this.cardNum,
+        ChnlId: "62",
+        BranchId: "0110",
+        //confirm返回的数据
+        BankNbr: this.bankNbr,
+        BankName: this.bankName,
+        ContTypCd: this.contTypCd,
+        AcctTypCd: this.acctTypCd
+      })
+        .then(res => {
+          console.log(res);
+          Toast({
+            duration: 2000, // 持续展示 toast
+            message: "添加成功",
+            icon: require("@/assets/myAccount/addBankCard/ico_right@3x.png")
+          });
+          setTimeout(() => {
+            this.$router.push({ name: "index" });
+          }, 2000);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //二次加挂验密
+    addAccount() {
+      this.request("CAcctAddZL", {
+        AcctName: this.userName,
+        VouId: this.cardNum,
+        PayPwd: this.password,
+        // PayPwd: "123456",
+        TrsAcNo: this.cardNum,
+        ChnlId: "62",
+        BranchId: "0110",
+        //confirm返回的数据
+        BankNbr: this.bankNbr,
+        BankName: this.bankName,
+        ContTypCd: this.contTypCd,
+        AcctTypCd: this.acctTypCd
+      })
+        .then(res => {
+          console.log(res);
+          Toast({
+            duration: 2000, // 持续展示 toast
+            message: "添加成功",
+            icon: require("@/assets/myAccount/addBankCard/ico_right@3x.png")
+          });
+          setTimeout(() => {
+            this.$router.push({ name: "index" });
+          }, 2000);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    next() {
+      if (this.index == 1) {
+        this.cardAcctAddZL();
+      } else {
+        this.addAccount();
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.header-box {
+  padding: px2vw(30) px2vw(40) px2vw(20);
+  p {
+    font-size: px2vw(24);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(168, 168, 168, 1);
+    line-height: px2vw(34);
+  }
+}
+.outer-box {
+  padding: 0 px2vw(40);
+  background: #fff;
+  /deep/ .md-field-item-title {
+    width: px2vw(154);
+  }
+}
+.btn {
+  padding: 0 px2vw(40);
+}
+</style>

@@ -1,0 +1,59 @@
+<template>
+  <van-popup v-model="show" position="bottom">
+    <van-picker
+      show-toolbar
+      :columns="week"
+      title="请选择发起日"
+      confirm-button-text="完成"
+      @cancel="onCancel"
+      @confirm="onConfirm"
+    />
+  </van-popup>
+</template>
+
+<script>
+import { Picker, Popup } from "vant";
+export default {
+  components: {
+    [Picker.name]: Picker,
+    [Popup.name]: Popup
+  },
+  props: {
+    nowWeek: {
+      require: false,
+      default: 0
+    },
+    selectWeek: {
+      require: true,
+      default: false
+    }
+  },
+  watch: {
+    selectWeek: {
+      handler(val) {
+        this.show = val;
+        // this.$emit('update:show', val)
+      }
+    }
+  },
+  data() {
+    return {
+      week: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
+      show: false
+    };
+  },
+  methods: {
+    onCancel() {
+      this.show = false;
+    },
+    onConfirm(picker, value) {
+      console.log(picker, value);
+      this.$parent.week = value + 1;
+      this.$parent.selectWeek = false;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+</style>

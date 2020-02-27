@@ -1,0 +1,26 @@
+<template>
+  <div class="items">
+    <item v-for="(item,index) in data" :key="index" :item="item"></item>
+  </div>
+</template>
+
+<script>
+import item from "./item";
+export default {
+  components: {
+    item
+  },
+  props: {
+    data: {
+      require: true
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.items {
+  .item:not(:last-child) {
+    border-bottom: px2vw(1) solid #eff0f1;
+  }
+}
+</style>

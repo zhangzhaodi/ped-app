@@ -1,0 +1,246 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller>
+      <Pagetitle :title="titleInfo" :notice="noticeInfo"></Pagetitle>
+      <div class="sel-item">
+        <div class="sel-m">
+          <div class="left-box">
+            <v-input
+              @input="verify"
+              type="verify"
+              v-model="amountInWords"
+              :maxlength="6"
+              placeholder="请输入短信验证码"
+              option="请输入短信验证码"
+            ></v-input>
+          </div>
+          <div>
+            <span class="verify" @click="sendHandle" v-if="showTime">发送验证码</span>
+            <van-count-down @finish="finish" v-else :time="time" format="sss后重发" />
+          </div>
+        </div>
+      </div>
+      <div v-if="config" class="report-box">
+        <p>验证码错误，请重新输入</p>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :style="styleObject" :disabled="forbidden" @click="next()">下一步</van-button>
+        </div>
+      </div>
+      <Dialog
+        :showDialog="showDialog"
+        :title="dialogTitle"
+        :message="dialogMessage"
+        :confirmDialog="confirmDialog"
+      ></Dialog>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Pagetitle from "./components/Pagetitle";
+import Dialog from "./components/Dialog";
+import { Button, CountDown } from "vant";
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+import { error } from 'util';
+import { CheckList } from 'mand-mobile';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    vInput,
+    Dialog,
+    Pagetitle,
+    [Button.name]: Button,
+    [CountDown.name]: CountDown
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      titleInfo: "短信验证码",
+      noticeInfo: "短信验证码已发送至绑定手机",
+      //是否禁用
+      forbidden: true,
+      styleObject: {
+        background: ""
+      },
+      //验证码
+      amountInWords: "",
+      showTime: true,
+      time: 60 * 1000,
+      config: false,
+      //提示信息
+      showDialog: false,
+      dialogTitle: "验证错误",
+      dialogMessage: "短信验证输入错误超过5次，今日不能再申请注册手机银行",
+      confirmDialog: "知道了",
+      _tokenName:'',
+    };
+  },
+  computed: {
+    // 使用对象展开运算符将此对象混入到外部对象中
+    ...mapState("eleAccounts", {
+      form: "eleForm"
+    })
+   },
+  created() {
+        console.log(this.form, "vuex",
+            this.$route.query,"路由"
+          );
+  },
+  methods: {
+      ...mapActions("eleAccounts", ["updateEleForm"]),
+        //电子账户开户确认
+    next() {
+      this.request("OpenEleAcNoConfirm",
+      {
+          BranchId:this.form.BranchId || "1666",
+          ChnlId:this.form.ChnlId || '62',
+          CustNm: this.form.username || '',
+          CertNo:this.form.IDCard || '',
+          CertType:"1" || '',
+          RelCardNbr:this.form.bankCard || "",
+          ContTypCd:"1" || '',
+          AcctOpenOrg:"70010" || '',
+          CardTypeNo:"1" || '',
+          OccupationTpCd:this.form.job || '',
+          ComAddress:this.form.Address ||  "",
+          ContAddr:this.form.Address ||  "",
+          Amt:'0' || '',
+          AcctTyp:'2' || '',
+          SmsCode: this.amountInWords ||  '',
+          UserSmsId:this.form.UserSmsId || '',
+          ApprTyp: "1" || '',
+          SmsNbr:this.form.SmsNbr || '',
+          IdVolk:this.form.IdVolk || '',
+          MobileNo:this.form.phone || '',
+          BeginDate:this.form.BeginDate || '',
+          EndDate:this.form.EndDate || '',
+          Rdtdmk:this.form.Rdtdmk||  "",
+          ComAddress:this.form.ComAddress ||  "",
+          IssueOffice:this.form.IssueOffice || '',
+          Sex:this.form. Sex|| '',
+          Folk:this.form.Folk || '',
+          Birthday:this.form.Birthday || '',
+      },true)
+            .then((res)=>{
+              console.log(res);
+          this._token=res._tokenName
+          let params = {
+          BranchId:this.form.BranchId || "1666",
+          ChnlId:this.form.ChnlId || '62',
+          CustNm: this.form.username || '',
+          CertNo:this.form.IDCard || '',
+          CertType:"1" || '',
+          RelCardNbr:this.form.bankCard || "",
+          ContTypCd:"1" || '',
+          AcctOpenOrg:"70010" || '',
+          CardTypeNo:"1" || '',
+          OccupationTpCd:this.form.job || '',
+          ComAddress:this.form.Address ||  "",
+          ContAddr:this.form.Address ||  "",
+          Amt:'0' || '',
+          AcctTyp:'2' || '',
+          ApprTyp: "1" || '',
+          IdVolk:this.form.IdVolk || '',
+          MobileNo:this.form.phone || '',
+          BeginDate:this.form.BeginDate || '',
+          EndDate:this.form.EndDate || '',
+          Rdtdmk:this.form.Rdtdmk||  "",
+          ComAddress:this.form.ComAddress ||  "",
+          Folk:this.form.Folk || '',
+          IssueOffice:this.form.IssueOffice || '',
+          Sex:this.form. Sex|| '',
+          AcctOpenOrg:this.form.AcctOpenOrg,
+          AcctOpenNam:this.form.AcctOpenNam,
+          _tokenName:res._tokenName || '',
+          Birthday:this.form.Birthday || '',
+      }
+      window.NativeCall.goSetPasswordVC(params);
+            })
+            .catch((error)=>{
+              console.log(error);
+            })
+    },
+    sendHandle() {
+      this.showTime = false;
+      let param = {
+        ApprTyp: "1",
+        BranchId: '1666',
+        ChnlId: '62',
+        VerifyTag: 'N',
+        PhoneNbr:this.form.phone,
+        VerifyScene: '1'
+      }
+      this.request('SendSmsOtpPassword',
+        param, true
+      ).then((res) => {
+       let b={SmsNbr:res.SmsNbr,
+            UserSmsId:res.UserSmsId}
+        //同步赋值+更新 this.form = {...this.form,...b}
+        let newForm = {...this.form,...b}
+        this.updateEleForm(newForm);
+        console.log(res,"验证码已发送")
+
+      }).catch((error) => {
+        console.log(error)
+      })
+    },
+    finish() {
+      this.showTime = true;
+    },
+    verify() {
+      if (this.amountInWords.length == 6) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.van-count-down {
+  margin-top: px2vw(8);
+  float: right;
+  font-size: px2vw(28);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(204, 204, 204, 1);
+  line-height: px2vw(28);
+}
+.left-box {
+  flex: 1
+}
+.report-box {
+  padding: 0 px2vw(60);
+  margin-top: px2vw(20);
+}
+.report-box p {
+  font-size: px2vw(24);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(255, 64, 64, 1);
+  line-height: px2vw(24);
+}
+.footer-box{
+  display: flex;
+  justify-content: center;
+  .btn-box{
+    width: px2vw(670);
+  }
+}
+.electronicAccounts .sel-item .sel-m .verify{
+  color: #008bff;
+}
+</style>

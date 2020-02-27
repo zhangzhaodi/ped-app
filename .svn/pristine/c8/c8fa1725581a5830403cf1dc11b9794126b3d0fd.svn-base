@@ -1,0 +1,55 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue");
+const CustInfoConfirm = () => import("../pages/custInfoConfirm.vue");
+const AuditLogging = () => import("../pages/auditLogging.vue");
+const ResultPage = () => import("../pages/resultPage.vue");
+
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "扫码面核",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/custInfoConfirm",
+      name: "custInfoConfirm",
+      component: CustInfoConfirm,
+      meta: {
+        title: "客户信息确认",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/auditLogging",
+      name: "auditLogging",
+      component: AuditLogging,
+      meta: {
+        title: "审核记录查询",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/resultPage",
+      name: "resultPage",
+      component: ResultPage,
+      meta: {
+        title: "客户信息确认",
+        keepAlive: true
+      }
+    }
+  ]
+});

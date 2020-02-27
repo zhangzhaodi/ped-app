@@ -1,0 +1,298 @@
+<template>
+  <div class="result">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="top" v-if="data">
+      <div :class="['img',{'img1':data.type=='3'||data.type=='5'||data.type=='7'}]">
+        <!-- iconicon_guanbi -->
+        <span
+          :class="['iconfont',{'iconcheck-':data.type!='3'},{'iconicon_guanbi':data.type=='3'||data.type=='5'||data.type=='7'}]"
+        ></span>
+      </div>
+      <p class="msg" v-if="data.type=='1'">申请成功</p>
+      <p class="msg" v-if="data.type=='2'">提交赎回申请成功</p>
+      <p class="msg" v-if="data.type=='3'">申请失败</p>
+      <p class="msg" v-if="data.type=='4'">撤销成功</p>
+      <p class="msg" v-if="data.type=='5'">撤销失败</p>
+      <p class="msg" v-if="data.type=='6'">更改成功</p>
+      <p class="msg" v-if="data.type=='7'">更改失败</p>
+      <!-- <p class="text" v-if="type=='2'">受理中，非交易时间，将在下一个工作日自动赎回</p> -->
+      <p class="text" v-if="data.type=='3'||data.type=='5'||data.type=='7'">{{data._RejMessage}}</p>
+    </div>
+    <div class="line"></div>
+    <div class="content" v-if="data">
+      <div class="detail">
+        <div class="payer">
+          <p class="left">产品名称</p>
+          <p class="center">
+            <span>{{data.ProductName}}</span>
+          </p>
+        </div>
+        <div class="money" v-if="data.type=='1'||data.type=='2'||data.type=='3'">
+          <p class="left">赎回金额</p>
+          <p class="center">{{data.Vol | Money}}元</p>
+        </div>
+        <div class="notice">
+          <div class="left">
+            <span v-if="data.type=='1'||data.type=='2'||data.type=='3'">赎回日期</span>
+            <span v-else-if="data.type=='4'||data.type=='5'">撤销日期</span>
+            <span v-else>更改日期</span>
+          </div>
+          <div class="center">{{new Date()|Format("yyyy-MM-dd")}}</div>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="line"></div> -->
+    <div class="btn" v-if="data">
+      <van-button type="default" class="again" @click="toManageMoney">我的理财</van-button>
+      <van-button
+        type="default"
+        class="final"
+        @click="again"
+        v-if="data.type=='5'||data.type=='3'"
+      >再试一次</van-button>
+      <van-button type="default" class="final" @click="final" v-else>完成</van-button>
+    </div>
+    <!-- 行业优先 -->
+    <div class="best">
+      <img src="@/assets/manageMoney/img_guanggao@2x.png" />
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      // ...this.$route.params,
+      data: null,
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      }
+    };
+  },
+  filters: {
+    err(str) {
+      if (str.indexOf("-") != -1) {
+        return str.slice(str.lastIndexOf("-") + 1).trim();
+      } else {
+        return str.trim();
+      }
+    }
+  },
+  // created() {
+  //    this.data = this.$route.params;
+  //    this.$store.state.manageMoney.pocketResult = this.data;
+  // },
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      if (from.name != "pocketDetail" && from.name != "pocketInput") {
+        console.log(1);
+        vm.data = vm.$store.state.manageMoney.pocketResult;
+      } else {
+        vm.data = vm.$route.params;
+        // alert(JSON.stringify(vm.data))
+        vm.$store.state.manageMoney.pocketResult = vm.data;
+      }
+    });
+  },
+  methods: {
+    final() {
+      this.$router.push({ name: "index" });
+    },
+    toManageMoney() {
+      this.$router.push({ name: "myPocket" });
+    },
+    again() {
+      this.$router.go(-1);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+.result {
+  height: 100%;
+  background: #fff;
+}
+.top {
+  height: px2vw(348);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  .img {
+    height: px2vw(110);
+    width: px2vw(110);
+    background: linear-gradient(#27cd6f, #39df8d);
+    border-radius: 50%;
+    color: #fff;
+    line-height: px2vw(110);
+    text-align: center;
+    margin: 0 auto;
+    .iconfont {
+      font-size: px2vw(56);
+    }
+  }
+  .img1 {
+    background: linear-gradient(#f96159, #ff4040);
+  }
+  .msg {
+    font-size: px2vw(40);
+    font-weight: 400;
+    color: #262626;
+    text-align: center;
+    line-height: px2vw(40);
+    margin-top: px2vw(40);
+  }
+  .text {
+    font-size: px2vw(28);
+    font-family: PingFangSC-Light, PingFang SC;
+    font-weight: 300;
+    color: rgba(125, 125, 125, 1);
+    text-align: center;
+    line-height: px2vw(40);
+    max-width: px2vw(512);
+    margin-top: px2vw(20);
+  }
+}
+.content {
+  font-family: PingFangSC;
+  padding: px2vw(50) 0;
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer,
+    .money,
+    .notice {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        width: px2vw(152);
+        flex: none;
+        color: #7d7d7d;
+      }
+      .center {
+        flex: 1;
+        color: #000;
+        font-weight: 400;
+      }
+      .right {
+        color: #008bff;
+        flex: none;
+      }
+    }
+    .payer {
+      margin-top: 0;
+    }
+  }
+}
+.dealline {
+  height: px2vw(282);
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  padding: px2vw(51) px2vw(40) px2vw(70) px2vw(40);
+  .img {
+    box-sizing: border-box;
+    padding: px2vw(20) 0;
+    height: px2vw(144);
+    width: px2vw(30);
+    background: url("~@/assets/manageMoney/img_time.png");
+    background-size: 100% 100%;
+    // img {
+    //   width: px2vw(15);
+    //   height: 100%;
+    // }
+  }
+  .time {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-left: px2vw(14);
+    .text {
+      font-size: px2vw(26);
+      font-weight: 400;
+      color: #262626;
+    }
+    .p1 {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #7d7d7d;
+      margin-top: px2vw(6);
+    }
+  }
+}
+.btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: px2vw(30);
+  font-weight: 400;
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  /deep/ .van-button {
+    height: px2vw(90);
+    width: px2vw(310);
+    border-radius: px2vw(45);
+  }
+  .again {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background-color: #fff;
+    border: px2vw(2) solid #d7a083;
+    color: #d7a083;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    span {
+      flex: 1;
+      text-align: center;
+    }
+  }
+  .final {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background: linear-gradient(
+      left,
+      RGBA(229, 154, 117, 1),
+      RGBA(255, 202, 168, 1)
+    );
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    span {
+      flex: 1;
+      text-align: center;
+    }
+  }
+}
+.best {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(80);
+  img {
+    width: 100%;
+  }
+}
+</style>

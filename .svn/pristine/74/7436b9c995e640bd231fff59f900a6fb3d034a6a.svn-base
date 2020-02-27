@@ -1,0 +1,85 @@
+<template>
+  <div class="tradeInfo">
+    <!-- 交易信息 -->
+    <div class="title">交易信息</div>
+    <div class="label">
+      <div class="name">交易账户</div>
+      <div
+        class="info"
+      >{{bankInfo.PayeeBankName?bankInfo.PayeeBankName:bankInfo.bankaliasname}} | ({{data.BankAcct?data.BankAcct:data.BankAcc|CardNoFour}})</div>
+    </div>
+    <div class="label" v-if="data.PrdTemplate=='1307'">
+      <div class="name">七日年化</div>
+      <div class="info">{{data.Yield|parseFloatTwo}}</div>
+    </div>
+    <!-- <div class="label" v-if="data.PrdTemplate=='1307'">
+      <div class="name">历史收益</div>
+      <div class="info">{{(data.TolCashBonus+data.TolPortionBonus)?(data.TolCashBonus+data.TolPortionBonus):'0'}}</div>
+    </div> -->
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    data: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      bankInfo: {}
+    };
+  },
+  created(){
+    console.log(this.data)
+    this.bank();
+  },
+  methods: {
+    bank() {
+      let bankAccount = this.data.BankAcct?this.data.BankAcct:this.data.BankAcc;
+      let params = {
+        BranchId: "2336",
+        ChnlId: "62",
+        AcctNbr: bankAccount
+      };
+      this.request("BankBinQuery", { ...params }).then(res => {
+        console.log(res);
+        this.bankInfo = res.PayeeBankName ? res : res.Banks[0];
+        console.log(res);
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.tradeInfo {
+  padding: px2vw(40) px2vw(40) px2vw(30);
+  background: #fff;
+  margin-top: px2vw(20);
+  .title {
+    font-size: px2vw(32);
+    font-weight: 500;
+    color: rgba(38, 38, 38, 1);
+  }
+  .label {
+    margin-top: px2vw(40);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    .name {
+      font-size: px2vw(28);
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+    }
+    .info {
+      margin-left: px2vw(40);
+      font-size: px2vw(28);
+      font-weight: 400;
+      color: rgba(0, 0, 0, 1);
+    }
+  }
+}
+</style>

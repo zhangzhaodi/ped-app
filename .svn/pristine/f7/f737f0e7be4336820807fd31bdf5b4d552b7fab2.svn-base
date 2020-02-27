@@ -1,0 +1,177 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :isWhite="isWhite"
+      :backgroundColor="color"
+    ></Myheader>
+    <div class="content" v-if="userInfo">
+      <div class="top">
+        <p class="text">住房公积金账户余额(元)</p>
+        <p class="money">{{data.TmpAcct|Money}}</p>
+        <van-button>查看账户详情</van-button>
+        <div class="userInfo">
+          <span>{{userInfo.Name}}</span>
+          <span>&nbsp;|&nbsp;</span>
+          <span>{{userInfo.MobilePhone|PhoneProtect}}</span>
+          <p class="status">{{data.PayStat?'正常缴费':'正常缴费'}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false,
+        rightShow: false
+      },
+      color: "transparent",
+      isWhite: true,
+      userInfo: null,
+      data:null
+    };
+  },
+  filters: {
+    PhoneProtect(value, type) {
+      if (!value) {
+        return "";
+      }
+      if (typeof value !== "string") {
+        value = String(value);
+      }
+      return value.substr(0, 3) + " **** " + value.substr(value.length - 4);
+    }
+  },
+  components: {
+    Myheader: Header
+  },
+  methods: {
+    login() {
+      let params = {
+        BankId: "9999",
+        LoginId: "15670538691",
+        Password: "123456asd",
+        EquipmentId: "123456asd",
+        ChnlId: "62",
+        LoginType: "R",
+        BranchId: "PHNE",
+        LoginMode: "1",
+        AddrInfo: "郑州"
+      };
+      // window.NativeCall.getUserInfo(params => {
+      //   let res = JSON.parse(params);
+      //   this.$store.state.userInfo = res;
+      //   this.accountLists();
+      //   // alert(this.$store.state.userInfo);
+      //   // alert(this.$store.state.payerList);
+      // });
+      //测试
+      this.request("login", { ...params }).then(res => {
+        this.userInfo = res;
+        this.getInfo()
+      });
+    },
+    //查询公积金
+    getInfo() {
+      let params = {
+        BankId: "9999",
+        ChnlId: "62",
+        BranchId: "PHNE"
+      };
+      this.request("AccumulationFundQry", { ...params }).then(res => {
+        console.log(res);
+        this.data = res
+      });
+    }
+  },
+  created() {
+    this.login();
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .content {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+  .headerBox {
+    position: absolute;
+  }
+}
+.content {
+  .top {
+    height: px2vw(460);
+    background: url("~@/assets/assistant/accumulationFund/img_bg@2x.png");
+    background-size: 100% 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    .text {
+      font-size: px2vw(22);
+      font-family: PingFangSC-Light, PingFang SC;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 1);
+      margin-top: px2vw(118);
+    }
+    .money {
+      font-size: px2vw(54);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 1);
+      margin-top: px2vw(10);
+    }
+    .van-button {
+      width: px2vw(216);
+      height: px2vw(54);
+      margin-top: px2vw(40);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: px2vw(32);
+      .van-button__text {
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(155, 99, 47, 1);
+      }
+    }
+    .userInfo {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 1);
+      margin-top: px2vw(32);
+      display: flex;
+      flex-direction: row;
+      .status {
+        width: px2vw(96);
+        height: px2vw(28);
+        line-height: px2vw(28);
+        background: #36b162;
+        text-align: center;
+        margin-left: px2vw(12);
+      }
+    }
+  }
+}
+.van-hairline--top-bottom::after {
+  border-width: 0;
+}
+</style>

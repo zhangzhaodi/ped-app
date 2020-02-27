@@ -1,0 +1,658 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader :title="$route.meta.title" :backRouter="headerBackRouter" :backgroundColor="'#fff'"></Myheader>
+    <!-- 上部筛选 -->
+    <div class="select-date">
+      <van-dropdown-menu active-color="#3E8FFF">
+        <van-dropdown-item :title="selectDate" ref="dateDropDown">
+          <button class="date-mode-btn" @click="changeMode">
+            {{byMonth?"按月选择":"按日选择"}}<i class="iconfont little_mark">&#xe641;</i>
+          </button>
+          <div v-if="byMonth">
+            <div class="current-time">
+              <span class="text"> {{monthDate}}</span>
+            </div>
+            <van-datetime-picker type="year-month" v-model="currentDate" :formatter="formatter" @change="monthPickerChange" @confirm="confirm" @cancel="cancel" />
+          </div>
+          <div v-if="!byMonth">
+            <div class="current-time">
+              <div class="time">
+                <div @click="startHandle()" class="time-box" :class="{selected:startSelected}">{{startTime}}</div>
+                <p class="mounthtimestyle_p">至</p>
+                <div @click="endHandle()" class="time-box" :class="{selected:endSelected}">{{endTime}}</div>
+              </div>
+            </div>
+            <p class="hint" v-show="isShow">{{wrongText}}</p>
+            <van-datetime-picker v-model="currentDate" type="date" :formatter="formatter" @change="change" @confirm="confirm" @cancel="cancel" />
+          </div>
+        </van-dropdown-item>
+        <van-dropdown-item v-model="status" :options="statusOptions" @change="handleSearch" />
+      </van-dropdown-menu>
+    </div>
+
+    <!-- 中部内容 -->
+    <Scroller class="history">
+      <van-list v-model="loading" :finished="finished" @load="loadMore">
+        <div class="item" v-for="(item,index) in historylist" :key="index" @click="toDetail(item)">
+          <div class="left">
+            <img v-if="item.LC_TransCode == '100200'" class="img" src="@/assets/fund/type_mairu@2x.png" />
+            <img v-if="item.LC_TransCode == '100202'" class="img" src="@/assets/fund/type_shuhui@2x.png" />
+            <div v-if="item.LC_TransCode != '100202' && item.LC_TransCode != '100200'" class="LC_img">其它</div>
+            <!-- <img class="img" :src="@/assets/travelTreasure/transactionhistory/icon_mairu@2x.png" /> -->
+          </div>
+          <div class="right">
+            <div class="top">
+              <div class="name">
+                <div class="fund-name">{{item.ProductName}}</div>
+                <div>{{item.AMT | Money}}</div>
+              </div>
+              <div class="num">
+                <span>[{{item.ProductNo}}]</span>
+                <span class="status" :class="{success: item.TransState == 'S' ||item.TransState == '8 ', doing:item.TransState == 'Z'}">{{item.TransStateName}}</span>
+              </div>
+
+            </div>
+            <div class="bottom">
+              <div>{{item.TransDate | dateFormater}}</div>
+              <div>焦作中旅银行 ({{item.BankAcct | CardNoFour}})</div>
+            </div>
+
+          </div>
+        </div>
+      </van-list>
+    </Scroller>
+
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import { Button, DropdownMenu, DropdownItem, DatetimePicker, Switch, Popup, List } from "vant";
+import dayjs from "dayjs"
+export default {
+  components: {
+    Myheader: Header,   //头部组件
+    [Button.name]: Button,
+    [DropdownMenu.name]: DropdownMenu,
+    [DropdownItem.name]: DropdownItem,
+    [DatetimePicker.name]: DatetimePicker,
+    Scroller,
+    [List.name]: List
+  },
+  data() {
+    return {
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      loading: false,
+      finished: false,
+      // 顶部时间栏战士
+      selectDate: dayjs().format('YYYY-MM'),
+      monthDate: dayjs().format('YYYY-MM'),
+      currentDate: new Date(),
+      startTime: "",
+      endTime: "",
+      beginDate: '',
+      endDate: '',
+      wrongText: '结束时间不能早于起始时间',
+      //起始时间选中状态的类名
+      startSelected: true,
+      endSelected: false,
+      //显示切换
+      byMonth: true,
+      option1: [
+        { text: '全部商品', value: 0 },
+      ],
+      status: "0",
+      statusOptions: [
+        { text: '全部类型', value: '0' },
+        { text: '买入', value: '100200' },
+        { text: '赎回', value: '100202' },
+        // { text: '分红', value: '3' },
+        // { text: '定投', value: '4' },
+      ],
+      historylist: [],
+      historylist1: [
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", money: "100", card: "21468237648764728574572", way: "credit", status: "赎回" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "credit" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "credit" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "credit" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "credit" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "credit" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "debit" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "debit" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "debit" },
+        { name: "易基金天天理财A", time: "2019-08-22 09:30", price: "100", card: "21468237648764728574572", way: "debit" },
+      ],
+      page: 1,
+      pageNum: 10,
+    }
+  },
+  computed: {
+    ...mapState('common', ['userInfo']),
+    startNum() {
+      return (this.page - 1) * this.pageNum + 1
+    },
+    isShow() {
+      let isShow = false;
+      let threeMonthLater = dayjs(this.startTime).add(3,'month');
+      if (dayjs(this.endTime).isBefore(this.startTime)) {
+        this.wrongText = "结束时间不能早于起始时间";
+        isShow = true;
+      } else if (dayjs(this.endTime).isAfter(threeMonthLater)) {
+        this.wrongText = "时间跨度不能超过3个月";
+        isShow = true;
+      } else {
+        isShow = false;
+      }
+
+      // else if (dayjs(this.endTime).isSame(this.startTime)) {
+      //   this.wrongText = "结束时间与起始时间不能相等";
+      //   isShow = true;
+      // } 
+      return isShow
+    },
+
+  },
+  filters: {
+    dateFormater(val) {
+      if (!val) return
+      return dayjs(val).format('YYYY-MM-DD')
+    },
+    getStatus(val) {
+      let text = "";
+      switch (val) {
+        case "1":
+          text = '预受理';
+          break
+        case "2":
+          text = '受理';
+          break
+        case "3":
+          text = '已撤单';
+          break
+        case "4":
+          text = '已抹账';
+          break
+        case "5":
+          text = '确认中';
+          break
+        case "6":
+          text = '部分确认未全部返回';
+          break
+        case "7":
+          text = '部分确认已全部返回';
+          break
+        case "8":
+          text = '确认成功';
+          break
+        case "9":
+          text = '确认失败';
+          break
+        case "A":
+          text = '认购确认';
+          break
+        case "B":
+          text = '份额调账';
+          break
+        case "D":
+          text = '分红数据';
+          break
+        case "E":
+          text = '已重发';
+          break
+        case "F":
+          text = '重发失败';
+          break
+        case "S":
+          text = '成功';
+          break
+        case "Y":
+          text = '预约';
+          break
+        case "Z":
+          text = '处理中';
+          break
+        default:
+          text = ''
+      }
+    }
+  },
+  created() {
+    //初始起始日期
+    let begin = dayjs().startOf('month');
+    let end = dayjs().endOf('month');
+    this.startTime = dayjs().format('YYYY-MM-DD');
+    this.endTime = dayjs().format('YYYY-MM-DD');
+    this.beginDate = dayjs(begin).format('YYYYMMDD');
+    this.endDate = dayjs(end).format('YYYYMMDD');
+  },
+  mounted() {
+  },
+
+  methods: {
+    handleSearch() {
+      this.page = 1;
+      this.historylist = [];
+      this.finished = false;
+    },
+    getData(){
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        CustomerIdentifyType: '1',
+        CustomerIdentify: this.userInfo.CifNo,
+        PositionString: this.startNum,
+        QueryRowsNum: this.pageNum,
+        BeginDate: this.beginDate,
+        EndDate: this.endDate,
+        TransCodesGroup: this.status == 0 ? "" : this.status
+      }
+      this.request("FundEntrustHisListQry", params).then(res => {
+        console.log(res, "ddd")
+        let resList =  res.HisCommisList;
+        if(resList.length > 0){
+          if (!this.historylist) {
+            this.historylist = resList;
+          } else {
+            this.historylist = [...this.historylist, ...resList];
+          }
+          if(resList.length < this.pageNum){//获取的新数据小于每页数据量，则不需再次翻页
+            this.finished = true;
+          }else{
+            this.page++;
+          }
+        }else{
+          this.finished = true;
+        }
+        this.loading = false;
+      }).catch(err => {
+        this.loading = false;
+        this.finished = true;
+      })
+      console.log("最终数据",this.historylist)
+    },
+    loadMore() {
+      this.getData();
+    },
+    monthPickerChange(picker) {
+      let arr = picker.getValues();
+      this.monthDate = arr[0].substr(0, 4) + "-" + arr[1].substr(0, 2);
+    },
+    //切换时间选择模式
+    changeMode() {
+      this.byMonth = !this.byMonth;
+    },
+    //时间格式
+    formatter(type, value) {
+      if (type === 'year') {
+        return `${value}年`;
+      } else if (type === 'month') {
+        return `${value}月`
+      }
+      return value;
+    },
+    //选择时间
+    confirm() {
+      if (this.byMonth) {
+        this.selectDate = this.monthDate;
+        let begin = dayjs(this.monthDate).startOf('month');
+        let end = dayjs(this.monthDate).endOf('month');
+        this.beginDate = dayjs(begin).format('YYYYMMDD');
+        this.endDate = dayjs(end).format('YYYYMMDD');
+        this.handleSearch();
+        this.$refs.dateDropDown.toggle();
+      } else {
+        if (!this.isShow) {
+          this.selectDate = dayjs(this.startTime).format("YYYY.MM.DD") + '-' + dayjs(this.endTime).format("YYYY.MM.DD")
+          this.beginDate = dayjs(this.startTime).format('YYYYMMDD');
+          this.endDate = dayjs(this.endTime).format('YYYYMMDD');
+          this.handleSearch();
+          // console.log(this.beginDate,this.endDate,"等等")
+          this.$refs.dateDropDown.toggle();
+        }
+      }
+    },
+    //取消选择
+    cancel() {
+      this.$refs.dateDropDown.toggle();
+    },
+    //格式化日期
+    formatDate: function (date) {
+      var y = date.getFullYear();
+      var m = date.getMonth() + 1;
+      m = m < 10 ? '0' + m : m;
+      var d = date.getDate();
+      d = d < 10 ? ('0' + d) : d;
+      return y + '-' + m  // 到天数 + '-' + d;
+    },
+    //时间选择器数据的过滤
+    formatter(type, value) {
+      if (type === "year") {
+        return `${value}年`;
+      } else if (type === "month") {
+        return `${value}月`;
+      } else if (type === "day") {
+        return `${value}日`;
+      }
+      return value;
+    },
+    //时间选择器时间改变
+    change(value) {
+      let arr = value.getValues();
+      if (this.startSelected) {
+        this.startTime =
+          arr[0].substr(0, 4) +
+          "-" +
+          arr[1].substr(0, 2) +
+          "-" +
+          arr[2].substr(0, 2);
+      } else {
+        this.endTime =
+          arr[0].substr(0, 4) +
+          "-" +
+          arr[1].substr(0, 2) +
+          "-" +
+          arr[2].substr(0, 2);
+      }
+    },
+    toDetail(item) {
+      this.$router.push({ name: "positionHistoryDetail", params: { data: item } })
+    },
+    startHandle() {
+      this.startSelected = true;
+      this.endSelected = false;
+      let startTime = this.startTime.split("-").join(",");
+      console.log(startTime);
+      this.currentDate = new Date(startTime);
+    },
+    endHandle() {
+      this.startSelected = false;
+      this.endSelected = true;
+      let endTime = this.endTime.split("-").join(",");
+      console.log(endTime);
+      this.currentDate = new Date(endTime);
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 内部样式
+.history {
+  background: #f5f6f8;
+  .item {
+    display: flex;
+    flex-direction: row;
+    background: #fff;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 0 px2vw(40);
+    margin-bottom: px2vw(20);
+    .left {
+      display: flex;
+      height: px2vw(70);
+      padding-top: px2vw(35);
+      margin-right: px2vw(20);
+      .img {
+        width: px2vw(70);
+      }
+      .LC_img {
+        display: flex;
+        width: px2vw(70);
+        height: px2vw(70);
+        background: #3e8fff;
+        align-items: center;
+        justify-content: center;
+        border-radius: 100%;
+        color: #fff;
+        font-size: px2vw(24);
+        font-weight: 500;
+        font-family: $font-family;
+        letter-spacing: px2vw(2);
+      }
+    }
+    .right {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      width: 100%;
+      .top {
+        border-bottom: px2vw(1) solid #ebeef0;
+        padding-top: px2vw(30);
+        padding-bottom: px2vw(34);
+        .name {
+          display: flex;
+          justify-content: space-between;
+          color: #262626;
+          font-size: px2vw(30);
+          font-family: $font-family;
+          font-weight: 400;
+          margin-bottom: px2vw(16);
+          .fund-name {
+            margin-right: px2vw(30);
+            width: px2vw(400);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+        .num {
+          display: flex;
+          justify-content: space-between;
+          font-size: px2vw(24);
+          font-family: $font-family;
+          font-weight: 400;
+          .status {
+            &.success {
+              color: #27cd6e;
+            }
+            &.doing {
+              color: #ffb52b;
+            }
+          }
+        }
+      }
+      .bottom {
+        display: flex;
+        justify-content: space-between;
+        padding: px2vw(23) 0;
+        color: #7d7d7d;
+        font-size: px2vw(24);
+        font-family: $font-family;
+        font-weight: 400;
+      }
+    }
+  }
+}
+.date-mode-btn {
+  margin-left: px2vw(40);
+  margin-top: px2vw(40);
+  margin-bottom: px2vw(30);
+  border-radius: px2vw(25);
+  background: #f4f5f8;
+  padding: px2vw(13) px2vw(26);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #262626;
+  font-size: px2vw(24);
+  font-family: $font-family;
+  font-weight: 400;
+  .iconfont {
+    margin-left: px2vw(10);
+    color: #262626;
+    font-size: px2vw(24);
+  }
+}
+
+.footer-btn {
+  display: flex;
+  box-shadow: px2vw(-5) px2vw(-5) px2vw(20) 0px rgba(69, 69, 83, 0.5);
+  button {
+    height: px2vw(90);
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    &.cancel-btn {
+      color: #262626;
+      font-size: px2vw(30);
+      background: #fff;
+    }
+    &.confirm-btn {
+      color: #fff;
+      font-size: px2vw(30);
+      background: linear-gradient(
+        270deg,
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+    }
+  }
+}
+/deep/ .select-date {
+  width: 100%;
+  display: flex;
+  .van-dropdown-menu {
+    width: 100%;
+    height: px2vw(90);
+  }
+  .van-dropdown-item__option--active {
+    background: #f9fafb;
+  }
+  .van-dropdown-menu__item {
+    height: px2vw(90);
+    .van-dropdown-menu__title {
+      font-size: px2vw(24);
+      font-weight: 400;
+      font-family: $font-family;
+    }
+  }
+  .van-dropdown-item__content {
+    .van-overlay {
+      background: rgba(0, 0, 0, 1);
+      opacity: 0.5;
+    }
+    .van-cell--clickable {
+      .van-cell__title {
+        padding-left: px2vw(40);
+        color: inherit;
+      }
+      .van-cell__value {
+        padding-right: px2vw(40);
+        flex: none;
+      }
+    }
+  }
+}
+
+// 头部框
+.van-dropdown-menu {
+  height: px2vw(50);
+  border: none;
+}
+.van-hairline--top-bottom {
+  padding-left: px2vw(40);
+}
+/deep/ .van-datetime-picker {
+  margin-top: px2vw(30);
+  display: flex;
+  flex-direction: column-reverse;
+}
+/deep/ .van-dropdown-menu .van-dropdown-menu__item {
+  text-align: center;
+  margin-right: px2vw(20);
+}
+
+.active {
+  border: px2vw(1) solid #ebeef0ff;
+  background: red;
+  height: 20px;
+  width: 20px;
+}
+//月份日期
+.current-time {
+  text-align: center;
+  font-size: px2vw(30);
+  font-family: $font-family;
+  font-weight: 400;
+  color: rgb(24, 29, 36);
+  padding-top: px2vw(22);
+  padding-bottom: px2vw(22);
+  border-bottom: px2vw(1) solid #eff0f1;
+  .text {
+    color: #3e8fff;
+  }
+}
+.mounthtimestyle_p {
+  margin: 0 px2vw(40) 0;
+}
+
+// 月份选择
+/deep/ .van-picker__toolbar {
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  height: px2vw(90);
+  line-height: px2vw(90);
+  .van-picker__confirm {
+    width: 50%;
+    background: linear-gradient(
+      270deg,
+      rgba(248, 204, 173, 1) 0%,
+      rgba(218, 154, 120, 1) 100%
+    );
+    text-align: center;
+    font-size: px2vw(30);
+    font-family: $font-family;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    height: 100%;
+  }
+  .van-picker__cancel {
+    width: 50%;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.05);
+    text-align: center;
+    font-size: px2vw(30);
+    font-family: $font-family;
+    font-weight: 400;
+    color: #da9a78;
+    height: 100%;
+  }
+}
+
+.time {
+  padding: px2vw(0) px2vw(108);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: px2vw(30);
+  font-family: PingFangSC;
+  font-weight: 400;
+  .time-box {
+    color: #7d7d7d;
+    border-bottom: 1px solid #7d7d7d;
+    height: px2vw(52);
+  }
+  .selected {
+    color: #3e8fff;
+    border-bottom: 1px solid #3e8fff;
+  }
+  p {
+    color: rgba(38, 38, 38, 1);
+  }
+}
+.hint {
+  margin-top: px2vw(8);
+  width: 100%;
+  text-align: center;
+  font-size: px2vw(22);
+  font-family: PingFangSC;
+  font-weight: 300;
+  color: rgba(255, 64, 64, 1);
+}
+</style>

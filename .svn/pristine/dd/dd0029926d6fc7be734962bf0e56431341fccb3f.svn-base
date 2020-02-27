@@ -1,0 +1,248 @@
+<template>
+  <div class="cards" v-show="Level">
+    <div :class="['top',userLevel]">
+      <div class="left" :style="{color:levelColor}">
+        <p class="now">当前等级</p>
+        <p class="level">{{levelText}}</p>
+        <p class="info">
+          <span>等级说明</span>
+          <span class="iconfont iconicon_help-"></span>
+        </p>
+      </div>
+      <img :src="userLevelMedal" alt v-show="userLevelMedal" />
+    </div>
+    <Card
+      v-for="(item,index) in equityList"
+      :key="index"
+      :list="item"
+      :data="cardInfo[index]"
+      :nowIndex="nowIndex"
+    ></Card>
+  </div>
+</template>
+
+<script>
+import Card from "../components/card";
+const v1 = require("@/assets/personalInterests/img_dengjishuoming_yixing@2x.png");
+const v2 = require("@/assets/personalInterests/img_dengjishuoming_erxing@2x.png");
+const v3 = require("@/assets/personalInterests/img_dengjishuoming_sanxing@2x.png");
+const v4 = require("@/assets/personalInterests/img_dengjishuoming_sixing@2x.png");
+const v5 = require("@/assets/personalInterests/img_dengjishuoming_wuxing@2x.png");
+const v6 = require("@/assets/personalInterests/img_dengjishuoming_liuxing@2x.png");
+const v7 = require("@/assets/personalInterests/img_dengjishuoming_qixing@2x.png");
+export default {
+  data() {
+    return {
+      cardInfo: [
+        {
+          title: "出行权益",
+          index: "0",
+          label: "机票｜火车票｜预订",
+          background:
+            "linear-gradient(270deg,rgba(107,171,255,1) 0%,rgba(108,138,249,1) 100%)"
+        },
+        {
+          title: "旅游权益",
+          index: "1",
+          label: "门票｜住宿｜定制旅行",
+          background:
+            "linear-gradient(270deg,rgba(240,192,72,1) 0%,rgba(254,178,68,1) 100%)"
+        },
+        {
+          title: "生活权益",
+          index: "2",
+          label: "最i星期六",
+          background:
+            "linear-gradient(270deg,rgba(51,82,165,1) 0%,rgba(31,60,136,1) 100%)"
+        },
+        {
+          title: "金融权益",
+          index: "3",
+          label: "金融｜免费",
+          background:
+            "linear-gradient(270deg,rgba(70,160,241,1) 0%,rgba(51,116,243,1) 100%)"
+        },
+        {
+          title: "签证权益",
+          index: "4",
+          label: "签证",
+          background:
+            "linear-gradient(270deg,rgba(46,64,101,1) 0%,rgba(10,19,40,1) 100%)"
+        }
+      ],
+      nowIndex: null
+    };
+  },
+  components: {
+    Card
+  },
+  computed: {
+    userLevel() {
+      return "v" + (this.Level - 1);
+    },
+    userLevelMedal() {
+      switch (this.Level) {
+        case "1":
+          return v1;
+          break;
+        case "2":
+          return v2;
+          break;
+        case "3":
+          return v3;
+          break;
+        case "4":
+          return v4;
+          break;
+        case "5":
+          return v5;
+          break;
+        case "6":
+          return v6;
+          break;
+        case "7":
+          return v7;
+          break;
+      }
+    },
+    levelColor() {
+      switch (this.Level) {
+        case "1":
+          return "#9A6F46";
+          break;
+        case "2":
+          return "#865222";
+          break;
+        case "3":
+          return "#3A474F";
+          break;
+        case "4":
+          return "#3A474F";
+          break;
+        case "5":
+          return "#2E3967";
+          break;
+        case "6":
+          return "#FFFFFF";
+          break;
+        case "7":
+          return "#FFFFFF";
+          break;
+      }
+    },
+    levelText() {
+      switch (this.Level) {
+        case "1":
+          return "一星大众";
+          break;
+        case "2":
+          return "二星黄金";
+          break;
+        case "3":
+          return "三星白金I";
+          break;
+        case "4":
+          return "四星白金II";
+          break;
+        case "5":
+          return "五星钻石";
+          break;
+        case "6":
+          return "六星星钻I";
+          break;
+        case "7":
+          return "七星星钻II";
+          break;
+      }
+    }
+  },
+  props: {
+    Level: {
+      require: true
+    },
+    equityList: {
+      require: true
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.cards {
+  width: 100%;
+  // padding: 0 px2vw(30);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .top {
+    width: px2vw(690);
+    height: px2vw(283);
+    position: relative;
+    img {
+      width: px2vw(148);
+      height: px2vw(186);
+      position: absolute;
+      top: px2vw(20);
+      right: px2vw(40);
+    }
+    .left {
+      margin-left: px2vw(50);
+      margin-top: px2vw(65);
+      .now {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+      }
+      .level {
+        font-size: px2vw(30);
+        font-family: PingFangSC-Semibold, PingFang SC;
+        font-weight: 600;
+        margin-top: px2vw(16);
+      }
+      .info {
+        font-size: 0;
+        margin-top: px2vw(65);
+        span {
+          font-size: px2vw(24);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+        }
+        .iconfont {
+          font-size: px2vw(24);
+          color: inherit;
+          font-weight: 400;
+          margin-left: px2vw(11)
+        }
+      }
+    }
+  }
+  .v0 {
+    background: url("~@/assets/personalInterests/v1/img_kapian_yixing@2x.png");
+    background-size: 100% 100%;
+  }
+  .v1 {
+    background: url("~@/assets/personalInterests/v2/img_kapian_erxing@2x.png");
+    background-size: 100% 100%;
+  }
+  .v2 {
+    background: url("~@/assets/personalInterests/v3/img_kapian_sanxing@2x.png");
+    background-size: 100% 100%;
+  }
+  .v3 {
+    background: url("~@/assets/personalInterests/v4/img_kapian_sixing@2x.png");
+    background-size: 100% 100%;
+  }
+  .v4 {
+    background: url("~@/assets/personalInterests/v5/img_kapian_wuxing@2x.png");
+    background-size: 100% 100%;
+  }
+  .v5 {
+    background: url("~@/assets/personalInterests/v6/img_kapian_liuxing@2x.png");
+    background-size: 100% 100%;
+  }
+  .v6 {
+    background: url("~@/assets/personalInterests/v7/img_kapian_qixing@2x.png");
+    background-size: 100% 100%;
+  }
+}
+</style>

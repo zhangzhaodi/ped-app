@@ -1,0 +1,165 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="header">
+        <div class="way">
+          <div class="img-box">
+            <img src="@/assets/fund/history_goumai@2x.png" alt />
+          </div>
+          <p>基金交易</p>
+          <!-- -{{info.payeeBankName}}({{ info.payeeAcctNbr || cardNum | CardNoFour}} -->
+        </div>
+        <div class="money"><span class="unit">￥</span>{{info.AMT | Money}}</div>
+        <!-- <p class="status warning" v-if="info.transStatus == 9 || info.transStatus == 5">{{getStatus(info.transStatus)}}</p> -->
+        <!-- <p class="status failure" v-else-if="info.transStatus == 1">{{getStatus(info.transStatus)}}</p> -->
+        <!-- <p class="status" v-else>{{getStatus(info.transStatus)}}</p> -->
+        <p class="wrong-info" v-if="info.transStatus == 1">{{info.returnMsg}}</p>
+
+      </div>
+      <div class="cell-top">
+        <div class="cell">
+          <p>交易说明</p>
+          <span>{{info.ProductName}}</span>
+        </div>
+        <div class="cell">
+          <p>交易类型</p>
+          <span>{{getStatus(info.LC_TransCode)}}</span>
+        </div>
+        <div class="cell">
+          <p>支付方式</p>
+          <span>焦作中旅银行({{info.BankAcct | CardNoFour}})</span>
+        </div>
+        <div class="cell">
+          <p>交易金额</p>
+          <span>{{info.AMT | Money}}元</span>
+        </div>
+        <div class="cell">
+          <p>交易时间</p>
+          <span>{{info.TransDate | dateFormat}}</span>
+        </div>
+        <div class="cell">
+          <p>订单编号</p>
+          <span>{{info.SerialNum}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import PopupRound from "@/components/PopupRound";
+import dayjs from 'dayjs'
+export default {
+  components: {
+    Myheader: Header
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      info: this.$route.params.data || {},
+      imgText: "",
+      cardNum: "",
+    };
+  },
+  created() {
+    console.log(this.$route.params.data);
+  
+  },
+  methods: {
+    getStatus(data){
+      if(data == "100200"){
+        return "申购"
+      }else if(data == "100202"){
+        return "赎回"
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+}
+.wrong-info {
+  margin-top: px2vw(5);
+}
+.content {
+  margin-top: px2vw(40);
+  padding: 0 px2vw(40);
+  background: #fff;
+  .status {
+    &.failure {
+      color: rgba(249, 97, 89, 1);
+    }
+    &.warning {
+      color: #ffb52b;
+    }
+  }
+  .header {
+    .way {
+      display: flex;
+      justify-content: center;
+      .img-box {
+        width: px2vw(32);
+        margin-right: px2vw(10);
+        img {
+          width: 100%;
+        }
+      }
+      p {
+        padding-top: px2vw(3);
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+      }
+    }
+    .money {
+      padding-top: px2vw(30);
+      padding-bottom: px2vw(24);
+      text-align: center;
+      font-size: px2vw(70);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+      .unit{
+        font-size:px2vw(40);
+      }
+    }
+    p {
+      font-size: px2vw(26);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(125, 125, 125, 1);
+      text-align: center;
+    }
+  }
+  .cell-top {
+    padding-bottom: px2vw(20);
+    border-bottom: $border-bottom;
+    margin-top: px2vw(60);
+  }
+  .cell-bottom {
+    margin-top: px2vw(20);
+  }
+  .cell {
+    height: px2vw(80);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: px2vw(26);
+    font-family: PingFangSC-Light, PingFang SC;
+    p {
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+    }
+    span {
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+}
+</style>

@@ -1,0 +1,60 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue")
+const Hotel = () => import("../pages/hotel.vue")
+const Scenic = () => import("../pages/scenic.vue")
+const Vip = () => import("../pages/vip.vue")
+const Train = () => import("../pages/train.vue")
+const Delay = () => import("../pages/delay.vue")
+const Save = () => import("../pages/save.vue")
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "臻享权益",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/hotel",
+      name: "hotel",
+      component: Hotel
+    },
+    {
+      path: "/scenic",
+      name: "scenic",
+      component: Scenic
+    },
+    {
+      path: "/vip",
+      name: "vip",
+      component: Vip
+    },
+    {
+      path: "/train",
+      name: "train",
+      component: Train
+    },
+    {
+      path: "/delay",
+      name: "delay",
+      component: Delay
+    },
+    {
+      path: "/save",
+      name: "save",
+      component: Save
+    }
+  ]
+});

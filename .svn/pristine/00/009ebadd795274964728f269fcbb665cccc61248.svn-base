@@ -1,0 +1,442 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :isWhite="true" backgroundColor="linear-gradient(270deg,rgba(248,204,173,1) 0%,rgba(218,154,120,1) 100%)"></Myheader>
+    <div class="main-wrapper">
+      <div class="top">
+        <div class="fund-info">
+          <h2>{{data.ProductName}}【{{data.ProductNo}}】<span class="iconfont">&#xe649;</span></h2>
+          <div class="card-info">焦作中旅银行({{data.BankAcct|cardNoFour}})</div>
+          <div class="money">
+            <div class="label">
+              金额(元)
+            </div>
+            <div class="num">{{data.FinanProPortAMT | Money}}</div>
+          </div>
+          <div class="yield-box">
+            <div class="item">
+              <div class="title">昨日收益(元)<img src="@/assets/fund/icon_youjiantouxiao@2x.png" alt=""></div>
+              <div class="num">{{data.LastDayIncome | Money}}</div>
+            </div>
+            <div class="item-border"></div>
+            <div class="item flex-center">
+              <div class="title">持有收益(元)</div>
+              <div class="num">{{data.HoldAmt || 0 | Money}}</div>
+            </div>
+            <div class="item-border"></div>
+            <div class="item flex-right">
+              <div class="yield">
+                <div class="title">持有收益率</div>
+                <div class="num">{{data.HoldAmtRate}}%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="expend-box">
+        <div class="item">
+          <div>最新净值({{currentDate}}):{{data.ProdValue | Money}}元</div>
+          <div>可用份额(元):{{data.TotUseLimit | Money}}</div>
+        </div>
+        <div class="item">
+          <div>日跌涨幅:{{data.DayFloat || "0.00"}}%</div>
+          <div>待确认份额:0.00</div>
+        </div>
+      </div>
+      <div class="divide">&nbsp;</div>
+      <div class="charts-box section">
+        <div class="">
+          <mycharts :chartData="chartData" :chartType="chartType" :interval="interval"></mycharts>
+        </div>
+      </div>
+      <div class="divide">&nbsp;</div>
+      <div class="productInfo">
+        <h2>产品信息</h2>
+        <div class="item">
+          <div class="label">分红方式</div>
+          <div class="content">{{data.DivideModeName}}</div>
+          <!-- <div class="content" v-if="data.DefDivMode==0">红利转投</div> -->
+          <!-- <div class="content" v-if="data.DefDivMode==1">现金分红</div> -->
+        </div>
+        <div class="item">
+          <div class="label">收费模式</div>
+          <div class="content">{{data.chargeWay}}</div>
+        </div>
+        <div class="item">
+          <div class="label">赎回到账时间</div>
+          <div class="content">2019-08-22</div>
+        </div>
+      </div>
+      <div class="divide">&nbsp;</div>
+      <div class="link-to">
+        <van-cell title="我的定投" is-link @click="toFundPlan" />
+        <van-cell title="交易历史" is-link @click="toHistory" />
+      </div>
+      <div class="footer-box">
+        <van-button class="reset" @click="toRedeem">赎回</van-button>
+      </div>
+
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+// import Footer from "../../components/Footer";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import { Sticky } from "vant";
+import dayjs from 'dayjs'
+import Mycharts from "../components/testEcharts";
+export default {
+  components: {
+    Myheader: Header,
+    [Sticky.name]: Sticky,
+    Scroller,
+    Mycharts,
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      data:{
+
+      },
+      chartData: [],
+      chartType: "", //prdValue产品净值yield年化收益率
+      interval: null,
+    };
+  },
+  created() {
+    this.data = {...this.selectPosition};
+    this.getDetail();
+    // this.initData();
+  },
+  mounted() { },
+  computed: {
+    ...mapState('fund', ['selectPosition']),
+    ...mapState('common', ['userInfo']),
+    currentDate(){
+      return dayjs().format('MM-DD')
+    }
+  },
+  methods: {
+    ...mapMutations('fund', ['SELECTPOSITION']),
+    getDetail() {
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        PositionString: '1',
+        QueryRowsNum: '20',
+        QueryFields: 'prd_serial~serial_periods~prd_label',
+        ProductNo: this.data.ProductNo,
+        // StartPageNum: '1',
+        // EndPageNum: '10'
+      }
+      this.request('FinancialProMsgQry', params).then(res => {
+        let { ProductInfo } = res;
+        if (ProductInfo.length > 0) {
+          this.data = {...this.data,...res.ProductInfo[0]};
+          this.SELECTPOSITION(this.data);
+          console.log(this.data, "结果")
+        }
+      })
+      // &ProductType=1&PositionString=1&QueryRowsNum=20&QueryFields=prd_serial~serial_periods~prd_label&ProductNo=1307-HBJZ-1025xwx
+    },
+    toFundPlan() {
+      this.$router.push({ name: 'fundPlan' })
+    },
+    toHistory(){
+      this.$router.push({ name: 'positionHistory' })
+    },
+    toRedeem() {
+      this.$router.push({ name: 'redeem' })
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+.main-wrapper {
+  margin-top: px2vw(88);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  background: #fff;
+  margin-bottom: px2vw(112);
+}
+.outer {
+  position: relative;
+  .headerBox {
+    top: 0;
+    position: fixed;
+  }
+  .top {
+    background: linear-gradient(
+      270deg,
+      rgba(248, 204, 173, 1) 0%,
+      rgba(218, 154, 120, 1) 100%
+    );
+    background-repeat: no-repeat;
+    .tips {
+      display: flex;
+      justify-content: space-between;
+      margin: px2vw(20) px2vw(40) px2vw(30) px2vw(40);
+      align-items: center;
+      background: #d28760;
+      padding: px2vw(6) px2vw(20);
+      border-radius: px2vw(6);
+      .left {
+        display: flex;
+        align-items: center;
+        img {
+          width: px2vw(32);
+          margin-right: px2vw(10);
+        }
+      }
+      .left,
+      .right {
+        color: #fff;
+        font-size: px2vw(22);
+        font-weight: 400;
+        font-family: $font-family;
+      }
+    }
+    .fund-info {
+      color: #fff;
+      padding: px2vw(40);
+      h2 {
+        font-size: px2vw(30);
+        font-family: $font-family;
+        font-weight: 500;
+        line-height: px2vw(36);
+        .iconfont {
+          float: right;
+          font-size: px2vw(12);
+        }
+      }
+      .card-info {
+        margin-top: px2vw(20);
+        font-size: px2vw(26);
+        font-family: $font-family;
+        font-weight: 400;
+      }
+      .money {
+        margin-top: px2vw(50);
+        .label {
+          font-size: px2vw(24);
+          font-family: $font-family;
+          font-weight: 400;
+        }
+        .num {
+          margin-top: px2vw(10);
+          font-size: px2vw(50);
+          font-family: $font-family;
+          font-weight: 500;
+        }
+      }
+
+      .yield-box {
+        // box-shadow: 0px 2px 20px 0px rgba(168, 168, 168, 0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: px2vw(40);
+        .item-border {
+          background: #fff;
+          height: px2vw(50);
+          width: px2vw(2);
+          opacity: 0.39;
+        }
+        .item {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          position: relative;
+          &.flex-center {
+            align-items: center;
+          }
+          &.flex-right {
+            align-items: flex-end;
+          }
+          .yield {
+            align-items: flex-start;
+            display: flex;
+            flex-direction: column;
+          }
+          .title {
+            margin-bottom: px2vw(9);
+            color: #fff;
+            font-size: px2vw(24);
+            font-family: $font-family;
+            font-weight: 400;
+            img {
+              width: px2vw(10);
+              height: px2vw(16);
+              margin-left: px2vw(10);
+            }
+          }
+
+          .num {
+            font-size: px2vw(34);
+            font-family: $font-family;
+            font-weight: 500;
+            color: #fff;
+            .period {
+              font-size: px2vw(22);
+              color: #7d7d7d;
+              font-weight: 300;
+              font-family: $font-family;
+              margin-left: px2vw(8);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .expend-box {
+    padding: px2vw(30) px2vw(40);
+    background: #fff;
+    display: flex;
+    justify-content: space-between;
+    .item {
+      display: flex;
+      flex-direction: column;
+      div {
+        color: #7d7d7d;
+        font-size: px2vw(24);
+        font-family: $font-family;
+        font-weight: 400;
+        &:first-child {
+          margin-bottom: px2vw(30);
+        }
+      }
+    }
+  }
+  .charts-box{
+    padding: 0 px2vw(40);
+  }
+  .divide {
+    height: px2vw(20);
+    background: #f5f6f8;
+    width: 100%;
+    &::after {
+      content: " ";
+    }
+  }
+  .link-to{
+    padding: 0 px2vw(40);
+    background:#fff;
+  }
+  .productInfo {
+    padding: px2vw(40) px2vw(40) px2vw(52) px2vw(40);
+    background:#fff;
+    box-sizing: border-box;
+    h2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: px2vw(32);
+      color: #262626;
+      font-weight: 500;
+      .more {
+        color: #999ca0;
+        font-size: px2vw(26);
+        .iconfont {
+          font-size: px2vw(10);
+        }
+      }
+    }
+    .item {
+      display: flex;
+      flex-direction: row;
+      margin-top: px2vw(40);
+      .label {
+        width: px2vw(174);
+        font-size: px2vw(28);
+        font-weight: 300;
+        color: #7d7d7d;
+        margin-right: px2vw(68);
+      }
+      .content {
+        font-size: px2vw(28);
+        font-weight: 400;
+        color: #000000;
+        text-align: left;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+  .scrollerBox {
+    background: #f5f6f8;
+  }
+  .record {
+    padding: 0 px2vw(40);
+    background: #fff;
+    .title {
+      font-size: px2vw(32);
+      color: #262626;
+      font-family: $font-family;
+      font-weight: 500;
+      padding: px2vw(40) 0;
+    }
+    .record-list {
+      display: flex;
+      flex-direction: column;
+      .list-item {
+        display: flex;
+        justify-content: space-between;
+        height: px2vw(100);
+        align-items: center;
+        font-size: px2vw(28);
+        font-family: $font-family;
+        font-weight: 400;
+        color: #262626;
+        border-bottom: 1px solid rgba(235, 238, 240, 0.5);
+        &:last-child {
+          border-bottom: none;
+        }
+        div {
+          display: flex;
+          .success {
+            color: #27cd6e;
+          }
+          .fail {
+            color: #f75a50;
+          }
+        }
+      }
+    }
+  }
+  .footer-box {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.05);
+    .van-button {
+      flex: 1;
+      width: 50%;
+      height: px2vw(112);
+      font-size: px2vw(34);
+      font-weight: 400;
+      font-family: $font-family;
+      border-radius: 0;
+      &.reset {
+        color: #da9a78;
+      }
+      &.edit {
+        color: #fff;
+        background: linear-gradient(
+          270deg,
+          rgba(248, 204, 173, 1) 0%,
+          rgba(218, 154, 120, 1) 100%
+        );
+      }
+    }
+  }
+}
+</style>

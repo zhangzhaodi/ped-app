@@ -1,0 +1,320 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title">
+      <i @click="goAuditLogging" slot="left" class="iconfont">&#xe612;</i>
+    </Myheader>
+    <Scroller>
+      <div class="info-top">
+        <div class="info-text">扫客户二维码，核对客户信息</div>
+        <div class="info-img">
+          <img src="@/assets/scanFace/icon_saomiao@2x.png" alt />
+        </div>
+        <div class="info-btn">
+          <div @click="scanQRCode" class="btn-box">
+            <van-button>
+              <div class="add-box">
+                <p>扫码面核</p>
+              </div>
+            </van-button>
+          </div>
+        </div>
+        <div class="info-number">
+          <div class="number-box">
+            <p>机构号</p>
+            <span>132</span>
+          </div>
+          <div class="number-box">
+            <p>操作员号</p>
+            <span>12321321</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-bottom">
+        <div class="info-header">
+          <div class="left">业绩统计</div>
+          <div class="right">统计时间：{{ respTime | respTime }}</div>
+        </div>
+        <div class="info-content">
+          <div class="left">审核客户数量</div>
+          <div class="right">{{ performance.accountReviewCount }} 个</div>
+        </div>
+        <div class="info-content">
+          <div class="left">账户升级数</div>
+          <div class="right">{{ performance.upgradeReviewCount }} 个</div>
+        </div>
+        <div class="info-content">
+          <div class="left">实体卡申请数</div>
+          <div class="right">80 个</div>
+        </div>
+        <div class="info-content">
+          <div class="left">手机银行开户数</div>
+          <div class="right">80 个</div>
+        </div>
+        <div class="info-content">
+          <div class="left">理财签约数</div>
+          <div class="right">80 个</div>
+        </div>
+        <div class="info-content">
+          <div class="left">代扣签约数</div>
+          <div class="right">80 个</div>
+        </div>
+        <div class="info-content">
+          <div class="left">日均资产</div>
+          <div class="right">80 个</div>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      cifNo: "",
+      userId: "",
+      respTime: "", //当前时间
+      performance: {
+        // accountReviewCount: "1", 审核客户数量
+        // upgradeReviewCount: "0" 升级客户数量
+      }
+    };
+  },
+  filters: {
+    respTime: function(value) {
+      if (!value) {
+        return "";
+      }
+      if (typeof value !== "string") {
+        value = String(value);
+      }
+      var y = value.substring(0, 4);
+      var m = value.substring(4, 6);
+      var d = value.substring(6, 8);
+      var h = value.substring(8, 10);
+      var M = value.substring(10, 12);
+      var s = value.substring(12, 14);
+      return y + "-" + m + "-" + d + " " + h + ":" + M + ":" + s;
+    }
+  },
+  created() {
+    // this.login();
+    this.ApproveRecordQry();
+  },
+  methods: {
+    //扫描二维码
+    scanQRCode() {
+      window.NativeCall.scanQRCode(params => {
+        let res = JSON.parse(params);
+        this.cifNo = res.cifno;
+        this.userId = res.userId;
+        this.QueryBasiInfo();
+      });
+    },
+    //获取审核资料
+    QueryBasiInfo() {
+      this.request("QueryBasiInfo", {
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "39",
+        UserCifNo: this.cifNo,
+        UserId: this.userId
+      })
+        .then(res => {
+          console.log(res);
+          let params = JSON.stringify(res);
+          this.$router.push({
+            name: "custInfoConfirm",
+            query: {
+              params: params,
+              cifNo: this.cifNo
+            }
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //业绩统计
+    ApproveRecordQry() {
+      this.request("ApproveRecordQry", {
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "39",
+        QryType: "1", //1 业绩查询 2审核记录查询
+        ReviewNo: "0"
+      })
+        .then(res => {
+          console.log(res);
+          this.respTime = res.RespTime;
+          this.performance = res.Performance;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    login() {
+      this.request("login", {
+        BankId: "9999",
+        LoginId: "17591168228",
+        Password: "qwer1234",
+        EquipmentId: "125657",
+        LoginType: "R",
+        LoginMode: "1",
+        BranchId: "01001",
+        ChnlId: "62",
+        AddrInfo: "zhengz"
+      })
+        .then(res => {
+          console.log(res);
+          this.userId = res.UserId;
+          this.cifNo = res.CifNo;
+          this.ApproveRecordQry();
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //审核记录查询
+    goAuditLogging() {
+      this.$router.push({
+        name: "auditLogging"
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  .headerBox {
+    i {
+      font-size: px2vw(37);
+      color: #262626;
+    }
+  }
+  .scrollerBox {
+    flex: 1;
+    background: #f5f6f8;
+    .info-top {
+      background: #fff;
+      padding: px2vw(70) px2vw(137) px2vw(66);
+      .info-text {
+        font-size: px2vw(28);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+        text-align: center;
+      }
+      .info-img {
+        margin: 0 auto;
+        margin-top: px2vw(36);
+        width: px2vw(200);
+        img {
+          width: 100%;
+        }
+      }
+      .info-btn {
+        padding: px2vw(0) px2vw(98);
+        margin-top: px2vw(50);
+        .van-button {
+          height: px2vw(80);
+          background: linear-gradient(
+            270deg,
+            rgba(107, 171, 255, 1) 0%,
+            rgba(108, 138, 249, 1) 100%
+          );
+          box-shadow: px2vw(2) px2vw(10) px2vw(30) 0px rgba(108, 147, 251, 0.36);
+          border-radius: px2vw(45);
+          .add-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: px2vw(80);
+          }
+        }
+      }
+      .info-number {
+        margin-top: px2vw(58);
+        display: flex;
+        justify-content: space-between;
+        .number-box {
+          display: flex;
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFang SC;
+          p {
+            font-weight: 300;
+            color: rgba(38, 38, 38, 1);
+          }
+          span {
+            margin-left: px2vw(20);
+            font-weight: 400;
+            color: rgba(62, 143, 255, 1);
+            background: linear-gradient(
+              270deg,
+              rgba(107, 171, 255, 1) 0%,
+              rgba(108, 138, 249, 1) 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+        }
+      }
+    }
+    .info-bottom {
+      background: #fff;
+      margin-top: px2vw(20);
+      margin-bottom: px2vw(62);
+      padding: px2vw(0) px2vw(40);
+      .info-header {
+        display: flex;
+        align-items: center;
+        line-height: px2vw(110);
+        border-bottom: 1px solid #eeeeee;
+        .left {
+          flex: 1;
+          font-size: px2vw(32);
+          font-family: PingFangSC;
+          font-weight: 500;
+          color: rgba(38, 38, 38, 1);
+        }
+        .right {
+          font-size: px2vw(26);
+          font-family: PingFangSC-Light, PingFang SC;
+          font-weight: 300;
+          color: #7d7d7d;
+        }
+      }
+      .info-content {
+        display: flex;
+        align-items: center;
+        line-height: px2vw(110);
+        .left {
+          flex: 1;
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+        }
+        .right {
+          font-size: px2vw(32);
+          font-family: PingFangSC-Medium, PingFang SC;
+          font-weight: 500;
+          color: rgba(38, 38, 38, 1);
+        }
+      }
+    }
+  }
+}
+</style>

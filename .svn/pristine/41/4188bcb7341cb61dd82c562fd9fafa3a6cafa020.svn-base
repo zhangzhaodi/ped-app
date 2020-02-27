@@ -1,0 +1,400 @@
+<template>
+  <div class="outer" v-if="data">
+    <Myheader
+      :title="$route.meta.title"
+      :isWhite="header.isWhite"
+      :backgroundColor="header.color"
+      :params="params"
+    ></Myheader>
+    <div class="content">
+      <div class="top">
+        <p class="name">{{data.productName}}</p>
+        <div class="num" v-if="data.modulCode!='1307'">
+          <p class="text">当前净值</p>
+          <p class="num">{{data.prodValue}}</p>
+        </div>
+        <div class="num" v-else>
+          <p class="text">上日年化收益率</p>
+          <p class="num">{{data.yield|parseFloatTwo}}</p>
+        </div>
+      </div>
+      <div class="items" v-if="data.modulCode=='1303'" id="scroll">
+        <div class="item" v-for="(item,index) in itemList" :key="index">
+          <p class="time">{{item.IssueDate|timeFormat1}}</p>
+          <p class="rate">{{item.ProdValue}}</p>
+        </div>
+      </div>
+      <div class="chart" v-else>
+        <div class="tip">
+          <p class="time">{{new Date()|Format("yyyy-MM-dd")}}</p>
+          <p class="rate" v-if="data.modulCode=='1306'">
+            <span>产品净值:</span>
+            <span class="num">{{data.prodValue}}</span>
+          </p>
+          <p class="rate" v-else-if="data.modulCode=='1307'">
+            <span>年化收益率:</span>
+            <span class="num">{{data.Yield|parseFloatTwo}}</span>
+          </p>
+        </div>
+        <!-- <echarts :x="x" :y="y" :lines="lines" :chartData="chartData" :chartType="chartType"></echarts> -->
+        <echarts :chartData="chartData" :chartType="chartType" :interval="interval"></echarts>
+        <div class="tab">
+          <p @click="tabChange(1)" :class="{'active':tabIndex=='1'}">近1周</p>
+          <p @click="tabChange(2)" :class="{'active':tabIndex=='2'}">近1月</p>
+          <p @click="tabChange(3)" :class="{'active':tabIndex=='3'}">近3月</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+// import echarts from "../../components/echarts";
+import echarts from "../../components/testEcharts";
+export default {
+  components: {
+    Myheader: Header,
+    echarts
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      header: {
+        color: "transparent",
+        isWhite: true
+      },
+      data: null,
+      itemList: [],
+      form: {
+        colum: [],
+        row: []
+      },
+      chartData: [],
+      tabIndex: 1,
+      start: null,
+      end: null,
+      nowDate: null, //当前时间
+      chartType: "", //prdValue产品净值yield年化收益率
+      step: 0,
+      lines: 4,
+      interval: null, //间隔
+      page: 1 //起始页数
+    };
+  },
+  created() {
+    // this.data = this.$route.params;
+    this.nowDate = new Date();
+    this.end = this.GetFormatDate(this.nowDate, 0);
+    this.start = this.GetFormatDate(this.nowDate, -7);
+    // console.log(this.start);
+    this.getInfo();
+    this.chartData = [[0, 0]];
+  },
+  mounted() {
+    this.scrollBottom();
+  },
+  filters: {
+    timeFormat1(value) {
+      if (value == "0") {
+        return "";
+      } else {
+        let arr = [];
+        arr.push(value.slice(0, 4));
+        arr.push(value.slice(4, 6));
+        arr.push(value.slice(6));
+        return arr.join("-");
+      }
+    }
+  },
+  methods: {
+    getInfo() {
+      //产品详情
+      console.log(this.$route.params);
+      let ProductNo = this.$route.params.ProductNo;
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        ProductType: "1",
+        ProductNo: ProductNo
+      };
+      this.request("financialProMsgQry", params).then(res => {
+        this.data = res.ProductInfo[0];
+        console.log(this.data);
+        if (this.data.modulCode == "1307") {
+          this.chartType = "yield";
+        } else {
+          this.chartType = "prdValue";
+        }
+        this.FinaQuotationQry();
+      });
+    },
+    GetFormatDate(dd, n) {
+      // var dd = new Date()
+      dd.setDate(dd.getDate() + n); // 获取n天后的日期
+      let y = dd.getFullYear(); // 年份
+      let m =
+        dd.getMonth() + 1 < 10 ? "0" + (dd.getMonth() + 1) : dd.getMonth() + 1; // 月份，不足10补0
+      let d = dd.getDate() < 10 ? "0" + dd.getDate() : dd.getDate(); // 日，不足10补0
+      return y + "" + m + "" + d;
+    },
+    tabChange(val) {
+      this.reset();
+      if (val == "1") {
+        this.start = this.GetFormatDate(this.nowDate, -7);
+      } else if (val == "2") {
+        this.start = this.GetFormatDate(this.nowDate, -30);
+      } else {
+        this.start = this.GetFormatDate(this.nowDate, -92);
+      }
+      this.tabIndex = val;
+      this.FinaQuotationQry();
+    },
+    reset() {
+      // this.nowDate = new Date("2019-11-05");
+      this.nowDate = new Date();
+      this.lines = 4;
+      this.interval = 0;
+      this.chartData = [[0, 0]];
+      // this.x = ["0", "0", "0", "0", "0"];
+    },
+    FinaQuotationQry() {
+      //行情查询
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        PositionString: (this.page - 1) * 10 + 1,
+        QueryRowsNum: "10",
+        ProductNo: this.data.productNo,
+        StartDate: this.start,
+        EndDate: this.end
+      };
+      this.request("FinaQuotationQry", { ...params })
+        .then(res => {
+          console.log(res);
+          let itemList = res.CurCommisList;
+          let data = [];
+          if (this.data.modulCode == "1306") {
+            //周期净值
+            let timeList = [];
+            itemList.map(item => {
+              //数据格式正确时取数据
+              if (item.IssueDate != "0" && item.ProdValue) {
+                let value = item.ProdValue;
+                let time = new Date(
+                  item.IssueDate.slice(0, 4) +
+                    "-" +
+                    item.IssueDate.slice(4, 6) +
+                    "-" +
+                    item.IssueDate.slice(6, 8)
+                ).getTime();
+                timeList.push(time);
+                if (!time) {
+                  time = new Date().getTime();
+                }
+                data.unshift([time, value]);
+              }
+            });
+            // console.log(timeList);
+            // 最大天数和最小天数
+            let max = Math.max.apply(null, timeList);
+            let min = Math.min.apply(null, timeList);
+            let step = max - min;
+            //计算天数间隔
+            let day = parseInt(step / 24 / 60 / 60 / 1000);
+            //数据在五条以内有几条展示几条、以上时保持横轴最多五条
+            if (day < 5) {
+              this.interval = 1;
+            } else {
+              this.interval = parseInt(day / 5);
+            }
+            this.chartData = data;
+            // console.log(this.chartData);
+          }
+          if (this.data.modulCode == "1307") {
+            //周期净值
+            let timeList = [];
+            itemList.map(item => {
+              //数据格式正确时取数据
+              if (item.IssueDate != "0" && item.Yield) {
+                let value = item.Yield;
+                console.log(1);
+                let time = new Date(
+                  item.IssueDate.slice(0, 4) +
+                    "-" +
+                    item.IssueDate.slice(4, 6) +
+                    "-" +
+                    item.IssueDate.slice(6, 8)
+                ).getTime();
+                timeList.push(time);
+                if (!time) {
+                  time = new Date().getTime();
+                }
+                data.unshift([time, value]);
+              }
+            });
+            // console.log(timeList);
+            // 最大天数和最小天数
+            let max = Math.max.apply(null, timeList);
+            let min = Math.min.apply(null, timeList);
+            let step = max - min;
+            //计算天数间隔
+            let day = parseInt(step / 24 / 60 / 60 / 1000);
+            //数据在五条以内有几条展示几条、以上时保持横轴最多五条
+            if (day < 5) {
+              this.interval = 1;
+            } else {
+              this.interval = parseInt(day / 5);
+            }
+            this.chartData = data;
+            if (this.chartData.length == 0) {
+              this.reset();
+            }
+            console.log(this.chartData);
+          }
+          if (this.data.modulCode == "1303") {
+            itemList.map(item => {
+              this.itemList.unshift(item);
+            });
+          }
+        })
+        .catch(err => {
+          let str = err._RejMessage;
+          // this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+        });
+    },
+    //滚动加载
+    scrollBottom() {
+      //滚动加载
+      let content = document.getElementById("scroll");
+      let _this = this;
+      content.onscroll = function() {
+        // alert(content.scrollHeight,content.scrollTop,content.clientHeight)
+        if (
+          Math.ceil(content.scrollHeight - content.scrollTop) -
+            Math.ceil(content.clientHeight) <=
+            1 &&
+          content.scrollTop != 0
+        ) {
+          // alert(1111)
+          // this.page = parseInt(this.page)+1;
+          _this.page++;
+          _this.FinaQuotationQry();
+        }
+      };
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  .headerBox {
+    position: absolute;
+  }
+}
+.content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  .top {
+    height: px2vw(336);
+    background: linear-gradient(
+      360deg,
+      rgba(251, 221, 201, 1) 0%,
+      rgba(221, 171, 142, 1) 100%
+    );
+    padding: 0 px2vw(40);
+    overflow: hidden;
+    .name {
+      margin-top: px2vw(138);
+      font-size: px2vw(34);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 1);
+      width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .text {
+      margin-top: px2vw(40);
+      font-size: px2vw(24);
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+    }
+    .num {
+      margin-top: px2vw(10);
+      font-size: px2vw(50);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+  .items {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .item {
+    height: px2vw(110);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 px2vw(40);
+    .time {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+    }
+    .rate {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+  .tip {
+    padding: 0 px2vw(40);
+    height: px2vw(60);
+    display: flex;
+    align-items: center;
+    font-size: px2vw(24);
+    color: #7d7d7d;
+    font-weight: 500;
+    margin-top: px2vw(40);
+    background: rgba(62, 143, 255, 0.1);
+    .num {
+      color: #f75a50;
+    }
+    .rate {
+      margin-left: px2vw(40);
+    }
+  }
+  .tab {
+    display: flex;
+    flex-direction: row;
+    padding: 0 px2vw(40);
+    p {
+      flex: 1;
+      text-align: center;
+      background: #f5f6f8;
+      font-size: px2vw(24);
+      font-weight: 400;
+      height: px2vw(60);
+      line-height: px2vw(60);
+      color: rgba(38, 38, 38, 1);
+      border: px2vw(2) solid rgba(222, 224, 228, 0.6);
+    }
+    .active {
+      background: #fff;
+      border: none;
+    }
+  }
+}
+.content::-webkit-scrollbar {
+  display: none; /*隐藏滚动条*/
+}
+</style>

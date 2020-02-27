@@ -1,0 +1,23 @@
+import Vue from "vue";
+import Router from "vue-router";
+import Index from "../pages/index";
+//添加备注名
+
+Vue.use(Router);
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "月度账单",
+        keepAlive: false
+      }
+    }
+  ]
+});

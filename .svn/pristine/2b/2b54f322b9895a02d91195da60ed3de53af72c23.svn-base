@@ -1,0 +1,689 @@
+<template>
+  <div class="outer" v-if="productInfo">
+    <Myheader
+      :title="$route.meta.title"
+      :isWhite="header.isWhite"
+      :backgroundColor="header.color"
+      :headerparams="params"
+    ></Myheader>
+    <div class="product">
+      <div class="title">
+        <p>{{productInfo.productName}}</p>
+        <!-- <span class="iconfont icongengduo-"></span> -->
+      </div>
+      <div class="top_detail">
+        <div class="left">
+          <p class="top">交易金额(元)</p>
+          <p class="bottom" v-if="this.$store.state.productType=='0'">{{data.AMT|Money}}</p>
+          <p class="bottom" v-else>{{data.FinanProPortAMT|Money}}</p>
+        </div>
+        <div class="center">
+          <p class="top">投资期限(天)</p>
+          <!-- <p class="bottom">{{horizon}}</p> -->
+          <!-- <p
+            class="bottom"
+            v-if="productInfo.modulCode!='1306'"
+          >{{data.termTypeRange?datatermTypeRange:'0'}}</p>-->
+          <p
+            class="bottom"
+            v-if="productInfo.modulCode!='1307'&&this.$store.state.productType=='0'"
+          >{{data.ProdInvest?data.ProdInvest:data.HoldDays?data.HoldDays:'0'}}</p>
+          <p
+            class="bottom"
+            v-else-if="productInfo.modulCode!='1307'&&this.$store.state.productType=='1'"
+          >{{data.HoldDays?data.HoldDays:data.ProdInvest?data.ProdInvest:'0'}}</p>
+          <p class="bottom" v-else>随时申赎</p>
+        </div>
+        <div class="right" v-if="productInfo.modulCode=='1102'">
+          <p class="top">预期收益率</p>
+          <p class="bottom">{{data.ExpectProfRate?data.ExpectProfRate.indexOf('%')==-1?data.ExpectProfRate+'%':data.ExpectProfRate:'0%'}}</p>
+        </div>
+        <div class="right" v-if="productInfo.modulCode=='1303'">
+          <p class="top">当前净值</p>
+          <p class="bottom">{{data.ProdValue}}</p>
+        </div>
+        <div class="right" v-else-if="productInfo.modulCode=='1306'">
+          <p class="top">当前净值</p>
+          <p class="bottom">{{data.netWorth?data.netWorth:data.ProdValue}}</p>
+        </div>
+        <div class="right" v-else-if="productInfo.modulCode=='1307'">
+          <p class="top">7日年化</p>
+          <p class="bottom">{{data.Yield?data.Yield:'0%'}}</p>
+        </div>
+      </div>
+      <div :class="['triangle',{'act':packUp}]" @click="close">
+        <div></div>
+      </div>
+    </div>
+    <div :class="['time',{'close':packUp}]" v-if="this.$store.state.productType=='0'">
+      <div class="begin">
+        <div class="text">预计起息日</div>
+        <div
+          class="date"
+          v-if="productInfo.modulCode!='1306'"
+        >{{productInfo.prodStartDate|timeFormat1}}</div>
+        <div class="date" v-else>{{productInfo.nextDate|timeFormat1}}</div>
+      </div>
+      <div class="transPhyTime">
+        <div class="text">预计到期日</div>
+        <div class="date">{{productInfo.prodEndDate|timeFormat1}}</div>
+      </div>
+    </div>
+    <div :class="['time',{'close':packUp}]" v-if="this.$store.state.productType=='1'">
+      <div class="begin">
+        <div class="text">预计起息日</div>
+        <div class="date">{{productInfo.prodStartDate|timeFormat1}}</div>
+      </div>
+      <div class="end">
+        <div class="text">预计到期日</div>
+        <div class="date">{{productInfo.prodEndDate|timeFormat1}}</div>
+      </div>
+      <div class="transPhyTime" v-if="this.$store.state.productType=='0'">
+        <div class="text">交易日期</div>
+        <div class="date">{{productInfo.prodEndDate|timeFormat1}}</div>
+      </div>
+    </div>
+    <div class="detail">
+      <!-- 交易信息 -->
+      <div class="title">交易信息</div>
+      <div class="label">
+        <div class="name">交易信息</div>
+        <div class="info">购买</div>
+      </div>
+      <div class="label">
+        <div class="name">交易状态</div>
+        <div class="info" v-if="this.$store.state.productType=='1'">成交</div>
+        <div class="info" v-else>{{option3[data.TransState]}}</div>
+      </div>
+      <div class="label">
+        <div class="name">交易渠道</div>
+        <div class="info">手机银行</div>
+      </div>
+      <div class="label">
+        <div class="name">交易账户</div>
+        <div class="info">
+          <!-- 测试 -->
+          <span>{{bankInfo.PayeeBankName?bankInfo.PayeeBankName:bankInfo.bankaliasname}}</span>
+          <span>|</span>
+          <span>({{data.BankAcct?data.BankAcct:data.BankAcc|CardNoFour}})</span>
+        </div>
+      </div>
+    </div>
+    <div class="btn" v-if="this.$store.state.productType==0">
+      <p class="cencel" @click="btnCancel">撤销</p>
+      <p class="again" @click="again">追加购买</p>
+    </div>
+    <div class="btn" v-if="this.$store.state.productType==1&&productInfo.modulCode=='1306'">
+      <p class="cencel" @click="change2Week" v-if="data.IsTransfer=='0'">更改为周期兑付</p>
+      <p class="cencel" @click="change2Sequel" v-if="data.IsTransfer=='1'">更改为周期续作</p>
+      <p class="again" @click="again">再次购买</p>
+    </div>
+    <!-- <div class="btn" v-if="this.$store.state.productType=='1'&&productInfo.ModulCode!='1306'">
+      <p class="cencel" @click="change2Week" v-if="data.IsTransfer=='0'">更改为周期兑付</p>
+      <p class="cencel" @click="change2Sequel" v-if="data.IsTransfer=='1'">更改为周期续作</p>
+      <p class="again" @click="again" v-if="data.IsTransfer=='0'">再次购买</p>
+    </div>-->
+    <div class="btn" v-if="this.$store.state.productType==1&&productInfo.modulCode=='1307'">
+      <p class="cencel" @click="toPocketInput">申请赎回</p>
+      <p class="again" @click="again">追加购买</p>
+    </div>
+    <Mydialog :show="dialog.show" @con="con" @cancel="cancel" :isClose="dialog.showCancel">
+      <template slot="content">
+        <p class="dialogTitle">提示</p>
+        <p class="dialogText">{{dialog.text}}</p>
+      </template>
+    </Mydialog>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Dialog from "../../components/dialog";
+export default {
+  components: {
+    Myheader: Header,
+    Mydialog: Dialog
+  },
+  data() {
+    return {
+      header: {
+        color: "transparent",
+        isWhite: true
+      },
+      data: null,
+      params: {
+        leftShow: false
+      },
+      packUp: false,
+      startDate: null,
+      endDate: null,
+      dialog: {
+        show: false,
+        text: "您正在进行理财撤销操作，撤销后无法恢复，请确认是否继续撤销？",
+        showCancel: false
+      },
+      productInfo: null,
+      bankInfo: null,
+      isAllow: false,
+      error: "", //错误信息
+      option3: {
+        0: "预受理",
+        1: "受理",
+        2: "已撤单",
+        3: "已抹账",
+        4: "失败",
+        5: "确认中",
+        6: "部分确认未全部返回",
+        7: "部分确认已全部返回",
+        8: "确认成功",
+        9: "确认失败",
+        A: "认购确认",
+        B: "份额调账",
+        D: "分红数据",
+        E: "已重发",
+        F: "重发失败",
+        S: "成功",
+        Y: "预约",
+        Z: "处理"
+      }
+    };
+  },
+
+  computed: {
+    horizon() {
+      function timeFormat1(value) {
+        let arr = [];
+        arr.push(value.slice(0, 4));
+        arr.push(value.slice(4, 6));
+        arr.push(value.slice(6));
+        return arr.join("-");
+      }
+      let start = timeFormat1(this.productInfo.prodStartDate);
+      let end = timeFormat1(this.productInfo.prodEndDate);
+      return (
+        (new Date(end).getTime() - new Date(start).getTime()) /
+        24 /
+        60 /
+        60 /
+        1000
+      );
+    }
+  },
+  beforeRouteEnter(to, form, next) {
+    next(vm => {
+      if (form.name != "myPocket") {
+        vm.productInfo = vm.$store.state.manageMoney.productInfo;
+        vm.data = vm.$store.state.manageMoney.itemInfo;
+        vm.bankInfo = vm.$store.state.manageMoney.bankInfo;
+        console.log(
+          vm.$store.state.productType,
+          vm.productInfo.modulCode,
+          vm.data.IsTransfer
+        );
+      } else {
+        vm.data = vm.$route.params;
+        console.log(vm.data.IsTransfer);
+        vm.$store.state.manageMoney.itemInfo = vm.data;
+        vm.itemDetail();
+        vm.bank();
+        vm.isAllowCancel();
+      }
+    });
+  },
+  created() {},
+  filters: {
+    timeFormat1(value) {
+      let arr = [];
+      arr.push(value.slice(0, 4));
+      arr.push(value.slice(4, 6));
+      arr.push(value.slice(6));
+      return arr.join("-");
+    }
+  },
+  methods: {
+    close() {
+      //点击三角下面内容显示或隐藏
+      this.packUp = !this.packUp;
+    },
+    itemDetail() {
+      let ProductNo = this.data.ProductNo
+        ? this.data.ProductNo
+        : this.data.PrdCode;
+      let params = {
+        //branchId: "PHNE",
+        ChnlId: "39",
+        ProductType: "1",
+        ProductNo: ProductNo
+      };
+      this.request("financialProMsgQry", { ...params }).then(res => {
+        // console.log(res.ProductList[0]);
+        this.productInfo = res.ProductInfo[0];
+
+        this.$store.state.manageMoney.productInfo = this.productInfo;
+      });
+    },
+    bank() {
+      let bankAccount = this.data.BankAcct
+        ? this.data.BankAcct
+        : this.data.BankAcc;
+      let params = {
+        //branchId: "2336",
+        ChnlId: "62",
+        AcctNbr: bankAccount
+      };
+      this.request("BankBinQuery", { ...params }).then(res => {
+        console.log(res);
+        this.bankInfo = res.PayeeBankName ? res : res.Banks[0];
+        this.$store.state.manageMoney.bankInfo = this.bankInfo;
+        // console.log(res)
+      });
+    },
+    //截取错误信息
+    err(str) {
+      this.error = str.slice(str.lastIndexOf("-") + 1).trim();
+      // console.log(this.error)
+    },
+    con() {
+      //点击弹出框的确定
+      if (this.$store.state.productType == 0) {
+        this.dialog.show = false;
+        this.cancelRequest();
+      } else {
+        //测试
+        let date = this.data.NextDate;
+        let arr=[]
+        arr.push(date.slice(0, 4));
+        arr.push(date.slice(4, 6));
+        arr.push(date.slice(6));
+        let time = new Date(
+          new Date(arr.join("-")).getTime() +
+            this.data.HoldDays * 24 * 60 * 60 * 1000
+        );
+        let y = time.getFullYear(); // 年份
+        let m =
+          time.getMonth() + 1 < 10
+            ? "0" + (time.getMonth() + 1)
+            : time.getMonth() + 1; // 月份，不足10补0
+        let d = time.getDate() < 10 ? "0" + time.getDate() : time.getDate(); // 日，不足10补0
+        let nextTime = y + "" + m + "" + d;
+        let params = {
+          //branchId: "PHNE",
+          ChnlId: "62",
+          ContinueType: null,
+          AccType: "1",
+          Account: this.$store.state.userInfo.CifNo,
+          CfmNos: this.data.CfmNo,
+          PeriodTimes: null,
+          PrdCode: this.productInfo.productNo,
+          TACode: this.productInfo.taCode,
+          BankAccs: this.data.BankAcct ? this.data.BankAcct : this.data.BankAcc,
+          RedEndDate: nextTime
+        };
+        if (this.data.IsTransfer == "1") {
+          //1兑付
+          //更改为周期续作
+          params.ContinueType = "1";
+          params.PeriodTimes = "0";
+          this.request("CusCycleSequel", { ...params })
+            .then(res => {
+              let type = {
+                type: "6"
+              };
+              this.$router.push({
+                name: "pocketResult",
+                params: { ...this.data, ...res, ...type }
+              });
+            })
+            .catch(err => {
+              let type = {
+                type: "7"
+              };
+              this.$router.push({
+                name: "pocketResult",
+                params: { ...this.data, ...res, ...type }
+              });
+            });
+        } else {
+          //更改为周期兑付
+          params.ContinueType = "0";
+          params.PeriodTimes = "1";
+          this.request("CusCycleSequel", { ...params })
+            .then(res => {
+              let type = {
+                type: "6"
+              };
+              this.$router.push({
+                name: "pocketResult",
+                params: { ...this.data, ...res, ...type }
+              });
+            })
+            .catch(err => {
+              let type = {
+                type: "7"
+              };
+              this.$router.push({
+                name: "pocketResult",
+                params: { ...this.data, ...res, ...type }
+              });
+            });
+        }
+        this.dialog.show = false;
+        // alert("发起周期兑付交易");
+      }
+      // console.log("确定");
+    },
+    cancel() {
+      //点击弹出框的取消
+      this.dialog.show = false;
+    },
+    btnCancel() {
+      //点击底部取消
+      if (this.isAllow) {
+        this.dialog.show = true;
+      } else {
+        this.$toast(this.error);
+      }
+    },
+    isAllowCancel() {
+      let params = {
+        //branchId: "PHNE",
+        ChnlId: "62",
+        CustomerIdentifyType: "1",
+        CustomerIdentify: this.$store.state.userInfo.CifNo,
+        PositionString: "1",
+        QueryRowsNum: "10",
+        SerialNum: this.data.SerialNum
+      };
+      this.request("AllowCancleQry", { ...params })
+        .then(res => {
+          this.isAllow = true;
+        })
+        .catch(err => {
+          this.err(err._RejMessage);
+        });
+    },
+    change2period() {},
+    cancelRequest() {
+      //撤销
+      let params = {
+        //branchId: "PHNE",
+        ChnlId: "62",
+        ProductType: "1",
+        BankAcct: this.data.BankAcct,
+        OriSerNum: this.data.SerialNum,
+        CustomerIdentifyType: "1",
+        CustomerIdentify: this.data.BankAcct,
+        TrsAcNo: this.data.BankAcct
+        // Password: "1111"
+      };
+      this.request("financialProdCancelConfirm", { ...params }).then(res1 => {
+        window.NativeCall.SecureKeyboard(psd => {
+          this.request("financialProdCancel", {
+            ...params,
+            Password: psd,
+            _tokenName: res1._tokenName
+          })
+            .then(res => {
+              let type = {
+                type: "4"
+              };
+              this.$router.push({
+                name: "pocketResult",
+                params: { ...this.data, ...res,...this.productInfo, ...type }
+              });
+            })
+            .catch(err => {
+              // this.err(err._RejMessage);
+              let type = {
+                type: "5"
+              };
+              // 测试
+              alert(JSON.stringify(err))
+              this.$router.push({
+                name: "pocketResult",
+                params: { ...this.data, ...err,...this.productInfo, ...type }
+              });
+              // this.$toast(this.error);
+            });
+        });
+      });
+    },
+    change2Week() {
+      //更改为周期兑付
+      this.dialog.text = "是否修改为周期兑付";
+      this.dialog.show = true;
+    },
+    change2Sequel() {
+      //更改为周期续作
+      this.dialog.text = "是否修改为周期续作";
+      this.dialog.show = true;
+    },
+    toPocketInput() {
+      // 跳转到货币赎回
+      this.$router.push({
+        name: "pocketInput",
+        params: { ...this.data, ...this.productInfo, ...this.bankInfo }
+      });
+    },
+    again() {
+      //再次购买
+      this.$router.push({ name: "apply", params: this.data });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/.headerBox {
+  position: absolute;
+}
+.product {
+  height: px2vw(374);
+  background: linear-gradient(
+    270deg,
+    rgba(255, 223, 199, 1) 0%,
+    rgba(214, 159, 129, 1) 100%
+  );
+  overflow: hidden;
+  padding: 0 px2vw(40);
+  position: relative;
+  z-index: 1000;
+  .title {
+    font-size: px2vw(34);
+    font-weight: 500;
+    color: #fff;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: px2vw(138);
+    .iconfont {
+      font-size: px2vw(22);
+      color: #fff;
+    }
+  }
+  .top_detail {
+    display: flex;
+    flex-direction: row;
+    margin-top: px2vw(60);
+    justify-content: space-between;
+    color: #fff;
+    .center {
+      position: relative;
+      text-align: center;
+    }
+    .left,
+    .center,
+    .right {
+      flex: 1;
+    }
+    .right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      .top,
+      .bottom {
+        // width: px2vw(110);
+      }
+    }
+    .center::after {
+      position: absolute;
+      content: " ";
+      height: px2vw(50);
+      top: px2vw(8);
+      left: 0;
+      border-left: px2vw(1) solid #ffffff;
+    }
+    .center::before {
+      position: absolute;
+      content: " ";
+      height: px2vw(50);
+      top: px2vw(8);
+      right: 0;
+      border-left: px2vw(1) solid #ffffff;
+    }
+    .top {
+      font-size: px2vw(22);
+      font-weight: 300;
+    }
+    .bottom {
+      margin-top: px2vw(10);
+      font-size: px2vw(34);
+      font-weight: 500;
+    }
+  }
+  .triangle {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 px2vw(16) px2vw(16);
+    border-color: transparent transparent rgba(255, 255, 255, 0.59);
+    margin: 0px auto;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: px2vw(20);
+  }
+  .act {
+    border-width: px2vw(16) px2vw(16) 0;
+    border-color: rgba(255, 255, 255, 0.59) transparent transparent;
+  }
+}
+.time {
+  // height: px2vw(145);
+  padding: px2vw(40) px2vw(80) px2vw(43) px2vw(40);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  background: #fff;
+  box-sizing: border-box;
+  transition: all 1s ease;
+  position: relative;
+  flex-wrap: wrap;
+  .begin,
+  .end,
+  .transPhyTime {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    min-width: 50%;
+    padding: px2vw(10) 0;
+  }
+  .text {
+    font-size: px2vw(22);
+    width: px2vw(110);
+    font-weight: 300;
+    color: rgba(125, 125, 125, 1);
+  }
+  .date {
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    margin-left: px2vw(10);
+  }
+}
+
+.close {
+  margin-top: px2vw(-145);
+  opacity: 0;
+}
+.detail {
+  padding: px2vw(40) px2vw(40) px2vw(30);
+  background: #fff;
+  margin-top: px2vw(20);
+  .title {
+    font-size: px2vw(32);
+    font-weight: 500;
+    color: rgba(38, 38, 38, 1);
+  }
+  .label {
+    margin-top: px2vw(40);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    .name {
+      font-size: px2vw(28);
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+    }
+    .info {
+      margin-left: px2vw(40);
+      font-size: px2vw(28);
+      font-weight: 400;
+      color: rgba(0, 0, 0, 1);
+    }
+  }
+}
+.btn {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  height: px2vw(120);
+  line-height: px2vw(120);
+  background: #fff;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  font-size: px2vw(34);
+  font-weight: 400;
+  text-align: center;
+  p {
+    flex: 1;
+  }
+  .cencel {
+    color: #262626;
+  }
+
+  .again {
+    color: #d7a083;
+  }
+  .line {
+    width: px2vw(1);
+    height: px2vw(80);
+    background: #d3d7e2;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: px2vw(20);
+    margin: 0 auto;
+  }
+}
+.dialogTitle {
+  font-size: px2vw(34);
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  letter-spacing: px2vw(1);
+  margin-top: px2vw(46);
+  margin-bottom: px2vw(30);
+  text-align: center;
+}
+.dialogText {
+  text-align: center;
+  font-size: px2vw(26);
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(36);
+  margin-bottom: px2vw(50);
+}
+</style>

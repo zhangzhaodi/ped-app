@@ -1,0 +1,14 @@
+$color-blue: #0073e5;
+$color-blue-light: #18baf9;
+$color-gray: #999;
+// border-color
+$color-gray-light: #e6e6e6;
+$color-red: #ff531a;
+$color-text: #262626;
+$font-family: "PingFangSC-Regular,PingFang SC";
+$font-size: px2vw(30);
+$border-bottom: px2vw(1) solid rgba(239,240,241,0.5);
+//此方法可直接引入设计稿尺寸
+@function px2vw($px) {
+  @return $px / (750/100) + vw;
+}

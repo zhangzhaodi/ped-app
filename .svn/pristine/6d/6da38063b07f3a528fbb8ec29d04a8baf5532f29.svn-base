@@ -1,0 +1,679 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :backgroundColor="header.color"
+      :isWhite="header.isWhite"
+    ></Myheader>
+    <div class="contentBox">
+      <div class="content canvas" ref="canvas">
+        <p class="rule" @click="toRule">活动规则</p>
+        <img src="@/assets/recommendShare/img_yaohaoyou@2x.png" class="img1" alt />
+        <div class="hongbao">
+          <p class="title">每邀请一个新用户注册开户可得</p>
+          <p class="money">
+            <span class="number">100</span>
+            <span>元</span>
+          </p>
+          <p class="rate">好友可得X%理财收益奖励</p>
+          <p class="btn">
+            <van-button @click="bottomShow">立即邀请</van-button>
+          </p>
+          <div class="items">
+            <div class="item" @click="toInvite">
+              <img src="@/assets/recommendShare/icon_ewm@2x.png" alt />
+              <span class="text">二维码邀请</span>
+            </div>
+            <div class="line"></div>
+            <div class="item" @click="toAddReferrer">
+              <img src="@/assets/recommendShare/icon_tuijianren@2x.png" alt />
+              <span class="text">添加推荐人</span>
+            </div>
+          </div>
+        </div>
+        <!-- <img src="@/assets/recommendShare/img_wodehongbao@2x.png" class="img2" alt /> -->
+        <p class="skip color">简单三步 立享好礼</p>
+        <img src="@/assets/recommendShare/img_buzhou@2x.png" alt class="img3" />
+        <p class="my color">我的邀请战绩</p>
+        <div class="boxShadow">
+          <div class="box">
+            <div class="items">
+              <div class="item">
+                <p class="number">12</p>
+                <p class="text">共邀请好友</p>
+              </div>
+              <div class="line"></div>
+              <div class="item">
+                <p class="number">99+</p>
+                <p class="text">战绩排名</p>
+              </div>
+              <div class="line"></div>
+              <div class="item">
+                <p class="number">{{'60'|Money}}</p>
+                <p class="text">获得红包(元)</p>
+              </div>
+            </div>
+            <van-button>查看详情</van-button>
+          </div>
+        </div>
+        <p class="more color">更多分享</p>
+        <div class="moreBoxShadow">
+          <div class="moreBox">
+            <div class="items">
+              <div class="item">
+                <img src="@/assets/recommendShare/icon_shojiyinhang@2x.png" alt class="left" />
+                <div class="text">开通手机银行</div>
+                <div class="toShare">去分享</div>
+                <img src="@/assets/recommendShare/icon_gengduo3@2x.png" alt class="right" />
+                <img src="@/assets/recommendShare/icon_gengduo1@2x.png" alt class="right" />
+              </div>
+              <div class="item">
+                <img src="@/assets/recommendShare/icon_xianshangkiahu@2x.png" alt class="left" />
+                <div class="text">线上开户</div>
+                <div class="toShare">去分享</div>
+                <img src="@/assets/recommendShare/icon_gengduo3@2x.png" alt class="right" />
+                <img src="@/assets/recommendShare/icon_gengduo1@2x.png" alt class="right" />
+              </div>
+              <div class="item">
+                <img src="@/assets/recommendShare/icon_xudai@2x.png" alt class="left" />
+                <div class="text">办理永续贷</div>
+                <div class="toShare">去分享</div>
+                <img src="@/assets/recommendShare/icon_gengduo3@2x.png" alt class="right" />
+                <img src="@/assets/recommendShare/icon_gengduo1@2x.png" alt class="right" />
+              </div>
+            </div>
+            <div class="bottom">
+              <span>更多推荐</span>
+              <img src="@/assets/recommendShare/icon_gengduo3@2x.png" alt class="right" />
+              <img src="@/assets/recommendShare/icon_gengduo1@2x.png" alt class="right" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <van-popup v-model="popupShow" round position="bottom" :style="{ height: '36%' }">
+      <p class="title">分享</p>
+      <div class="popupBox">
+        <div class="item" @click="toWeiXin">
+          <img src="@/assets/recommendShare/icon_weiixn@2x.png" alt />
+          <p class="text">微信</p>
+        </div>
+        <div class="item" @click="toFriendCircle">
+          <img src="@/assets/recommendShare/icon_pengyouquan@2x.png" alt />
+          <p class="text">朋友圈</p>
+        </div>
+        <div class="item" @click="savecanvas">
+          <img src="@/assets/recommendShare/icon_xiangce@2x.png" alt />
+          <p class="text">保存到相册</p>
+        </div>
+        <div
+          class="item cobyOrderSn"
+          data-clipboard-action="copy"
+          :data-clipboard-text="url"
+          @click="copyLink"
+        >
+          <img src="@/assets/recommendShare/icon_lianjie@2x.png" alt />
+          <p class="text">复制链接</p>
+        </div>
+      </div>
+      <div class="line"></div>
+      <div class="cancel" @click="cancel">
+        <span>取消</span>
+      </div>
+    </van-popup>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import html2canvas from "html2canvas";
+
+import { Button, Popup, Toast } from "vant";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      header: {
+        color: "transparent",
+        isWhite: true
+      },
+      popupShow: false,
+      transparentFlag: false
+    };
+  },
+  components: {
+    Myheader: Header,
+    [Button.name]: Button,
+    [Popup.name]: Popup,
+    [Toast.name]: Toast
+  },
+  computed: {
+    url() {
+      return (
+        "http://188.177.155.65:8081/zl/referrer/dist/index.html?userId=" +
+        this.$store.state.userInfo.UserId
+      );
+    }
+  },
+  methods: {
+    toInvite() {
+      //跳转到二维码邀请
+      this.$router.push({ name: "invite" });
+    },
+    GetShareRecord() {
+      let params = {
+        BankId: "9999",
+        BranchId: "1001",
+        ChnlId: "62",
+        OperateType: "1"
+      };
+      this.request("GetShareRecord", { ...params }).then(res => {
+        //     "RespCode": "000000",
+        //     "BizTrackNo": "62191120000001196976858396344320",
+        //     "ShareNum": "分享人数",
+        //     "ReturnCode": "000000",
+        //     "ReturnMsg": "交易成功",
+        //     "ShareReward": "分享奖励",
+        //     "RespMessage": "交易成功",
+        //     "RespTime": "20191120102145536",
+        //     "_RejCode": "000000",
+        //     "ShareRank": "分享排名"
+      });
+    },
+    toRule() {
+      //跳转到活动规则
+      this.$router.push({ name: "rule" });
+    },
+    toAddReferrer() {
+      this.$router.push({ name: "addReferrer" });
+    },
+    bottomShow() {
+      //底部弹框显示
+      // this.popupShow = true;
+      let url =
+        "http://188.177.155.210:8081/zl/referrer/dist/index.html?userId=" +
+        this.$store.state.userInfo.UserId;
+      let params = {
+        title: "推荐分享", //(标题),
+        text: "测试", //（内容）,
+        url: url, //（点击分享的跳转链接）
+        thumbnail: "http://188.177.155.210:8081/zl/bankIcons/CTS.png", //（缩略图）
+        thumbUrl: "", //（缩略图URL）、
+        imageUrl: "" //（保存图片功能的URL）
+      };
+      window.NativeCall.ShareWeiXin(params);
+    },
+    cancel() {
+      // this.popupShow = false;
+    },
+    copyLink() {
+      let _this = this;
+      let clipboard = new this.clipboard(".cobyOrderSn");
+      clipboard.on("success", function() {
+        _this.$toast("复制成功");
+      });
+      clipboard.on("error", function() {
+        _this.$toast("复制失败");
+      });
+    },
+    savecanvas() {
+      this.popupShow = false;
+      let canvas = document.querySelector(".canvas");
+      canvas.scrollTo(0, 0);
+      let that = this;
+      html2canvas(canvas, { scale: 2, logging: false, useCORS: true }).then(
+        function(canvas) {
+          let type = ".png";
+          let imgData = canvas.toDataURL(type); // 照片格式处理
+          let _fixType = function(type) {
+            type = type.toLowerCase().replace(/jpg/i, "jpeg");
+            let r = type.match(/png|jpeg|bmp|gif/)[0];
+            return "image/" + r;
+          };
+          imgData = imgData.replace(_fixType(type), "image/octet-stream");
+          let filename = "ZL" + new Date().getTime() + type;
+          that.saveFile(imgData, filename);
+        }
+      );
+    },
+    //保存文件
+    saveFile(data, filename) {
+      let save_link = document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        "a"
+      );
+      save_link.href = data;
+      save_link.download = filename;
+      let event = document.createEvent("MouseEvents");
+      event.initMouseEvent(
+        "click",
+        true,
+        false,
+        window,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
+        false,
+        false,
+        false,
+        0,
+        null
+      );
+      save_link.dispatchEvent(event);
+    },
+    //跳转到微信
+    toWeiXin() {
+    }
+  },
+  mounted() {
+    //屏幕滚动时修改header的背景
+    let content = document.getElementsByClassName("contentBox")[0];
+    let _this = this;
+    content.onscroll = function() {
+      if (content.scrollTop > 0) {
+        _this.transparentFlag = true;
+        console.log(1);
+      } else {
+        _this.transparentFlag = false;
+        console.log(2);
+      }
+    };
+  },
+  watch: {
+    transparentFlag: {
+      handler(val) {
+        if (val) {
+          this.header = {
+            color: "#fff",
+            isWhite: false
+          };
+        } else {
+          this.header = {
+            color: "transparent",
+            isWhite: true
+          };
+        }
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .contentBox {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    // display: flex;
+    // flex-direction: column;
+    // align-items: center;
+  }
+  .contentBox::-webkit-scrollbar {
+    display: none;
+  }
+  .headerBox {
+    position: absolute;
+  }
+}
+.contentBox {
+  position: relative;
+  .content {
+    height: px2vw(3750);
+    background: url("~@/assets/recommendShare/bg_share@2x.png");
+    background-size: 100% 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding-bottom: px2vw(157);
+  }
+  .rule {
+    width: px2vw(133);
+    height: px2vw(49);
+    text-align: center;
+    line-height: px2vw(49);
+    border-top-left-radius: px2vw(24);
+    border-bottom-left-radius: px2vw(24);
+    box-shadow: px2vw(2) px2vw(2) px2vw(14) 0 rgba(0, 0, 0, 0.27);
+    font-size: px2vw(24);
+    font-family: PingFangSC-Semibold, PingFang SC;
+    font-weight: 600;
+    color: rgba(255, 241, 242, 1);
+    background: linear-gradient(
+      171deg,
+      rgba(247, 213, 159, 1) 0%,
+      rgba(239, 98, 120, 1) 100%
+    );
+    text-shadow: px2vw(2) px2vw(3) px2vw(9) rgba(247, 87, 110, 1);
+    align-self: flex-end;
+    margin-top: px2vw(107);
+  }
+  .img1 {
+    width: px2vw(732);
+    height: px2vw(302);
+    margin-top: px2vw(-25);
+  }
+  .hongbao {
+    width: px2vw(670);
+    height: px2vw(786);
+    margin-top: px2vw(430);
+    background: url("~@/assets/recommendShare/img_wodehongbao@2x.png");
+    background-size: 100% 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    .title {
+      font-size: px2vw(26);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(230, 85, 87, 1);
+      margin-top: px2vw(68);
+    }
+    .money {
+      font-size: 0;
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(242, 89, 89, 1);
+      .number {
+        font-size: px2vw(120);
+      }
+      span {
+        font-size: px2vw(32);
+      }
+    }
+    .rate {
+      font-size: px2vw(26);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(230, 85, 87, 1);
+      margin-top: px2vw(36);
+    }
+    .btn {
+      .van-button {
+        // background: url("~@/assets/recommendShare/img_yaoqinganniu@2x.png");
+        margin-top: px2vw(129);
+        width: px2vw(564);
+        height: px2vw(90);
+        text-align: center;
+        background: linear-gradient(#fed9b1, #ffffff);
+        // background-size: 100% 100%;
+        border-radius: px2vw(45);
+        display: flex;
+        flex-direction: column;
+        align-content: center;
+        align-items: center;
+        box-shadow: px2vw(2) px2vw(2) px2vw(14) 0 rgba(0, 0, 0, 0.27);
+      }
+      .van-button__text {
+        font-size: px2vw(32);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        line-height: px2vw(90);
+        color: rgba(255, 64, 64, 1);
+        // margin-top: px2vw(42);
+      }
+    }
+    .items {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: px2vw(33);
+      .item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        img {
+          width: px2vw(98);
+        }
+        .text {
+          margin-top: px2vw(24);
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(255, 241, 225, 1);
+        }
+      }
+      .line {
+        width: px2vw(1);
+        height: px2vw(90);
+        background: #fff7ef;
+      }
+    }
+  }
+  .color {
+    width: px2vw(382);
+    height: px2vw(56);
+    line-height: px2vw(56);
+    font-size: px2vw(30);
+    font-family: PingFangSC-Semibold, PingFang SC;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 1);
+    text-align: center;
+  }
+  .img3 {
+    width: px2vw(670);
+    height: px2vw(308);
+    background: url("~@/assets/recommendShare/img_buzhou@2x.png");
+    background-size: 100% 100%;
+    margin-top: px2vw(50);
+  }
+  .skip {
+    background: url("~@/assets/recommendShare/img_lixianghaoli@2x.png");
+    background-size: 100% 100%;
+    margin-top: px2vw(140);
+  }
+  .my {
+    background: url("~@/assets/recommendShare/img_yaiqingzhanji@2x.png");
+    background-size: 100% 100%;
+    margin-top: px2vw(140);
+  }
+  .more {
+    background: url("~@/assets/recommendShare/img_fenxiang@2x.png");
+    background-size: 100% 100%;
+    margin-top: px2vw(140);
+  }
+  .boxShadow {
+    width: px2vw(670);
+    height: px2vw(358);
+    background: rgba(248, 244, 248, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: px2vw(18);
+    margin-top: px2vw(50);
+    .box {
+      width: px2vw(650);
+      height: px2vw(338);
+      background: #f8f4f8;
+      border-radius: px2vw(18);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      .items {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-top: px2vw(58);
+        .line {
+          width: px2vw(2);
+          height: px2vw(54);
+          background: rgba(241, 131, 123, 0.24);
+        }
+        .item {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          .number {
+            font-size: px2vw(40);
+            font-family: PingFangSC-Medium, PingFang SC;
+            font-weight: 500;
+            color: rgba(255, 64, 64, 1);
+          }
+          .text {
+            font-size: px2vw(26);
+            font-family: PingFangSC-Regular, PingFang SC;
+            font-weight: 400;
+            color: rgba(5, 5, 5, 1);
+            margin-top: px2vw(22);
+          }
+        }
+      }
+      .van-button {
+        margin-top: px2vw(60);
+        width: px2vw(570);
+        height: px2vw(80);
+        text-align: center;
+        background: linear-gradient(#f5b88d, #ef6370);
+        border-radius: px2vw(60);
+        display: flex;
+        flex-direction: column;
+        align-content: center;
+        align-items: center;
+      }
+      .van-button__text {
+        font-size: px2vw(32);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 1);
+      }
+    }
+  }
+  .moreBoxShadow {
+    height: px2vw(494);
+    width: px2vw(670);
+    background: rgba(248, 244, 248, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: px2vw(18);
+    margin-top: px2vw(50);
+    .moreBox {
+      height: px2vw(479);
+      width: px2vw(650);
+      background: #f8f4f8;
+      border-radius: px2vw(18);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      .right {
+        width: px2vw(10);
+        height: px2vw(20);
+      }
+      .items {
+        display: flex;
+        flex-direction: column;
+        margin-top: px2vw(36);
+        .item {
+          height: px2vw(119);
+          width: px2vw(570);
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          border-bottom: px2vw(1) solid #ef6571;
+          .left {
+            width: px2vw(80);
+          }
+          .text {
+            flex: 1;
+            margin-left: px2vw(20);
+            font-size: px2vw(28);
+            font-family: PingFangSC-Regular, PingFang SC;
+            font-weight: 400;
+            color: rgba(5, 5, 5, 1);
+          }
+          .toShare {
+            font-size: px2vw(28);
+            font-family: PingFangSC-Regular, PingFang SC;
+            font-weight: 400;
+            color: rgba(255, 64, 64, 1);
+            margin-right: px2vw(10);
+          }
+        }
+      }
+      .bottom {
+        margin-top: px2vw(30);
+        span {
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(255, 64, 64, 1);
+        }
+      }
+    }
+  }
+}
+.van-popup {
+  display: flex;
+  flex-direction: column;
+  .title {
+    font-size: px2vw(30);
+    font-family: PingFangSC-Medium, PingFang SC;
+    font-weight: 500;
+    color: rgba(38, 38, 38, 1);
+    margin-top: px2vw(55);
+    text-align: center;
+  }
+  .popupBox {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    height: px2vw(273);
+    margin-top: px2vw(60);
+    .item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      img {
+        width: px2vw(90);
+        height: px2vw(90);
+      }
+      .text {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        margin-top: px2vw(30);
+      }
+    }
+  }
+  .line {
+    width: 100%;
+    height: px2vw(20);
+    background: #f5f6f8;
+  }
+  .cancel {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    min-height: px2vw(100);
+    span {
+      font-size: px2vw(34);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+}
+.van-popup--bottom {
+  margin-bottom: px2vw(-1);
+}
+</style>

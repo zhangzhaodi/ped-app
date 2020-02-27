@@ -1,0 +1,45 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = ()=>import("../pages/index.vue")
+const LinkmanList = ()=>import("../pages/linkmanList.vue")
+const AddPayer = ()=>import("../pages/addPayer.vue")
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "资金归集",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/linkmanList",
+      name: "linkmanList",
+      component: LinkmanList,
+      meta: {
+        title: "联系人列表",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/addPayer",
+      name: "addPayer",
+      component: AddPayer,
+      meta: {
+        title: "新增联系人",
+        keepAlive: true
+      }
+    },
+
+  ]
+});

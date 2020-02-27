@@ -1,0 +1,1085 @@
+<template>
+  <div class="outer">
+    <Myheader :title="specialdata.PrdName" :params="headerParams"  :backRouter="headerBackRouter" :isWhite="true" :backgroundColor="'none'" ></Myheader>
+    <div class="content">
+    <!-- 头部 -->
+    <div class="top_t">
+          <h3 class="top_h3">{{specialdata.Rate | toFixedNum}}<span>%</span></h3>
+          <p  v-if="specialdata.TermType == 'D'" class="top_p">{{specialdata.TermCode}}天利率</p>
+          <p  v-if="specialdata.TermType == 'M'" class="top_p">{{specialdata.TermCode}}月利率</p>
+          <p  v-if="specialdata.TermType == 'Y'" class="top_p">{{specialdata.TermCode}}年利率</p>
+        </div>
+    <!-- 详情 -->
+    <div class="earnings_data ">
+            <div><li>理财期限</li><p>灵活存取</p></div>
+            <div></div>
+            <div><li>计息模式</li><p>靠档计息</p></div>
+            <div></div>
+            <div><li >付息模式<i slot="left" class="iconfont little_mark">&#xe62c;</i></li><p>按月付息</p></div>
+    </div>
+    <!-- 模态框 -->
+    <van-popup v-model="show" round >
+        <div class="showclass">
+          <p>按月付息</p>
+          <p>按月付息</p>
+          <button  @click="isshow">知道了</button>
+        </div>
+    </van-popup>
+    <!-- 付款卡框 -->
+        <div class="cardout">
+          <DebitCard @select="listdatainfo" :options="options"></DebitCard>
+      </div>
+      <!-- 费率 -->
+        <div v-if="Rateshow" class="payCard top white">
+              <div class="left">存期</div>
+              <div class="right">
+                <div class="bank">
+                  <p>
+                    <span>{{ratedata}}</span>
+                  </p>
+                </div>
+                <i  @click="showPicker = true"  slot="left" class="iconfont icongengduo-"></i>
+              </div>
+            </div>
+            <!-- 费率框 -->
+            <van-popup v-model="showPicker" round position="bottom">
+              <van-picker
+                show-toolbar
+                title="存期选择"
+                :columns="ratecolumns"
+                @cancel="showPicker = false"
+                @confirm="onConfirmone"
+              />
+            </van-popup>
+        <!-- 输入金额 -->
+          <div class="money top white">
+            <p class="title">转账金额(人民币)</p>
+            <md-amount
+              :value="form.upperMoney"
+              is-capital
+              :style="{'visibility': form.money?'visible':'hidden'}"
+            ></md-amount>
+            <md-input-item
+              type="money"
+              v-model="form.money"
+              @change="onInputChange"
+              :placeholder="textone"
+              maxlength="12"
+            >
+            <div slot="left">￥</div>
+            <p v-if="isError" class="error" slot="error">
+            <i slot="left" class="iconfont">&#xe62e;</i>
+            {{errortolist}}
+            </p>
+            <!-- <div class="input-operator" slot="right" @click="takeAll">全部转入</div> -->
+            </md-input-item>
+          <!-- <p class="toast">买入有一定费率，现在购买起息日08-23号</p> -->
+          </div>
+    <!-- 推荐人 -->
+    <!-- <div class="referrer top white">
+      <div class="left">
+              <p>推荐人</p>
+      </div>
+      <div class="right">
+        <van-field v-model="artNumber" type="text" placeholder="选填" />
+      </div>
+    </div> -->
+    <!-- 提示 -->
+    <div class="notice" @click="checkboxone">
+        <img v-if="ischeckbox"  src="@/assets/farmersTreasure/index/icon_gouxuan_nor@2x.png" alt="">
+          <img v-else src="@/assets/farmersTreasure/index/icon_gouxuan_sel@2x.png" alt="">
+        <p  >
+          本人已阅读并同意 <span>《焦作中旅银行个人手机银行开放式基金服务协议》</span>和<span>权益须知</span>
+          ,已充分了解并知晓本产品风险,愿意承担相关风险.
+        </p>
+    </div>
+    <!-- 确定 -->
+          <div class="footerBox">
+            <div class="btnbox">
+              <van-button :disabled="forbidden" @click="toConfirm" v-preventreclick>下一步</van-button>
+            </div>
+          </div>
+    <!-- 提示 -->
+    <div class="notice Notice">
+      支持提前赎回,靠档计息
+      <!-- <span @click="showup">了解规则</span> -->
+    </div>
+    <!-- 模态框 -->
+    <van-popup v-model="showone"   round >
+        <div class="showclassone">
+          <i slot="left" class="iconfont little_mark" @click="isshowone" >&#xe635;</i><p>提前赎回规则</p>
+          <div class="centent">
+            <div class="centent_left">
+              <span>赎回时持有时间</span>
+              <p>＜3个月</p>
+              <p>3个月-6个月<span>(不含6个月)</span></p>
+              <p>6个月-12个月<span>(不含12个月)</span></p>
+              <p>12个月-24个月<span>(不含24个月)</span></p>
+              <p>24个月-60个月<span>(不含36个月)</span></p>
+            </div>
+            <div class="centent_right">
+              <span>所得利率</span>
+              <p>0.50%</p>
+              <p>1.45%</p>
+              <p>1.75%</p>
+              <p>1.95%</p>
+              <p>3.20%</p>
+            </div>
+          </div>
+          <button  @click="isshowone">确定</button>
+        </div>
+    </van-popup>
+    <!-- 提示 -->
+    <!-- <Mynotice></Mynotice> -->
+    <confirm :popupFlag="popupFlag" @toResult="toResult" v-if="popupFlag"></confirm>
+  </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Amount, InputItem } from "mand-mobile";
+import confirm from "../../components/confirm";
+import DebitCard from "@/components/Popup/DebitCard.vue";
+import { Button } from "vant";
+import { Field ,Dialog,picker} from "vant";
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [Field.name]: Field,
+    confirm:confirm,
+    DebitCard:DebitCard,
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+       headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+       headerBackRouter: {
+        // name:'confirm',
+      },
+      bank: {
+        bankCard: 1231232131231231,
+        remain: 120000,
+        name: "焦作中旅银行",
+        use: "借记卡"
+      },
+      form: {
+        money: null,
+        upperMoney: null,
+        farmers:true,
+      },
+      options: {
+        showBalance: true,  //付款卡信息
+        showNum: false,
+        redBalance: false
+      },
+      ischeckbox:true,
+      // periodList: ["30天", "60天", "90天", "120天", "150天", "180天"],
+      // methodsList: ["周期兑付", "周期续作", "自动到期"],
+      period: null,
+      method: null,
+      methodSelect: false,
+      periodSelect: false,
+      disabled: false,
+      artNumber: null, //人工号
+      popupFlag: false, //确认页显示
+      forbidden:true,//按钮确认
+      price:false,//金额确认
+      show: false,
+      showone:false,
+      showPicker:false,
+      specialdata:{},
+      textone:'',//显示金额
+      Price:'',//要求金额
+      errortolist:'',//报错信息
+      isError:'',//报错显示
+      Rateshow:false,//费率显示
+      ratecolumns: [],
+      ratedata:'5年',
+      dataInfo:[],//数据
+      JumpModules:true,//跳转显示
+    }
+  },
+  created(){
+    // console.log(this.$route.meta,this.$route)
+  if(this.$route.meta.goToNative == true && this.JumpModules == true){
+    this.specialdata = this.$route.params
+    this.Rateshow = true
+    this.getdatainfo()
+    // alert(JSON.stringify(this.specialdata))
+  }else{
+      this.specialdata=this.Setuserinfo
+  }
+    this.getdatainfo()
+  // this.specialdata=this.Setuserinfo
+  if(this.specialdata.TermType == 'Y'){
+    this.textone=this.specialdata.MinFixAmt+'元起存'
+    this.Price = this.specialdata.MinFixAmt
+    }
+  if(this.specialdata.TermType !== 'Y'){
+    this.textone=this.specialdata.MinFixAmt+'元起存'
+    this.Price = this.specialdata.MinFixAmt
+    }
+  },
+  computed:{
+    ...mapGetters('deposit',['Setuserinfo']),
+    ...mapState("common", ["userInfo"]),
+  },
+  mounted(){
+  console.log(this.$route.query,this.Setuserinfo);
+  },
+  watch:{
+       //监听输入金额
+      'form.money':{
+        deep:true,
+        handler:function(val,oldVal){
+          console.log('watch中：',val,oldVal)
+          val = val.toString();
+        var arr0 = val.split("");
+        var arr = val.split(".");
+        // 第一位输入的是0的时候进行处理采用第二位的数字
+        if (arr0.length == 2 && arr0[0] == "0" && arr0[1] !== ".") {
+          this.form.money= Number(arr0[1]);
+          console.log( this.form.money)
+          return;
+        }
+        //小数点后超过两位时取前两位
+        if (val == "") {
+          this.form.money = "";
+          console.log( this.form.money)
+        } else if ((arr.length == 2 && arr[1].length > 2) || arr[0].length > 14) {
+          this.form.money = Number(oldVal);
+          console.log( this.form.money)
+        }
+      }
+        }
+    },//以V-model绑定数据时使用的数据变化监测
+  methods: {
+    ...mapActions("deposit",['setuserinfo']),
+    ...mapActions("common", ["getUserInfo"]),
+     //获取数据
+    getdatainfo(){
+        this.request("ProdInfoQry", {
+          BankId: "9999",
+          BranchId: "62",
+          ChnlId:"62",
+          Type:'1',
+          ChannelType:"0310",
+          BusinessType:"PHNE"
+        })
+          .then(res => {
+            console.log(res);
+        var data=[]
+        var time='time'
+        var Newday=[]
+        var Newyear=[]
+        if(res.List.length>0){
+          for(var i=0;i<res.List.length;i++){
+            if(res.List[i].PrdName.indexOf('鑫农宝') !== -1){
+                data.push(res.List[i])
+            }
+          }
+          this.dataInfo = data
+          if(this.dataInfo.length>0){
+              for(let j of this.dataInfo){
+                  if(j.TermType == 'D' ){
+                    var setTime = j.TermCode+"天";
+                    Newday.push(j.TermCode+"天");
+                    }else if(j.TermType == 'Y' ){
+                      var setTime = j.TermCode+"年";
+                      Newyear.push(j.TermCode+"年");
+                    }
+                this.ratecolumns= [...Newday,...Newyear]
+                this.$set(j,time,setTime)
+                  }
+                }
+              }
+          })
+          .catch(error => {
+            console.log(error);
+          })
+    },
+    // 获取数据
+    listdatainfo(data){
+      console.log(data);
+      this.bank={...data}
+    this.onInputChange('',this.form.money)
+    },
+    // 点选对勾
+    checkboxone(){
+    this.ischeckbox=!this.ischeckbox;
+    this.checkbox()
+    },
+    // 全部购买
+    takeAll() {
+      this.value = '300000'
+    },
+    checkbox(){
+      if(this.ischeckbox == false && this.price == true ){
+        this.forbidden=false
+      }else{
+        this.forbidden=true
+      }
+    },
+    onInputChange(name, value) {
+      console.log(value);
+      // 先清除样式
+      this.isError = false;
+      this.options.redBalance = false;
+      this.forbidden=true
+      // 判断非0 和 非空
+      if(value > 0  && value !== ''  ){
+      this.form.upperMoney = parseFloat(value);
+      var newprice = parseFloat(value);
+      console.log(newprice);
+      if (Number(newprice)< this.Price&&Number(newprice)>0 ) {
+        this.isError = true;
+        this.errortolist =this.textone;
+        this.options.redBalance = true;
+        this.forbidden=true;
+        this.price = false;
+      }
+      else if (Number(this.bank.balance) - newprice== 0) {
+        this.isError = false;
+        this.options.redBalance = false;
+        this.forbidden=false;
+        this.price = true;
+      }
+      else if (Number(this.bank.balance) - newprice < 0) {
+        this.isError = true;
+        this.errortolist = "可用余额不足";
+        this.options.redBalance = true;
+        this.forbidden=true;
+        this.price = false;
+      }
+      else if (Number(this.bank.balance) == 0) {
+        this.isError = false;
+        this.errortolist = "可用余额不足";
+        this.options.redBalance = false;
+        this.forbidden=true;
+        this.price = false;
+      }
+      else {
+        this.isError = false;
+        this.options.redBalance = false;
+        this.forbidden=false
+        this.price = true;
+      }
+      }
+      this.checkbox()
+    },
+    showPopup() {
+      this.show = true;
+    },
+    showup(){
+      this.showone=true;
+    },
+    //模态窗
+    isshow(){
+      this.show=!this.show
+    },
+    isshowone(){
+      this.showone=!this.showone
+    },
+    onConfirmone(value) {
+      console.log(value,this.dataInfo);
+      this.ratedata=value;
+      this.showPicker = false;
+      for(let i of this.dataInfo){
+      if(i.time == value){
+          this.specialdata = i
+        }
+      }
+    },
+    toConfirm() {
+      this.setuserinfo(this.specialdata)
+      this.$store.state.params = { ...this.form, ...this.data };
+      this.$store.state.params.bank = { ...this.bank };
+      console.log(this.$store.state.params,"vuex进入触发")
+      this.popupFlag = true;
+    },
+    toResult(data) {
+      if(data !== 0){
+          this.popupFlag = false;
+        }
+
+    }
+  },
+  beforeRouteLeave(to,from,next){
+    console.log(this.$router)
+    if(from.name == "farmersTreasurerollin" ){
+      this.JumpModules =false
+      for(let item of this.$router.options.routes){
+          if(item.name == "farmersTreasurerollin" || item.name == 'expensiveTreasurerollin'){
+          item.meta.goToNative = false
+          console.log('执行了',item.meta.goToNative)
+        }
+        }
+      console.log('执行了')
+            next();
+        }
+    }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  background: #fff;
+  -webkit-scrollbar {
+    display: none;
+  }
+  background: url("~@/assets/farmersTreasure/index/bg_xinnongbaoyihao@2x.png") no-repeat;
+  background-size:contain;
+}
+// 内部样式
+.content {
+  // display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  // padding: 0 px2vw(40) 0;
+}
+//top显示
+.top_t{
+  width: px2vw(750);
+  height: px2vw(238);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.top_t .top_p{
+  height:px2vw(26);
+  font-size:px2vw(26);
+  font-family:PingFangSC;
+  font-weight:400;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(26);
+  margin-top:px2vw(20);
+}
+.top_t .top_h3{
+  height:px2vw(60);
+  font-size:px2vw(60);
+  font-family:PingFangSC;
+  font-weight:500;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(60);
+  margin-top:px2vw(40);
+}
+//数据展示
+.earnings_data{
+  display: flex;
+  width: 100%;
+  height: px2vw(140);
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  background:white;
+  margin-top:px2vw(40);
+  padding:px2vw(62) px2vw(60);
+  }
+.earnings_data div li{
+  // width:px2vw(96);
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC;
+  font-weight:300;
+  color:rgba(125,125,125,1);
+  line-height:px2vw(24);
+}
+.earnings_data div p{
+  // width:px2vw(102);
+  height:px2vw(42);
+  font-size:px2vw(30);
+  font-family:PingFangSC;
+  font-weight:400;
+  color:rgba(38,38,38,1);
+  line-height:px2vw(42);
+  margin-top:px2vw(19);
+}
+.earnings_data div li{
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+}
+.earnings_data div  .little_mark{
+  font-size: px2vw(18);
+  font-weight:100;
+  color:#BDBDBD;
+  display: inline;
+}
+.earnings_data div:nth-of-type(2){
+  width:px2vw(1);
+  height:px2vw(41);
+  border-left:px2vw(1) solid rgba(151,151,151,1);
+}
+.earnings_data div:nth-of-type(4){
+  width:px2vw(1);
+  height:px2vw(41);
+  border-left:px2vw(1) solid rgba(151,151,151,1);
+}
+
+.top{
+    margin-top:px2vw(20);
+}
+.white {
+  background: #fff;
+}
+.left {
+  font-size: px2vw(30);
+  font-weight: 400;
+  color: #262626;
+}
+.cardout {
+  background: #fff;
+  padding: 0 px2vw(40) 0;
+}
+.bottom {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  overflow-x: scroll;
+  p {
+    width: px2vw(130);
+    height: px2vw(56);
+    min-width: px2vw(130);
+    max-width: px2vw(130);
+    line-height: px2vw(56);
+    text-align: center;
+    box-sizing: border-box;
+    border: px2vw(1) solid #7d7d7d;
+    color: #7d7d7d;
+    border-radius: px2vw(6);
+    flex: 1;
+    font-size: px2vw(24);
+  }
+  .active {
+    border-color: #3e8fff;
+    color: #3e8fff;
+  }
+
+  .item:not(:first-child) {
+    margin-left: px2vw(30);
+  }
+}
+.bottom::-webkit-scrollbar {
+  display: none;
+}
+.product {
+  font-size: 0;
+  padding: px2vw(21) px2vw(40) px2vw(20);
+  .name {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: px2vw(32);
+    font-weight: 500;
+    color: #262626;
+    .iconfont {
+      font-size: px2vw(10);
+      color: #7d7d7d;
+      font-weight: 400;
+    }
+  }
+  .rate{
+    height:px2cw(32);
+    font-size:px2cw(32);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(247,90,80,1);
+    line-height:px2cw(32);
+  }
+  .num {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: px2vw(26);
+    font-weight: 400;
+    color: #a8a8a8;
+    margin-top: px2vw(11);
+  }
+}
+.payCard {
+  background: #fff;
+  padding: px2vw(20) px2vw(40);
+  height: px2vw(110);
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  .right {
+    margin-left: px2vw(40);
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    .iconfont{
+      font-size: px2vw(22) ;
+      margin-top: px2vw(6);
+      color: #a8a8a8;
+    }
+    .bank {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      p {
+        font-size: 0;
+        span {
+          font-size: px2vw(30);
+          color: #262626;
+        }
+      }
+      .remain {
+        font-size: 0;
+        span {
+          color: #7d7d7d;
+          font-size: px2vw(24);
+          font-weight: 300;
+        }
+      }
+    }
+  }
+}
+.money {
+  background: #fff;
+  height: px2vw(320);
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  .title {
+    height: px2vw(80);
+    line-height: px2vw(80);
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: #262626;
+    margin-top: px2vw(20);
+  }
+  .toast {
+    height: px2vw(60);
+    line-height: px2vw(60);
+    color: #7d7d7d;
+    font-size: px2vw(24);
+  }
+}
+.period {
+  height: px2vw(110);
+  background: #fff;
+  padding: 0 px2vw(40);
+}
+.methods {
+  height: px2vw(110);
+  background: #fff;
+  padding: 0 px2vw(40);
+  .right {
+    font-size: px2vw(30);
+  }
+}
+
+.act {
+  height: px2vw(196);
+}
+.referrer {
+  // height: px2vw(110);
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  padding: 0 px2vw(40) 0;
+  display: flex;
+  // flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  font-size: px2vw(30);
+  .left{
+    height: px2vw(110);
+    line-height: px2vw(110);
+  }
+  .right {
+    flex: 1;
+    margin-left: px2vw(40);
+  }
+
+  //   background: linear-gradient(#ffdfc7, #d69f81);
+}
+/deep/ .van-field__control:disabled {
+  color: #a8a8a8;
+  font-size: px2vw(30);
+}
+/deep/ .van-field__control {
+  color: #262626;
+  font-size: px2vw(30);
+  // margin-top: px2vw(-6);
+}
+/deep/ .md-field-item-content{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+/deep/ .md-field-item-content:before {
+  border-bottom: px2vw(1) solid #eff0f1;
+}
+/deep/ .md-amount {
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(255, 181, 43, 1);
+  margin-top: px2vw(18);
+}
+/deep/ .md-input-item.is-error .md-field-item-content:before {
+  border: none;
+}
+/deep/ .md-field-item-children {
+  margin-top: px2vw(-20);
+}
+/deep/ .md-input-item {
+  height: px2vw(66);
+  line-height: px2vw(66);
+  display: flex;
+  flex-direction: column;
+  // align-items: center;
+  // padding-bottom: px2vw(29);
+}
+/deep/ .md-input-item-input{
+  font-size:px2vw(40);
+}
+/deep/ .md-field-item-left {
+      font-size: px2vw(40);
+      color: #262626FF;
+      padding-top: px2vw(10);
+  }
+/deep/ .md-field-item-control {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        .md-input-item-input {
+          width: 100%;
+          &::-webkit-input-placeholder {
+            /* WebKit, Blink, Edge */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            line-height: normal;
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::-moz-placeholder {
+            /* Mozilla Firefox 19+ */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::placeholder {
+            /* 大部分现代浏览器 */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::-ms-input-placeholder {
+            /* Microsoft Edge */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+        }
+      }
+.cardout {
+  background: #fff;
+  padding: 0 px2vw(40) 0;
+}
+
+
+//下面按钮
+.footerBox{
+  display: flex;
+  justify-content: center;
+  margin-top: px2vw(60);
+  width: 100%;
+  text-align: center;
+  font-size: px2vw(34);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+  height: px2vw(90);
+  line-height: px2vw(90);
+  .btnbox{
+    width: px2vw(670);
+     /deep/ .van-button  {
+    width: 100%;
+    color: rgba(255, 255, 255, 1);
+    border-radius: px2vw(45);
+    background:linear-gradient(289deg,rgba(58,138,255,1) 0%,rgba(58,158,255,1) 100%);
+  }
+  }
+}
+.input-operator{
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(0,139,255,1);
+}
+.Notice{
+  margin-bottom: px2vw(100);
+}
+.notice {
+  margin-top: px2vw(40);
+  font-size: px2vw(22);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: #7D7D7D;
+  line-height: px2vw(30);
+  padding: 0 px2vw(40);
+  display: flex;
+  p{
+    margin-left: px2vw(20);
+  }
+  span{
+    color:#008BFFFF
+  }
+  img{
+  height: px2vw(32);
+  width: px2vw(32);
+}
+}
+.outer .teshu{
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(125,125,125,1);
+  line-height:px2vw(24);
+  margin-left: px2vw(40);
+}
+//下部选择转出方式
+.rollout_means{
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding:  px2vw(20) px2vw(40)  px2vw(20) ;
+  height: px2vw(220);
+  background: #fff;
+}
+.radio_one {
+  display: inline-block;
+  height: px2vw(32);
+  width: px2vw(32);
+  line-height: px2vw(32);
+  vertical-align: middle;
+  cursor: pointer;
+  background: url('~@/assets/travelTreasure/rollout/icon_weigouxuan_nor@2x.png') no-repeat;
+  background-size: 100% 100%;
+}
+.input_radio {
+  display: inline-block;
+  height: px2vw(32);
+  width: px2vw(32);
+  line-height: px2vw(32);
+  cursor: pointer;
+  left: 0px;
+  outline: none;
+  -webkit-appearance: none;
+}
+.on {
+  background: url('~@/assets/travelTreasure/rollout/icon_gouxuan_nor@2x.png') no-repeat;
+  background-size: 100% 100%;
+}
+.rollout_{
+  height: px2vw(180);
+  display: flex;
+  flex-direction: column;
+ justify-content: space-between;
+}
+.rollout_left{
+  height: px2vw(140);
+  display: flex;
+  flex-direction: column;
+ justify-content: space-between;
+}
+.rollout_right{
+  height: px2vw(180);
+  display: flex;
+  flex-direction: column;
+ justify-content: space-between;
+}
+.rollout_right div{
+  display: flex;
+  flex-direction: column;
+ justify-content: center;
+}
+.rollout_right h5{
+  height:px2vw(30);
+  font-size:px2vw(30);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(38,38,38,1);
+  line-height:px2vw(30);
+  margin: 0;
+}
+.rollout_right p{
+  height:px2vw(22);
+  font-size:px2vw(22);
+  font-family:PingFangSC-Light,PingFangSC;
+  font-weight:300;
+  color:rgba(125,125,125,1);
+  line-height:px2vw(22);
+  margin-top: px2vw(20);
+}
+// 模态框
+.showclass{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width:px2vw(552);
+  height:px2vw(380);
+  background:rgba(255,255,255,0.98);
+  border-radius:px2vw(16);
+  padding: px2vw(40);
+  p:nth-of-type(1){
+    height:px2vw(34);
+    font-size:px2vw(34);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(34);
+    letter-spacing:px2vw(1);
+  }
+  p:nth-of-type(2){
+    margin-top:px2vw(30);
+    height:px2vw(108);
+    font-size:px2vw(26);
+    font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(36);
+  }
+  button{
+    width:px2vw(472);
+  height: px2vw(90);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 190, 78, 1) 0%,
+    rgba(255, 159, 8, 1) 100%
+  );
+  border-radius: px2vw(45);
+  margin-top:px2vw(85);
+  color: #fff;
+  font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    font-size:px2vw(30);
+  }
+}
+.showclassone{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width:px2vw(552);
+  height:px2vw(600);
+  background:rgba(255,255,255,0.98);
+  border-radius:px2vw(16);
+  padding: px2vw(40);
+  p:nth-of-type(1){
+    height:px2vw(34);
+    font-size:px2vw(34);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(34);
+    letter-spacing:px2vw(1);
+  }
+  button{
+    width:px2vw(472);
+  height: px2vw(90);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 190, 78, 1) 0%,
+    rgba(255, 159, 8, 1) 100%
+  );
+  border-radius: px2vw(45);
+  margin-top:px2vw(85);
+  color: #fff;
+  font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    font-size:px2vw(30);
+  }
+  .little_mark{
+    font-size:px2vw(20);
+    color: #666666FF;
+    margin-right: px2vw(550);
+  }
+  .centent{
+    margin-top: px2vw(50);
+    display:flex;
+    flex-direction:row;
+    align-items: center;
+    justify-content: space-between;
+    .centent_left{
+      span{
+        margin-top: px2vw(16);
+        height:px2vw(22);
+        font-size:px2vw(22);
+        font-family:PingFangSC-Light,PingFangSC;
+        font-weight:300;
+        color:rgba(125,125,125,1);
+        line-height:px2vw(22);
+      }
+      p{
+        margin-top: px2vw(16);
+        height:px2vw(36);
+        font-size:px2vw(26);
+        font-family:PingFangSC-Regular,PingFangSC;
+        font-weight:400;
+        color:rgba(38,38,38,1);
+        line-height:px2vw(36);
+      }
+    }
+    .centent_right{
+      margin-left: px2vw(60);
+      span{
+        margin-top: px2vw(16);
+        height:px2vw(22);
+        font-size:px2vw(22);
+        font-family:PingFangSC-Light,PingFangSC;
+        font-weight:300;
+        color:rgba(125,125,125,1);
+        line-height:px2vw(22);
+      }
+      p{
+        margin-top: px2vw(16);
+        height:px2vw(36);
+        font-size:px2vw(26);
+        font-family:PingFangSC-Regular,PingFangSC;
+        font-weight:400;
+        color:rgba(38,38,38,1);
+        line-height:px2vw(36);
+      }
+    }
+  }
+
+}
+</style>

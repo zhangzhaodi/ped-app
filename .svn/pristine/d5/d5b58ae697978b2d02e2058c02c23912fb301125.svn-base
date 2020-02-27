@@ -1,0 +1,208 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :isWhite="true" backgroundColor="none"></Myheader>
+    <div class="stick-box">
+      <div class="stick-top">
+        <!-- <button class="date-mode-btn" @click="changeMode">
+          {{byMonth?"按月选择":"按日选择"}}<i class="iconfont little_mark">&#xe641;</i>
+        </button> -->
+        <div @click="datePickerShow = true">
+          {{selectDate}}
+        </div>
+        <div class="aggregate">
+          <p>{{aggregate | Money}}</p>
+          <h3>持仓市值(元)</h3>
+        </div>
+      </div>
+      <van-sticky :class="{sticky:true}" :offset-top="stickyHeight">
+        <div class="content">
+          <header>
+            <div>基金名称</div>
+            <div>收益(元)</div>
+          </header>
+          <ul class="fund-lists">
+            <li class="list-item" v-for="(item,index) in fundLists" :key="index">
+              <div class="left">
+                <p class="name">{{item.name}}</p>
+                <p class="date">{{item.date}}</p>
+              </div>
+              <div class="earnings">
+                <span class="red" v-if="item.earnings >= 0">+{{ item.earnings | Money}}</span>
+                <span class="green" v-if="item.earnings < 0">{{ item.earnings | Money}}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </van-sticky>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Sticky } from "vant";
+
+export default {
+  components: {
+    Myheader: Header,
+    [Sticky.name]: Sticky
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      byMonth: true,
+      datePickerShow: false,
+      //总计
+      earnings: "66000",
+      apply: "1",
+      //委托列表
+      fundLists: [
+        {
+          name: '易方达财富快线货币市场基金A类',
+          earnings: "10000",
+          date: "2019-08-20"
+        },
+        {
+          name: '易方达财富快线货币市场基金A类',
+          earnings: "-10000",
+          date: "2019-08-20"
+        },
+      ]
+    };
+  },
+  created() {
+    let clientWidth = document.body.clientWidth;
+    console.log(clientWidth);
+    this.stickyHeight = (44 / 375) * clientWidth;
+  },
+  mounted() { },
+  methods: {
+    //贷款状态
+    changeState(value) {
+      if (value == 1) {
+        this.isSelected = true;
+      } else {
+        this.isSelected = false;
+      }
+    },
+    changeMode(){
+      this.byMonth = !this.byMonth;
+    },
+    //贷款记录
+    goLoanRecords() {
+      this.$router.push({ name: 'loanRecords' })
+    },
+    goPrepayment() {
+      this.$router.push({ name: 'prepayment' })
+    },
+    goContract() {
+      this.$router.push({ name: 'contract' })
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/.sticky {
+  .van-sticky {
+    height: 100%;
+  }
+}
+.outer {
+  position: relative;
+  .headerBox {
+    top: 0;
+    position: fixed;
+  }
+  .stick-box {
+    height: 100%;
+    background: #fff;
+    .stick-top {
+      padding-top: px2vw(88);
+      background: linear-gradient(
+        270deg,
+        rgba(248, 204, 173, 1) 0%,
+        rgba(218, 154, 120, 1) 100%
+      );
+      .aggregate {
+        padding-top: px2vw(20);
+        padding-bottom: px2vw(51);
+        margin: 0 px2vw(40);
+        font-family: PingFangSC;
+        font-weight: 300;
+        text-align: center;
+        color: rgba(255, 255, 255, 1);
+        p {
+          font-size: px2vw(60);
+          font-weight: 500;
+          margin-bottom: px2vw(13);
+        }
+        h3 {
+          font-size: px2vw(26);
+          font-weight: 300;
+        }
+
+        span {
+          font-size: px2vw(24);
+        }
+      }
+    }
+    .content {
+      margin-top: px2vw(-5);
+      height: 100%;
+      padding: 0 px2vw(40);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      border-top-left-radius: px2vw(16);
+      border-top-right-radius: px2vw(16);
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: px2vw(98);
+        border-bottom: px2vw(1) solid #ebeef0;
+        div {
+          color: #7d7d7d;
+          font-size: px2vw(28);
+        }
+      }
+
+      .fund-lists {
+        .list-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: px2vw(31) 0 px2vw(31);
+        }
+        .left {
+          display: flex;
+          flex-direction: column;
+          .name {
+            margin-bottom: px2vw(17);
+            color: #333;
+            font-size: px2vw(30);
+          }
+          .date {
+            font-size: px2vw(22);
+            color: #7d7d7d;
+          }
+        }
+        .earnings {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: px2vw(30);
+          .red {
+            color: #f96159;
+          }
+          .green {
+            color: #27cd6e;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

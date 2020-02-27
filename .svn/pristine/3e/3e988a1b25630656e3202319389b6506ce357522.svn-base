@@ -1,0 +1,42 @@
+<template>
+  <div class="nav-top">
+    <i class="iconfont iconic_back"
+       @click="back"></i>
+    <p>{{title}}</p>
+    <i class="iconfont iconicon_gengduoCopy-"></i>
+  </div>
+</template>
+<script>
+export default {
+  props: {
+    title: {
+      default: '标题名称',
+      type: String
+    }
+  },
+  methods: {
+    back () {
+      this.$emit('back')
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.nav-top {
+  margin-bottom: px2vw(20);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: px2vw(26) px2vw(40);
+  background-color: #ffffff;
+  p {
+    font-family: PingFangSC-Medium, PingFang SC;
+    font-weight: 500;
+    font-size: px2vw(36);
+    color: #262626;
+  }
+  i {
+    font-size: px2vw(40);
+  }
+}
+</style>

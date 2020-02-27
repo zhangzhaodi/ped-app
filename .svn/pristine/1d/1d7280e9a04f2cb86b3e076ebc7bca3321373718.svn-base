@@ -1,0 +1,111 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <Scroller>
+      <div class="content">
+        <div class="top">短信验证码已发送至手机189 **** 9998</div>
+        <div class="input-box">
+          <m-Input
+            v-model="verifyCode"
+            @input="verify"
+            title="短信验证码"
+            type="digit"
+            placeholder="请输入短信验证码"
+            maxlength="6"
+          >
+            <template slot="right">
+              <span class="verify" @click="sendHandle" v-if="showTime">发送验证码</span>
+              <van-count-down @finish="finish" v-else :time="time" format="sss后重发" />
+            </template>
+          </m-Input>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">确定</van-button>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import { CountDown } from "vant";
+
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    mInput,
+    [CountDown.name]: CountDown
+  },
+  data() {
+    return {
+      verifyCode: "",
+      forbidden: true,
+      //验证码
+      showTime: true,
+      time: 60 * 1000
+    };
+  },
+  created() {},
+  methods: {
+    next() {
+      this.$router.push({
+        name: "activeteSucced"
+      });
+    },
+    sendHandle() {
+      this.showTime = false;
+    },
+    finish() {
+      this.showTime = true;
+    },
+    verify() {
+      if (this.verifyCode.length == 6) {
+        this.forbidden = false;
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  .scrollerBox {
+    background: rgba(245, 246, 248, 1);
+    .content {
+      .top {
+        padding-top: px2vw(30);
+        padding-bottom: px2vw(20);
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFangSC;
+        font-weight: 400;
+        color: rgba(168, 168, 168, 1);
+        text-indent: px2vw(40);
+      }
+      .input-box {
+        background: #fff;
+        padding: 0 px2vw(40);
+        /deep/ .md-field-item-title {
+          width: px2vw(190);
+        }
+        .verify {
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: rgba(62, 143, 255, 1);
+        }
+        /deep/ .van-count-down {
+          font-family: PingFangSC-Regular, PingFangSC;
+          color: rgba(168, 168, 168, 1);
+        }
+      }
+    }
+    .btn-box {
+      padding: 0 px2vw(40);
+    }
+  }
+}
+</style>

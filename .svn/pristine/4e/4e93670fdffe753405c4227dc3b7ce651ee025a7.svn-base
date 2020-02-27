@@ -1,0 +1,12 @@
+.myLoans {
+  .outer {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    .scrollerBox {
+      flex: 1;
+      overflow: auto;
+    }
+  }
+}

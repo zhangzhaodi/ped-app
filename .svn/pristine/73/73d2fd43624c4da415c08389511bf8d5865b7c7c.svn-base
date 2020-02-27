@@ -1,0 +1,337 @@
+<template>
+  <div class="viewport">
+    <div class="header">
+      <span class="iconfont iconic_back"
+            @click="navBack"></span>
+      <input type="text"
+             @click="isSearch=true"
+             @input="handleSearch"
+             v-model="sarchCity"
+             placeholder="请输入城市">
+      <span class="cancel"
+            v-show="isSearch"
+            @click="cancel">取消</span>
+    </div>
+    <div class="content"
+         v-show="!isSearch">
+      <md-scroll-view ref="scrollView"
+                      :auto-reflow="true"
+                      :scrolling-x="false"
+                      @scroll="$_onScroll">
+        <div class="tags">
+          <div class="group">
+            <p class="title"><span class="icon"></span>当前/历史</p>
+            <tag :text="locationCityName"
+                 @click.native="selectedCity(locationCityName)"
+                 :isActive="true"
+                 :isIcon="true" />
+            <tag v-for="(item,index) in historyCities"
+                 @click.native="selectedCity(item)"
+                 :key="item"
+                 :text="item" />
+          </div>
+          <div class="group">
+            <p class="title"><span class="icon"></span>热门城市</p>
+            <tag v-for="item in hotCities"
+                 @click.native="selectedCity(item)"
+                 :key="item"
+                 :text="item" />
+          </div>
+          <div class="group">
+            <p class="title"><span class="icon"></span>字母索引</p>
+            <ul class="letters">
+              <li v-for="(item,index) in firsLetter"
+                  @click="selectLetter(index)"
+                  :class="{'active':activeBlockIndex===index}"
+                  :key="item">{{item}}</li>
+            </ul>
+          </div>
+        </div>
+        <div v-for="item in category"
+             :key="item.title"
+             class="category">
+          <p class="category-title">{{ item.title }}</p>
+          <div v-for="(ele,index) in item.cities"
+               :key="index"
+               class="list">
+            <p class="item"
+               @click="selectedCity(ele.cityName)">{{ele.cityName}}</p>
+          </div>
+        </div>
+      </md-scroll-view>
+      <p v-if="activeBlockIndex>-1"
+         class="striky-title">{{firsLetter[activeBlockIndex]}}</p>
+    </div>
+    <div class="content"
+         v-show="isSearch">
+      <ul class="search-list">
+        <li v-for="(item,index) in searchList"
+            @click="selectedCity(item.cityName)"
+            :key="index">{{item.cityName}}</li>
+      </ul>
+    </div>
+    <ul class="right-letters"
+        v-show="!isSearch">
+      <li @click="selectLetter(-1)"
+          :class="{'active':activeBlockIndex===-1}">★</li>
+      <li v-for="(item,index) in firsLetter"
+          @click="selectLetter(index)"
+          :class="{'active':activeBlockIndex===index}"
+          :key="index">{{item}}</li>
+    </ul>
+  </div>
+</template>
+<script>
+import Tag from '../components/Tag'
+import { ScrollView } from 'mand-mobile'
+export default {
+  name: 'cities-list',
+  data () {
+    return {
+      locationCityName: '郑州',
+      historyCities: [],
+      hotCities: ['北京', '天津', '上海', '广州', '深圳', '长沙', '武汉', '徐州', '杭州', '西安', '呼和浩特', '乌鲁木齐'],
+      category: [],
+      dimensions: [],
+      scrollY: 0,
+      firsLetter: [],
+      cities: [],
+      sarchCity: '',
+      searchList: [],
+      isSearch: false
+    }
+  },
+  components: {
+    Tag,
+    [ScrollView.name]: ScrollView,
+  },
+  computed: {
+    // 滚动时计算对应的字母块的标题
+    activeBlockIndex () {
+      let activeIndex = -1
+      this.dimensions.forEach((dimension, index) => {
+        if (this.scrollY >= dimension[0] && this.scrollY <= dimension[1]) {
+          activeIndex = index
+        }
+      })
+      return activeIndex
+    },
+  },
+  created () {
+    // 调用原生方法获取当前定位城市
+    window.NativeCall.getLocationCityName(res => {
+      this.locationCityName = JSON.parse(res).CityName
+    })
+  },
+  async mounted () {
+    this.historyCities = JSON.parse(localStorage.getItem('historyCities')) || []
+    await this.initList()
+    await this.handleCities()
+    await this.$nextTick(async () => {
+      this.$_initScrollBlock()
+    })
+  },
+  methods: {
+    // 获取数据
+    async initList () {
+      await this.request("CityList", {
+        BankId: '9999',
+        BranchId: '1001',
+        ChnlId: '62'
+      }, true).then(response => {
+        this.cities = response.List
+      })
+    },
+    // 城市列表处理
+    handleCities () {
+      // 获取所有首字母，去重，排序
+      this.firsLetter = [...new Set(this.cities.map(item => item.citySpellIn))].sort()
+      // 根据首字母，归类
+      this.category = this.firsLetter.map(item => ({ title: item, cities: this.cities.filter(element => item === element.citySpellIn) }))
+    },
+    // 计算每个字母块的高度
+    $_initScrollBlock () {
+      const tags = this.$el.querySelectorAll('.tags')
+      const blocks = this.$el.querySelectorAll('.category')
+      let offset = tags[0].clientHeight
+      Array.prototype.slice.call(blocks).forEach((block, index) => {
+        const innerHeight = block.clientHeight
+        this.$set(this.dimensions, index, [offset, offset + innerHeight])
+        offset += innerHeight
+      })
+    },
+    navBack () {
+      window.NativeCall.BackNative()
+    },
+    // 滚动监听
+    $_onScroll ({ scrollTop }) {
+      this.scrollY = scrollTop
+    },
+    // 字母点击
+    selectLetter (index) {
+      if (index === -1) {
+        this.$refs.scrollView.scrollTo(0, 0, true)
+        return
+      }
+      this.$refs.scrollView.scrollTo(0, this.dimensions[index][0] + 10, true)
+    },
+    // 城市选择
+    selectedCity (cityName) {
+      // 存入历史记录
+      if (!this.historyCities.find(item => item === cityName)) {
+        this.historyCities.unshift(cityName)
+        this.historyCities = this.historyCities.filter((ele, index) => index < 3)
+        localStorage.setItem('historyCities', JSON.stringify(this.historyCities))
+      }
+      // 回传城市
+      window.NativeCall.setLocationCityName({ CityName: cityName })
+      // 关闭当前页面
+      window.NativeCall.BackNative()
+    },
+    // 搜索
+    handleSearch () {
+      if (this.sarchCity) {
+        this.searchList = this.cities.filter(city => city.cityName.includes(this.sarchCity))
+      } else {
+        this.searchList = []
+      }
+    },
+    cancel () {
+      this.isSearch = false
+      this.sarchCity = ''
+      this.searchList = []
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.viewport {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .header {
+    padding: px2vw(6);
+    display: flex;
+    align-items: center;
+    background: #fff;
+    span {
+      padding: px2vw(20);
+      &.iconfont {
+        font-size: px2vw(40);
+      }
+      &.cancel {
+        font-size: px2vw(30);
+      }
+    }
+    input {
+      flex: 1;
+      text-indent: px2vw(30);
+      height: px2vw(60);
+      border: px2vw(1) solid rgba(238, 238, 238, 1);
+      border-radius: px2vw(30);
+      font-size: px2vw(30);
+    }
+  }
+  .content {
+    height: 92vh;
+    position: relative;
+    background: #fff;
+    -webkit-overflow-scrolling: touch;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    .tags {
+      .group {
+        padding-left: px2vw(24);
+        .title {
+          margin: px2vw(20) 0;
+          height: px2vw(40);
+          display: flex;
+          align-items: center;
+          font-size: px2vw(28);
+          color: #666666;
+          span {
+            margin-right: px2vw(10);
+            display: block;
+            width: px2vw(6);
+            height: px2vw(28);
+            background: rgba(223, 28, 50, 1);
+            border-radius: px2vw(3);
+          }
+        }
+        .letters {
+          display: flex;
+          flex-wrap: wrap;
+          li {
+            margin-bottom: px2vw(20);
+            margin-right: px2vw(20);
+            width: px2vw(56);
+            height: px2vw(56);
+            line-height: px2vw(56);
+            text-align: center;
+            border: px2vw(1) solid #eeeeee;
+            border-radius: px2vw(10);
+            font-size: px2vw(28);
+            color: #333333;
+            &.active {
+              color: #ec2138;
+            }
+          }
+        }
+      }
+    }
+
+    .striky-title {
+      position: absolute;
+      top: -1px;
+      left: 0;
+      right: 0;
+      z-index: 2;
+    }
+
+    .category-title,
+    .striky-title {
+      padding: px2vw(10);
+      text-align: left;
+      font-size: px2vw(26);
+      color: #333333;
+      background-color: #f0f0f0;
+    }
+
+    .item {
+      padding: px2vw(15);
+      text-align: left;
+      font-size: px2vw(28);
+      color: #333333;
+      border-bottom: px2vw(1) solid #efefef;
+    }
+    .search-list {
+      padding: 0 px2vw(40);
+      li {
+        padding: px2vw(15) 0;
+        font-size: px2vw(28);
+        color: #333333;
+        border-bottom: px2vw(1) solid #efefef;
+      }
+    }
+  }
+  .right-letters {
+    position: absolute;
+    bottom: px2vw(50);
+    right: px2vw(5);
+    z-index: 3;
+    background-color: #ffffff;
+    li {
+      width: px2vw(40);
+      height: px2vw(40);
+      line-height: px2vw(40);
+      text-align: center;
+      font-size: px2vw(30);
+      color: #a1a1a1;
+      &.active {
+        color: #ec2138;
+      }
+    }
+  }
+}
+</style>

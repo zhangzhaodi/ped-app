@@ -1,0 +1,87 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue");
+const StartGathering = () => import("../pages/StartGathering.vue");
+const PhoneConfirm = () => import("../pages/phoneGathering/confirm");
+const AddCard = () => import("../pages/addCard.vue");
+const Result = () => import("../pages/crossBankGathering/result");
+const Detail = () => import("../pages/detail");
+const HasSigned = () => import("../pages/hasSigned");
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "资金归集",
+        right: "账号解约",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/startGathering",
+      name: "startGathering",
+      component: StartGathering,
+      meta: {
+        title: "资金归集",
+        right: "账号解约",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/index/phoneConfirm",
+      name: "phoneConfirm",
+      component: PhoneConfirm,
+      meta: {
+        title: "资金归集",
+        right: "账号解约",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/addCard",
+      name: "addCard",
+      component: AddCard,
+      meta: {
+        title: "添加银行卡",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/result",
+      name: "result",
+      component: Result,
+      meta: {
+        title: "转账结果",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/detail",
+      name: "detail",
+      component: Detail,
+      meta: {
+        title: "定时收款详情",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/hasSigned",
+      name: "hasSigned",
+      component: HasSigned,
+      meta: {
+        title: "已签约账号",
+        keepAlive: false
+      }
+    },   
+  ]
+});

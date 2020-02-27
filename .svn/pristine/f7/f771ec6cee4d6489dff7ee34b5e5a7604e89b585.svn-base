@@ -1,0 +1,35 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue");
+const Result = () => import("../pages/result.vue");
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title:'零残币兑换预约',
+        keepAlive: false
+      }
+    },
+    {
+      path: "/result",
+      name: "result",
+      component: Result,
+      meta: {
+        title:'受托支付结果',
+        keepAlive: false
+      }
+    }
+
+  ]
+});

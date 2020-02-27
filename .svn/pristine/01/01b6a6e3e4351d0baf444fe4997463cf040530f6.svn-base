@@ -1,0 +1,388 @@
+<template>
+  <div class="viewport">
+    <header>
+      <Myheader :params="{ leftShow: false}"
+                backgroundColor="transparent"></Myheader>
+      <div class="title">
+        <img v-show="calcType.num==='1' || calcType.num==='4'"
+             src="@/assets/payImages/dianfei.png">
+        <img v-show="calcType.num==='2'"
+             src="@/assets/payImages/ranqifei.png">
+        <img v-show="calcType.num==='0'"
+             src="@/assets/payImages/shuifei.png">
+        {{calcType.title}}
+      </div>
+    </header>
+    <div class="details">
+      <div class="details_title">
+        <label>缴费单位</label>
+        <div @click="showCompany">
+          <input type="text"
+                 v-model="CompanyName"
+                 :placeholder="'请选择'+calcType.placeholder"
+                 readonly>
+          <img src="@/assets/payImages/icon_gengduo.png">
+        </div>
+      </div>
+      <div class="detail_num">
+        <label>缴费户号</label>
+        <a href="javascript:0"
+           @click="demandId">如何查询户号？</a>
+      </div>
+      <div class="detail_cont">
+        <input type="text"
+               placeholder="请输入10位缴费户号"
+               v-model="UserNo">
+      </div>
+      <div class="often_contacts"
+           @click="showPopup('PaymentList')">
+        <label> 常用名册</label>
+        <input type="text"
+               readonly
+               v-model="paymentName"
+               placeholder="请选择">
+        <img src="@/assets/payImages/icon_gengduo.png">
+      </div>
+      <button @click="queryBill">查询账单</button>
+    </div>
+    <a class="re_charge"
+       @click="goRecord">充值记录</a>
+    <van-popup v-model="show"
+               round
+               position="bottom"
+               :style="{ height: hig }">
+      <div class="company_chose"
+           v-show="showType ==1">
+        <div>
+          缴费单位
+        </div>
+        <ul>
+          <li v-for="(item,i) in companys"
+              :key="i"
+              @click="choseCompany(item,i)"
+              :class="{isChose:item.chose}">
+            {{item.BusinessName}}
+            <span v-show="item.chose">√</span>
+          </li>
+        </ul>
+      </div>
+      <div class="demand"
+           v-show="showType ==2">
+        <h4>如何获取电力账户？</h4>
+        <div>
+          <h5>1. 每月还款总金额不同</h5>
+          <p>在电力公司提供的电费发票上查询<br>
+            在银行等代售网点提供的发票上查询<br>
+            在您开户时给您的居民用户电登记表或购电证上查询。</p>
+        </div>
+        <div>
+          <h5>2. 查看短信</h5>
+          <p>搜索手机缴费单位发送催缴短信，短息中包含电力户号。</p>
+        </div>
+        <div>
+          <h5>3. 电话咨询</h5>
+          <p>拨打国家电网955598客服电话，提供个人相关信息查询。</p>
+        </div>
+        <button @click="show = false">确认</button>
+      </div>
+    </van-popup>
+    <PaymentList :show.sync="isPopupShow.PaymentList"
+                 :payType="$route.query.payType"
+                 @selectBack="selectBack" />
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue"
+import PaymentList from '../components/PaymentList'
+import { Toast } from 'mand-mobile'
+export default {
+  components: {
+    Myheader: Header,
+    PaymentList
+  },
+  data () {
+    return {
+      show: false,
+      companys: [],
+      CompanyInfo: {},
+      CompanyName: '',
+      hig: '30%',  // 弹框的高度
+      showType: 0,
+      isPopupShow: {},
+      paymentName: '',
+      UserNo: '',
+      AreaCode: ''
+    }
+  },
+  computed: {
+    calcType () {
+      const { payType } = this.$route.query
+      const obj = {
+        '0': { num: '0', title: '水费', placeholder: '水力公司' },
+        '1': { num: '1', title: '电费', placeholder: '电力公司' },
+        '2': { num: '2', title: '燃气费', placeholder: '燃气公司' },
+        '4': { num: '4', title: '电话费', placeholder: '运营商' }
+      }
+      return obj[payType]
+    },
+  },
+  mounted () {
+    // 调用原生方法获取当前定位城市
+    // window.NativeCall.getLocationCityName(res => {
+    //   this.getCityCode(JSON.parse(res).CityName || '郑州')
+    //   Toast.info(JSON.parse(res).CityName)
+    // })
+    this.getCityCode('郑州')
+  },
+  methods: {
+    getCityCode (CityName) {
+      this.request("CityList", {
+        CityName,
+        BankId: '9999',
+        BranchId: '1001',
+        ChnlId: '62'
+      }, true).then(response => {
+        this.AreaCode = response.List[0].cityCode
+        this.initCharge()
+      })
+    },
+    initCharge () {
+      const { payType } = this.$route.query
+      // 电费为省的编号
+      if (payType === '1') {
+        this.AreaCode = '410000'
+      }
+      this.request("PaymentUnitQry", {
+        AreaCode: this.AreaCode,
+        PayType: payType,
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "62",
+      }).then(response => {
+        this.companys = response.List
+      })
+    },
+    selectBack ({ paymentName, paymentNo }) {
+      this.paymentName = paymentName
+      this.UserNo = paymentNo
+    },
+    showPopup (type) {
+      this.$set(this.isPopupShow, type, true)
+    },
+    // 查询账单
+    queryBill () {
+      const { UserNo, CompanyInfo, CompanyName } = this
+      this.$router.push({ path: "/billPayment", query: { UserNo, CompanyInfo: this.CompanyInfo, BizType: this.calcType.num } })
+    },
+    handleSelectRoster () { },
+    // 选择电力公司
+    choseCompany (item) {
+      const { BusinessName } = item
+      this.CompanyInfo = item
+      this.CompanyName = BusinessName
+      this.$set(item, 'chose', true)
+      this.show = false
+    },
+    // 显示弹框
+    showCompany () {
+      this.hig = '30%'
+      this.show = true
+      this.showType = 1
+    },
+    // 查询户号的功能
+    demandId () {
+      this.hig = '80%'
+      this.show = true
+      this.showType = 2
+    },
+    // 充值记录
+    goRecord () {
+      const { paymentNo } = this.$route.query
+      this.$router.push({ path: "/paymentRecord", query: { UserNo: paymentNo } })
+    }
+  }
+}
+</script>
+
+<style lang='scss' scoped>
+.viewport {
+  position: relative;
+  height: 100vh;
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  header {
+    width: 100%;
+    height: px2vw(386);
+    background: url("../../../assets/payImages/img_bg-renqifei.png") no-repeat;
+    background-size: 100% px2vw(386);
+    .title {
+      margin-left: px2vw(80);
+      margin-top: px2vw(30);
+      font-size: px2vw(40);
+      font-weight: 300;
+      color: rgba(255, 255, 255, 1);
+      img {
+        width: px2vw(54);
+        height: px2vw(54);
+        margin-right: px2vw(20);
+        vertical-align: text-bottom;
+      }
+    }
+  }
+  .details {
+    position: relative;
+    width: px2vw(750);
+    height: px2vw(420);
+    background: rgba(255, 255, 255, 1);
+    z-index: 1003;
+    border-radius: px2vw(20) px2vw(20) 0 0;
+    padding: 0 px2vw(40);
+    box-sizing: border-box;
+    margin-top: px2vw(-110);
+  }
+  .details_title {
+    // width: px2vw(750);
+    height: px2vw(109);
+    display: flex;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 1);
+    border-radius: px2vw(20) px2vw(20) 0 0;
+    line-height: px2vw(109);
+    align-items: center;
+    border-bottom: 1px solid #ebeef0;
+
+    label,
+    input {
+      font-size: px2vw(30);
+      color: rgba(38, 38, 38, 1);
+    }
+    input {
+      width: px2vw(300);
+    }
+    img {
+      width: px2vw(12);
+      height: px2vw(24);
+    }
+  }
+  .detail_num {
+    height: px2vw(80);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    label {
+      font-size: px2vw(30);
+      color: rgba(38, 38, 38, 1);
+    }
+    a {
+      font-size: px2vw(26);
+      color: rgba(0, 139, 255, 1);
+    }
+  }
+  .detail_cont {
+    height: px2vw(120);
+    border-bottom: 1px solid #ebeef0;
+    input {
+      height: px2vw(119);
+      font-size: px2vw(40);
+      font-weight: 300;
+      color: rgba(168, 168, 168, 1);
+    }
+  }
+  .often_contacts {
+    height: px2vw(110);
+    line-height: px2vw(110);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    label,
+    input {
+      font-size: px2vw(30);
+      color: rgba(38, 38, 38, 1);
+    }
+    inmput {
+      width: px2vw(350);
+      text-align: right;
+    }
+    img {
+      width: px2vw(12);
+      height: px2vw(24);
+    }
+  }
+  button {
+    width: px2vw(670);
+    height: px2vw(90);
+    background: linear-gradient(
+      270deg,
+      rgba(181, 213, 255, 1) 0%,
+      rgba(182, 197, 252, 1) 100%
+    );
+    border-radius: px2vw(45);
+    font-size: px2vw(34);
+    color: rgba(255, 255, 255, 1);
+    margin-top: px2vw(80);
+  }
+  .re_charge {
+    font-size: px2vw(26);
+    color: rgba(0, 139, 255, 1);
+    position: absolute;
+    bottom: px2vw(20);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .company_chose {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    div {
+      display: flex;
+      justify-content: space-between;
+      height: px2vw(100);
+      line-height: px2vw(100);
+      font-size: px2vw(34);
+      color: rgba(38, 38, 38, 1);
+    }
+    ul {
+      margin-top: px2vw(10);
+      width: 100%;
+      li {
+        height: px2vw(100);
+        line-height: px2vw(100);
+        font-size: px2vw(30);
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+        display: flex;
+        justify-content: space-between;
+        padding: 0 px2vw(40);
+        span {
+          color: #3e8fff;
+        }
+      }
+    }
+  }
+  .isChose {
+    background: rgba(244, 245, 247, 1) !important;
+    opacity: 0.5;
+  }
+  .demand {
+    padding: 0 px2vw(40);
+    h4 {
+      font-size: px2vw(34);
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+      text-align: center;
+    }
+    h5 {
+      font-size: px2vw(30);
+      font-weight: 600;
+      color: rgba(38, 38, 38, 1);
+      margin-bottom: 0 !important;
+    }
+    p {
+      font-size: px2vw(30);
+      color: rgba(38, 38, 38, 1);
+      margin-top: px2vw(20);
+      line-height: px2vw(60);
+    }
+  }
+}
+</style>

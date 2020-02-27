@@ -1,0 +1,244 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <!-- <div class="hint" v-if="isreset">
+        <span class="iconfont">&#xe62e;</span>
+        <p>请输入中旅银行账户</p>
+      </div>-->
+      <div class="outer-box" :class="{reset:isreset}">
+        <mInput
+          v-model="userName"
+          :value="userName"
+          @input="verify"
+          title="姓名"
+          placeholder="请输入姓名"
+          maxlength="19"
+        ></mInput>
+        <mInput
+          v-model="bankCardNum"
+          @input="verify"
+          title="卡号"
+          type="bankCard"
+          placeholder="请输入或扫描本人银行卡号"
+          maxlength="19"
+        >
+          <img slot="right" src="@/assets/myAccount/addBankCard/icon_saomiao@2x.png" alt />
+        </mInput>
+        <mInput
+          v-model="idCard"
+          @input="verify"
+          title="身份证号"
+          type="digit"
+          placeholder="请输入或扫描本人身份证号"
+          maxlength="18"
+        >
+          <img slot="right" src="@/assets/myAccount/addBankCard/icon_saomiao@2x.png" alt />
+        </mInput>
+        <mInput
+          v-model="phoneNumber"
+          @input="verify"
+          title="预留手机号"
+          type="phone"
+          placeholder="请填写收卡人手机号码"
+          maxlength="11"
+        ></mInput>
+        <mInput
+          v-model="verifyCode"
+          @input="verify"
+          title="短信验证码"
+          type="digit"
+          placeholder="请输入短信验证码"
+          maxlength="6"
+        >
+          <template slot="right">
+            <span class="verify" @click="sendHandle" v-if="showTime">发送验证码</span>
+            <van-count-down @finish="finish" v-else :time="time" format="sss后重发" />
+          </template>
+        </mInput>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">下一步</van-button>
+        </div>
+      </div>
+    </div>
+    <Mydialog :isShow="show" :showCancel="showCancel"></Mydialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import Mydialog from "@/components/Dialog/Dialog.vue";
+import { CountDown } from "vant";
+
+export default {
+  components: {
+    Myheader: Header,
+    mInput,
+    Mydialog,
+    [CountDown.name]: CountDown
+  },
+  data() {
+    return {
+      //是否出现提示信息
+      userName: "",
+      isreset: false,
+      show: false,
+      showCancel: false,
+      //禁用下一步按钮
+      forbidden: true,
+      //银行卡号
+      bankCardNum: "",
+      //身份证号
+      idCard: "",
+      //手机号码
+      phoneNumber: "",
+      //验证码
+      verifyCode: "",
+      showTime: true,
+      time: 60 * 1000
+    };
+  },
+  computed: {},
+  created() {},
+  methods: {
+    //是否禁用下一步按钮
+    verify() {
+      if (
+        this.bankCardNum.length == 19 &&
+        this.userName.length > 0 &&
+        this.idCard.length == 18 &&
+        this.phoneNumber.length == 11 &&
+        this.verifyCode.length == 6
+      ) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    },
+    isSelfHold() {
+      this.request("isSelfHold", {
+        params: {
+          AcctName: this.userName,
+          VouId: this.bankCardNum,
+          BdFlag: "1",
+          ExpireDate: "20200101",
+          ChnlId: "3419",
+          BranchId: "0110"
+        }
+      })
+        .then(res => {
+          console.log(res);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    next() {
+      this.show = true;
+      // this.isSelfHold()
+      this.addAccount();
+      if (this.bankCardNum == "6666666666666666666") {
+        //是否是本行卡
+        this.isreset = true;
+      } else {
+        this.$router.push({
+          name: "enterPassword",
+          query: { cardNum: this.bankCardNum, userName: this.userName }
+        });
+      }
+    },
+    addAccount() {
+      let params = {
+        BdFlag: "2",
+        ChnlId: "3419",
+        BranchId: "0110",
+        AcctName: this.userName,
+        VouId: this.bankCardNum,
+        PayPwd: "123456",
+        ExpireDate: "20220101",
+        CifNo: "",
+        TrsAcNo: this.bankCardNum
+      };
+      this.request("addAccount", params)
+        .then(res => {
+          console.log(res.AcctName); //回显姓名
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //发送验证码
+    sendHandle() {
+      this.showTime = false;
+    },
+    finish() {
+      this.showTime = true;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.hint {
+  padding: 0 px2vw(40);
+  height: px2vw(68);
+  display: flex;
+  align-items: center;
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(255, 110, 57, 1);
+  span {
+    margin-right: px2vw(12);
+    font-size: px2vw(24);
+  }
+}
+.outer-box {
+  margin-top: px2vw(20);
+  padding: 0 px2vw(40);
+  background: #fff;
+  .sel-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: px2vw(110);
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    font-size: px2vw(30);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    .left {
+      width: px2vw(100);
+    }
+    .right {
+      flex: 1;
+    }
+  }
+  /deep/ .mand-input {
+    .md-field-item-right {
+      img {
+        width: px2vw(32);
+      }
+    }
+    .md-field-item-title {
+      width: px2vw(190);
+    }
+    .verify {
+      font-size: px2vw(28);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(62, 143, 255, 1);
+    }
+    .van-count-down {
+      color: rgba(168, 168, 168, 1);
+    }
+  }
+}
+.reset {
+  margin-top: 0;
+}
+.btn-box {
+  padding: 0 px2vw(40);
+}
+</style>

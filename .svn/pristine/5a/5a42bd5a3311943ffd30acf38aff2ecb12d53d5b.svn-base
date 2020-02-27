@@ -1,0 +1,745 @@
+<template>
+    <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader
+      :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'#fff'"
+    >
+    </Myheader>
+    <div class="content">
+      <div class="article">
+         <div class="list">
+          <p v-if="bigDatashow">{{bigData.PrdName}}</p>
+          <p v-else>{{CardData.DebtType  | depositDateType }}{{CardData.TermCode | depositDateChange}}</p>
+          <p v-if="bigDatashow">年利率{{ bigData.PrdInt | toFixedNumBer}}%&nbsp;|&nbsp;{{bigData.DepositTerm}}<span v-if="bigData.TermType == 'M'" >个月</span>
+            <span v-else="bigData.TermType == 'Y'" >年</span></p>
+          <p v-else>年利率{{CardData.Rate | toFixedNum }}%&nbsp;|&nbsp;{{CardData.TermCode | depositDateChange}}</p>
+        </div>
+            <div class="date">
+          <div class="date_left">
+              <p>本金(人民币)</p>
+              <p>当前利率</p>
+              <p>计息日期</p>
+              <p v-if="!Noticeshow">到期日期</p>
+          </div>
+           <div class="date_middle">
+              <p v-if="bigDatashow">{{ bigData.PayerAmt  | Money }}元</p>
+              <p v-else>{{CardData.Balance | Money }}元</p>
+              <p v-if="bigDatashow">{{ bigData.PrdInt | toFixedNumBer}}%</p>
+              <p v-else>{{CardData.Rate | toFixedNum }}%</p>
+              <p v-if="bigDatashow">{{bigData.OpenDate | DateChange}}</p>
+              <p v-else>{{CardData.StartDate || CardData.OpenDate | DateChange}}</p>
+              <p v-if="bigDatashow">{{bigData.EndDate | DateChange}}</p>
+              <p v-if="!Noticeshow">{{CardData.DueDt | DateChange}}</p>
+          </div>
+        </div>
+                <!-- 大额显示 -->
+                <!-- v-if="bigDatashow" -->
+           <div  class="money top white"  id="inputup">
+                <p class="title">支取金额</p>
+                <md-amount
+                  :value="form.upperMoney"
+                  is-capital
+                  :style="{'visibility': form.money?'visible':'hidden'}"
+                ></md-amount>
+                <md-input-item
+                  :type="checktype"
+                  v-model="form.money"
+                  @change="onInputChange"
+                  placeholder='请输入'
+                  maxlength="12"
+                  :disabled='disabled'
+                >
+                <div class="input-operator" slot="right" @click="takeAll">全部支取</div>
+                <div slot="left">￥</div>
+                </md-input-item>
+              <p class="toast">存款<span class="span">尚未到期</span>，提前支出将会造成损失</p>
+            </div>
+                  <!-- 整存显示 -->
+             <!-- <div v-else-if="Cardshow" class="money top white">
+                <p class="title">支取金额</p>
+                <md-amount
+                  :value="form.upperMoney"
+                  is-capital
+                  :style="{'visibility': form.money?'visible':'hidden'}"
+                ></md-amount>
+                <md-input-item
+                  type="digit"
+                  v-model="form.money"
+                  @change="onInputChange"
+                  :placeholder='CardData.Balance'
+                  maxlength="12"
+                >
+                <div class="input-operator" slot="right" @click="takeAll">全部支取</div>
+                </md-input-item>
+              <p class="toast">存款<span>尚未到期</span>，提前支出将会造成损失</p>
+            </div> -->
+              <!-- 通知显示 -->
+             <!-- <div  v-else-if="Noticeshow"class="money top white">
+                <p class="title">支取金额</p>
+                <md-amount
+                  :value="form.upperMoney"
+                  is-capital
+                  :style="{'visibility': form.money?'visible':'hidden'}"
+                ></md-amount>
+                <md-input-item
+                  type="digit"
+                  v-model="form.money"
+                  @change="onInputChange"
+                  :placeholder='CardData.Balance'
+                  maxlength="12"
+                >
+                <div class="input-operator" slot="right" @click="takeAll">全部支取</div>
+                </md-input-item>
+              <p class="toast">存款<span>尚未到期</span>，提前支出将会造成损失</p>
+            </div> -->
+            <!-- 提示 -->
+             <MyDialog
+                :showCancel="showCancel"
+                @cancel="cancel"
+                title="提示"
+                :show="alertShow"
+                :isClose="false"
+                @con="alertShow = false"
+              >
+                <p slot="content" class="dialog-content">{{dialogText}}</p >
+              </MyDialog>
+      </div>
+        <!-- //支取 -->
+        <div class="footerBox">
+            <div class="btnbox">
+              <van-button :disabled="forbidden" @click="toConfirm" v-preventreclick>下一步</van-button>
+            </div>
+      </div>
+      <!-- <div v-if="Cardshow == true || Noticeshow == true " class="tot">
+        <p>温馨提示</p>
+        <p>1.若部分提前支取，留存余额将不能低于起存金额50元；</p>
+        <p>2.部分提取后，下次提取需将余额全部取出</p>
+      </div> -->
+            <!-- 手机验证码 -->
+      <van-popup
+            v-model="captchaShow"
+            get-container="body"
+            round
+            position="bottom"
+            :close-on-click-overlay="false"
+            :style="{height:'62.29vh'}"
+          >
+          <header>
+              <span class="iconfont close" @click="clearSms">&#xe62b;</span>
+              请输入短信验证码
+            </header>
+            <div class="md-example-chil">
+              <md-captcha ref="captcha" :value="show" :maxlength="6" :isView="true" :brief="`验证码已发送至${phoneProtect}`" :text-render="keyFormatter" @confirm="onConfirm" @send="SendSmsPwd">
+              </md-captcha>
+            </div>
+      </van-popup>
+      <confirm :popupFlag="popupFlag"  :CardData='CardData'  @toResult="toResult" v-if="popupFlag"></confirm>
+  </div>
+    </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+// import {DropMenu} from 'mand-mobile'
+import {DropdownMenu, DropdownItem} from 'vant';
+import { mapActions,mapMutations,mapState, mapGetters,} from 'vuex';
+import Confirm from "../components/confirm";
+import { Amount, InputItem } from "mand-mobile";
+import Captcha from '@/components/Captcha';
+import { Field ,picker} from "vant";
+import Dialog from "@/components/Dialog/Dialog.vue";
+export default {
+  components: {
+    Myheader: Header, //头部组件
+    MyDialog: Dialog,
+    // [DropMenu.name]: DropMenu,
+    Confirm:Confirm,
+    [Captcha.name]: Captcha,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+  },
+  data(){
+    return{
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      popupFlag:false,
+      CardData:{},
+      bigData:{},
+      form: {
+        money: null,
+        upperMoney: null,
+        CardDataList:false,
+        bigDataList:false,
+        CardShow:false,
+        specialshow:false,
+      },
+      disabled:false,//禁止输入
+      checktype:'money',//输入控制
+      specialshow:false,//特色存款
+      bigDataShowT:false,//大额特殊
+      bigDatashow:false,//大额显示
+      Cardshow :false,//整取显示
+      Noticeshow:false,//通知显示
+      forbidden:true,//按钮显示
+      //是否显示
+      alertShow: false,
+       //是否显示取消
+      showCancel: false,
+      dialogText:"本金不能低于5万元",
+      captchaShow:false,//短信验证码显示
+      show:true,//短信
+      SmsNbr:'',//短信校验
+      phone:'13598874045',
+    }
+  },
+  created(){
+    window.NativeCall.getUserInfo(params => {
+    let par = JSON.parse(params);
+    this.phone = par.MobilePhone;
+    this.getUserInfo();
+    });
+    console.log(this.userInfo);
+    console.log(this.$route.query);
+    if(this.$route.query.SortId=='0'){
+      this.specialshow = true
+      this.form.specialshow = true
+    }
+    if(this.$route.query.SortId=='2'){
+      this.Cardshow = true
+      this.form.CardShow = true
+    }
+    if(this.$route.query.SortId=='3'){
+      this.Noticeshow = true
+    }
+    if((JSON.parse(this.$route.query.bigDatashow)) ==  true){
+      this.bigDatashow=true
+      this.form.bigDataList=true
+      this.bigData=(JSON.parse(this.$route.query.bigData))
+      console.log(this.bigData);
+    }else{
+      this.form.CardDataList=true
+    }
+    if((JSON.parse(this.$route.query.bigDataShowT)) ==  true){
+        this.bigDataShowT=true
+        this.form.bigDataList=true
+        this.form.CardDataList=false
+    }
+    this.CardData=JSON.parse(this.$route.query.CardData);
+  },
+  mounted(){
+    console.log(this.bigData.BillAcctNo,this.bigData.PayerAcNo,)
+    if(this.specialshow){
+      this.disabled = true
+      this.form.money =this.CardData.Balance
+      this.onInputChange('',this.form.money)
+      this.forbidden=false
+      this.form.CardDataList=false
+    }
+  },
+  methods:{
+        ...mapActions("deposit",['setuserinfo']),
+  toConfirm(){
+      //弹出底部弹框
+      // this.$router.push({
+      //   path: '/rollinresult'
+      // });
+      this.$store.state.params = { ...this.form};
+      this.setuserinfo({...this.CardData,...this.bigData});
+      console.log(this.$store.state.params,"vuex进入触发")
+      // console.log(1,this.form)
+      this.popupFlag = true;
+    },
+  onConfirm(code) {
+    console.log(this.bigData)
+      if(code.length === 6){
+        console.log(code)
+        this.request("LargeDepRecWithdrawalConfirm", {
+        BankId: this.form.BankId || '9999',
+        BranchId:  this.userInfo.BranchId || "1999",
+        ChnlId: this.userInfo.ChnlId || "62",
+        BillAcctNo:this.CardData.BiAcctNo,
+        RefAcctNo:this.CardData.BillAcctNo,
+        SmsNbr :this.SmsNbr,
+        OTPPassword:code,
+        Amt: String(this.form.money),
+        MinimumSubscriptionAmount:this.bigData.MinIncrementalAmount || "",
+        Balance: this.bigData.PayerAmt,
+      },true)
+        .then(res => {
+          console.log(res)
+          this.captchaShow = false
+          this.tokenName = res._tokenName;
+          if (res._RejCode == "000000") {
+        this.request("LargeDepRecWithdrawal", {
+            BankId: this.form.BankId || '9999',
+            BranchId:  this.userInfo.BranchId || "1999",
+            ChnlId: this.userInfo.ChnlId || "62",
+            ApprTyp: "2" || '',
+            Amt: this.form.money,
+            BillAcctNo:this.bigData.BillAcctNo,
+            RefAcctNo:this.bigData.PayerAcNo,
+            Balance: this.bigData.PayerAmt,
+            _tokenName:this.tokenName,
+          })
+          .then(res => {
+            console.log(res);
+            this.$router.push({
+              path: "/win",
+              query: {
+                TransAmt: this.form.money,
+                Rate: res.Rate,
+                InterestAmt:res.InterestAmt,
+                confirmBig: true
+              }
+            })
+          })
+          .catch(error=>{
+          this.$refs.captcha.$data.code = ''
+          var modul = "1"
+          this.$emit("toResult",modul);
+          })
+          }
+        })
+        .catch(error => {
+          this.captchaShow = false
+          this.$refs.captcha.$data.code = ''
+          console.log(error);
+          var modul = "1"
+          this.$emit("toResult",modul);
+        });
+      }
+    },
+    //短信框关闭
+    clearSms(){
+          this.captchaShow = false
+    },
+     //发送短信验证码
+      SendSmsPwd(){
+      this.request('SendSmsOtp',
+          {
+            // ApprTyp: "1",
+            BankId: this.form.BankId || '9999',
+            BranchId:  this.userInfo.BranchId || "1999",
+            ChnlId: this.userInfo.ChnlId || "62",
+            // VerifyTag: 'N',
+            SmsTransType:'1' || '',
+            PhoneNbr:this.phone,
+            MobilePhone:this.phone,
+            // VerifyScene: '1',
+          }, true
+          ).then((res) => {
+          this.SmsNbr=res.SmsNbr,
+          console.log(res,"验证码已发送")
+          }).catch((error) => {
+            console.log(error)
+          })
+    },
+    //接受popug组件信息，
+    toResult(data){
+      console.log(data);
+      if(data !== 0){
+          this.popupFlag = false;
+        }
+      if(data == 'big'){
+        this.captchaShow = true;
+      }
+    },
+    inputUp(){
+      document.getElementById('inputup').scrollIntoView();
+        console.log(vm,document.getElementById('inputup'))
+    },
+    takeAll() {
+      if(this.bigDatashow || this.bigDataShowT ){
+        this.form.money =this.bigData.PayerAmt
+        this.onInputChange('',this.form.money)
+      }else{
+        this.form.money =this.CardData.Balance
+        this.onInputChange('',this.form.money)
+      }
+    },
+    onInputChange(name, value) {
+      this.inputUp()
+      console.log(this.CardData.Balance,"-",value,"=",(this.CardData.Balance-value) );
+      this.form.upperMoney = parseFloat(value);
+      if(this.bigDatashow || this.bigDataShowT ){
+        if(value <= 0 ){
+        this.forbidden=true
+      }
+      else if(this.bigData.PayerAmt-value == '0' ){
+        this.forbidden=false
+      }
+      else if(this.bigData.PayerAmt-value < '200000'){
+        this.dialogText="本金不能低于20万元"
+        this.alertShow=true
+        this.forbidden=true
+      }
+      else{
+        this.forbidden=false
+        }
+      }
+      if(this.Cardshow){
+        if(value == ''){
+        this.forbidden=true
+      }
+      else if(this.CardData.Balance-value == '0' ){
+        this.forbidden=false
+      }
+      else if(this.CardData.Balance-value < '50' ){
+        this.dialogText="开户金额不能低于50元"
+        this.alertShow=true
+        this.forbidden=true
+      }
+      else{
+        this.forbidden=false
+        }
+      }
+      if(this.Noticeshow){
+        if(value == ''){
+        this.forbidden=true
+      }
+      else if(this.CardData.Balance-value == '0' ){
+        this.forbidden=false
+      }
+      else if(this.CardData.Balance-value < '50000'){
+        this.alertShow=true
+        this.forbidden=true
+      }
+      else{
+        this.forbidden=false
+      }
+      }
+    },
+    //隐藏dialog
+    cancel() {
+      this.alertShow = false;
+    },
+
+  },
+  computed:{
+        ...mapState("deposit", { user: "info"}),
+        ...mapState('common',['userInfo']),
+    keyFormatter(val) {
+      if (val === '.') {
+        return 'x'
+      }
+    },
+    phoneProtect(){
+      let value = this.phone;
+      return value.substr(0,3)+ '****' + value.substr(value.length - 4)
+    }
+  },
+  watch:{
+       //监听输入金额
+      'form.money':{
+        deep:true,
+        handler:function(val,oldVal){
+          console.log('watch中：',val,oldVal)
+          val = val.toString();
+        var arr0 = val.split("");
+        var arr = val.split(".");
+        // 第一位输入的是0的时候进行处理采用第二位的数字
+        // if(this.Cardshow == true || this.Noticeshow==true){
+          if (arr0.length == 2 && arr0[0] == "0" && arr0[1] !== ".") {
+            this.form.money= Number(arr0[1]);
+            console.log( this.form.money)
+            return;
+          }
+          //小数点后超过两位时取前两位
+          if (val == "") {
+            this.form.money = "";
+            console.log( this.form.money)
+          } else if ( (arr.length == 2 && arr[1].length > 2) || arr[0].length > 14 ) {
+            this.form.money = Number(oldVal);
+            console.log( this.form.money)
+          }
+        // }else{
+        //   this.checktype= 'digit'
+        // }
+      }
+    }
+  },
+}
+</script>
+
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  height: 100%;
+}
+.top{
+  height:px2vw(110);
+  background:rgba(255,255,255,1);
+  display:flex;
+  padding: 0 px2vw(40) 0;
+  align-content: center;
+  justify-content: space-between;
+  margin-bottom: px2vw(20);
+  p{
+    height:px2vw(110);
+    font-size:px2vw(30);
+    font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(110);
+    letter-spacing:px2vw(1);
+  }
+}
+
+.list{
+  height: px2vw(110);
+  padding: 0 px2vw(40) 0;
+  margin-top: px2vw(20);
+  background: #fff;
+  display: flex;
+  flex-direction:column;
+  justify-content: space-around;
+  p:nth-of-type(1){
+    height:px2vw(30);
+    font-size:px2vw(30);
+    font-family:PingFangSC-Medium,PingFang SC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(30);
+  }
+  p:nth-of-type(2){
+    height:px2vw(24);
+    font-size:px2vw(24);
+    font-family:PingFangSC-Regular,PingFang SC;
+    font-weight:400;
+    color:rgba(168,168,168,1);
+    line-height:px2vw(24);
+  }
+}
+.date{
+  padding: 0 px2vw(40) 0;
+  margin-top: px2vw(20);
+  background: #fff;
+  display: flex;
+  height: px2vw(315);
+  p{
+      margin-top: px2vw(40);
+  }
+  .date_left{
+    height:px2vw(28);
+    font-size:px2vw(28);
+    font-family:PingFangSC-Light,PingFang SC;
+    font-weight:300;
+    color:rgba(125,125,125,1);
+    line-height:px2vw(35);
+  }
+  .date_middle{
+    height:px2vw(28);
+    font-size:px2vw(28);
+    font-family:PingFangSC-Light,PingFang SC;
+    font-weight:400;
+    color:rgba(0,0,0,1);
+    line-height:px2vw(35);
+    margin-left: px2vw(30);
+  }
+}
+
+.footerBox{
+  display: flex;
+  justify-content: center;
+  margin-top: px2vw(140);
+  width: 100%;
+  text-align: center;
+  font-size: px2vw(32);
+  color: rgba(255, 255, 255, 1);
+  height: px2vw(90);
+  line-height: px2vw(90);
+  .btnbox{
+    width: px2vw(670);
+     /deep/ .van-button  {
+    width: 100%;
+    color: rgba(255, 255, 255, 1);
+    border-radius: px2vw(45);
+    background:linear-gradient(270deg,rgba(248,204,173,1) 0%,rgba(218,154,120,1) 100%);
+  }
+  }
+}
+
+.top {
+  margin-top: px2vw(20);
+}
+.white {
+  background: #fff;
+}
+.money {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  height: px2vw(280);
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  .title {
+    height: px2vw(80);
+    line-height: px2vw(80);
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: #262626;
+    margin-top: px2vw(20);
+  }
+  .toast {
+    height: px2vw(60);
+    line-height: px2vw(60);
+    color: #7d7d7d;
+    font-size: px2vw(24);
+    .span{
+      color:#FF4040FF;
+    }
+  }
+}
+/deep/ .van-field__control:disabled {
+  color: #a8a8a8;
+  font-size: px2vw(30);
+}
+/deep/ .van-field__control {
+  color: #262626;
+  font-size: px2vw(30);
+  // margin-top: px2vw(-6);
+}
+/deep/ .md-field-item-content{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+/deep/ .md-field-item-content:before {
+  border-bottom: px2vw(1) solid #eff0f1;
+}
+/deep/ .md-field-item-right{
+      color: #3E8FFFFF;
+}
+/deep/ .md-amount {
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(255, 181, 43, 1);
+  margin-top: px2vw(18);
+}
+/deep/ .md-input-item {
+  height: px2vw(66);
+  line-height: px2vw(66);
+  display: flex;
+  flex-direction: column;
+  // align-items: center;
+  // padding-bottom: px2vw(29);
+}
+/deep/ .md-field-item-left {
+      font-size: px2vw(40);
+      color: #262626FF;
+      padding-top: px2vw(10);
+  }
+/deep/ .md-field-item-control {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        .md-input-item-input {
+          width: 100%;
+          &::-webkit-input-placeholder {
+            /* WebKit, Blink, Edge */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            line-height: normal;
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::-moz-placeholder {
+            /* Mozilla Firefox 19+ */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::placeholder {
+            /* 大部分现代浏览器 */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::-ms-input-placeholder {
+            /* Microsoft Edge */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+        }
+      }
+/deep/ .md-input-item-input{
+  font-size:px2vw(50);
+}
+/deep/ .md-switch.active{
+  background:rgba(39,205,111,1);
+}
+/deep/ .md-input-item.is-error .md-field-item-content:before {
+  border: none;
+}
+/deep/ .md-field-item-children{
+  margin-top: px2vw(-20);
+}
+.tot{
+  font-size:px2vw(22);
+  font-family:PingFangSC-Regular,PingFang SC;
+  font-weight:400;
+  color:rgba(125,125,125,1);
+  line-height:px2vw(30);
+  margin-top: px2vw(100);
+  padding: 0 px2vw(40) 0;
+}
+//短信验证码
+header {
+  height: px2vw(100);
+  line-height: px2vw(100);
+  font-size: px2vw(34);
+  font-weight: 400;
+  text-align: center;
+  color: $color-text;
+  position: relative;
+  .iconfont {
+    font-size: px2vw(22);
+    color: #7d7d7d;
+  }
+  .close {
+    position: absolute;
+    left: px2vw(40);
+  }
+}
+</style>

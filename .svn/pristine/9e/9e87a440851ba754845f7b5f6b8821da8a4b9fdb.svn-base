@@ -1,0 +1,271 @@
+<template>
+  <div class="result">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="top">
+      <div class="img">
+        <span class="iconfont iconcheck-"></span>
+      </div>
+      <p class="msg">申请成功</p>
+    </div>
+    <div class="line"></div>
+    <div class="content">
+      <div class="detail">
+        <div class="payer">
+          <p class="left">产品名称</p>
+          <p class="center">
+            <span>{{data.ProductName}}</span>
+          </p>
+        </div>
+        <div class="money">
+          <p class="left">购买金额</p>
+          <p class="center">{{data.AMT | Money}}</p>
+        </div>
+        <div class="notice">
+          <div class="left">
+            <span>申请日期</span>
+          </div>
+          <div class="center">{{new Date().getTime()|Format('yyyy-MM-dd')}}</div>
+        </div>
+      </div>
+    </div>
+    <div class="line"></div>
+    <div class="dealline">
+      <div class="img">
+        <!-- <img src="@/assets/manageMoney/img_time.png" /> -->
+      </div>
+      <div class="time">
+        <div class="start">
+          <p class="text">到期日</p>
+          <p class="p1">预计{{data.ProdEndDate|timeFormat1}} {{data.ProdEndDate|week}}</p>
+        </div>
+        <div class="end">
+          <p class="text">起息日</p>
+          <p class="p1" v-if="data.ModulCode=='1102'||data.ModulCode=='1303'">预计{{data.ProdStartDate|timeFormat1}} {{data.ProdStartDate|week}}</p>
+          <p class="p1" v-if="data.ProductState=='1'&&data.ModulCode=='1306'">预计{{data.ProdStartDate|timeFormat1}} {{data.ProdStartDate|week}}</p>
+          <p class="p1" v-if="data.ProductState=='0'&&data.ModulCode=='1306'">预计{{data.NextDate|timeFormat1}} {{data.NextDate|week}}</p>
+          <p class="p1" v-if="data.ProductState=='1'&&data.ModulCode=='1307'">预计{{data.ProdStartDate|timeFormat1}} {{data.ProdStartDate|week}}</p>
+        </div>
+      </div>
+    </div>
+    <div class="btn">
+      <van-button type="default" class="again" @click="again">我的理财</van-button>
+      <van-button type="default" class="final" @click="final">完成</van-button>
+    </div>
+    <!-- 行业优先 -->
+    <div class="best">
+      <img src="@/assets/manageMoney/img_guanggao@2x.png">
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  props: {
+    data: {
+      require: true
+    }
+  },
+  filters: {
+    timeFormat1(value) {
+      let arr = [];
+      arr.push(value.slice(4, 6));
+      arr.push(value.slice(6));
+      return arr.join("-");
+    },
+    week(value){
+      let arr = [];
+      let weekDay = ['周日','周一','周二','周三','周四','周五','周六']
+      arr.push(value.slice(0, 4));
+      arr.push(value.slice(4, 6));
+      arr.push(value.slice(6));
+      let str = arr.join('-')
+      let index = new Date(arr.join("-")).getDay()
+      return weekDay[index];
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      }
+    };
+  },
+  methods: {
+    final() {
+      this.$router.push({ name: "index" });
+    },
+    again() {
+      this.$router.push({ name: "myPocket" });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+.top {
+  height: px2vw(348);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  .img {
+    height: px2vw(110);
+    width: px2vw(110);
+    background: linear-gradient(#27cd6f, #39df8d);
+    border-radius: 50%;
+    color: #fff;
+    line-height: px2vw(110);
+    text-align: center;
+    margin: 0 auto;
+    .iconfont {
+      font-size: px2vw(56);
+    }
+  }
+  .msg {
+    font-size: px2vw(40);
+    font-weight: 400;
+    color: #262626;
+    text-align: center;
+    line-height: px2vw(40);
+    margin-top: px2vw(40);
+  }
+}
+.content {
+  font-family: PingFangSC;
+  padding: px2vw(50) 0;
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer,
+    .money,
+    .notice {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        width: px2vw(152);
+        flex: none;
+        color: #7d7d7d;
+      }
+      .center {
+        flex: 1;
+        color: #000;
+        font-weight: 400;
+      }
+      .right {
+        color: #008bff;
+        flex: none;
+      }
+    }
+    .payer {
+      margin-top: 0;
+    }
+  }
+}
+.dealline {
+  height: px2vw(282);
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  padding: px2vw(51) px2vw(40) px2vw(70) px2vw(40);
+  .img {
+    box-sizing: border-box;
+    padding: px2vw(20) 0;
+    height: px2vw(144);
+    width: px2vw(30);
+    background: url('~@/assets/manageMoney/img_time.png');
+    background-size: 100% 100%;
+    // img {
+    //   width: px2vw(15);
+    //   height: 100%;
+    // }
+  }
+  .time {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-left: px2vw(14);
+    .start{
+      margin-top: px2vw(-20);
+    }
+    .text {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: #262626;
+    }
+    .p1 {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #7d7d7d;
+      margin-top: px2vw(6);
+    }
+  }
+}
+.btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: px2vw(30);
+  font-weight: 400;
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  /deep/ .van-button {
+    height: px2vw(90);
+    width: px2vw(310);
+    border-radius: px2vw(45);
+  }
+  .again {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background-color: #fff;
+    border: px2vw(2) solid #d7a083;
+    color: #d7a083;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    span{
+      flex: 1;
+      text-align: center;
+    }
+  }
+  .final {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background: linear-gradient(left,RGBA(229, 150, 113, 1), RGBA(255, 202, 167, 1));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    span{
+      flex: 1;
+      text-align: center;
+    }
+  }
+}
+.best{
+  padding: 0 px2vw(40);
+  margin-top: px2vw(80);
+  img{
+    width: 100%;
+  }
+}
+</style>

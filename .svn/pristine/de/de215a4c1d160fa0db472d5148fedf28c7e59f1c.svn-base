@@ -1,0 +1,175 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :backgroundColor="background"
+      :isWhite="isWhite"
+    ></Myheader>
+    <div class="content">
+      <h1>二维码邀请</h1>
+      <p class="text">好友使用任何二维码扫一扫的的工具，打开二维码下载中旅银行APP,即可完成邀请</p>
+      <img src="@/assets/share/img_erweimayaoqing@2x.png" alt class="img" />
+      <div class="ewm">
+        <img :src="imgUrl" alt class="canvas" ref="canvas" />
+      </div>
+      <div class="btn">
+        <van-button type="default" @click="savecanvas">导出为图片</van-button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import html2canvas from "html2canvas";
+import { Button } from "vant";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      background: "transparent",
+      isWhite: true,
+      imgUrl: null
+    };
+  },
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  created() {
+    this.getImage();
+  },
+  methods: {
+    getImage() {
+      let params = {
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "39"
+      };
+      this.request("ObtainQrCode", { ...params }).then(res => {
+        this.imgUrl = "data:image/png;base64," + res.qrCodeStr;
+        // this.imgUrl ='data:image/png;base64,'+res.qrCodeStr;
+      });
+    },
+    savecanvas() {
+      window.scrollTo(0, 0);
+      let canvas = document.querySelector(".canvas");
+      let that = this;
+      html2canvas(canvas, { scale: 2, logging: false, useCORS: true }).then(
+        function(canvas) {
+          let type = "png";
+          let imgData = canvas.toDataURL(type); // 照片格式处理
+          let _fixType = function(type) {
+            type = type.toLowerCase().replace(/jpg/i, "jpeg");
+            let r = type.match(/png|jpeg|bmp|gif/)[0];
+            return "image/" + r;
+          };
+          imgData = imgData.replace(_fixType(type), "image/octet-stream");
+          let filename = "ZL" + new Date().getTime() + "." + type;
+          that.saveFile(imgData, filename);
+        }
+      );
+    },
+    saveFile(data, filename) {
+      let save_link = document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        "a"
+      );
+      save_link.href = data;
+      save_link.download = filename;
+      let event = document.createEvent("MouseEvents");
+      event.initMouseEvent(
+        "click",
+        true,
+        false,
+        window,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
+        false,
+        false,
+        false,
+        0,
+        null
+      );
+      save_link.dispatchEvent(event);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: linear-gradient(#2b2471, #25144d);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .content {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+}
+h1 {
+  font-size: px2vw(60);
+  font-family: PingFangSC-Medium, PingFang SC;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  margin-top: px2vw(70);
+}
+
+.text {
+  font-size: px2vw(26);
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+  margin-top: px2vw(30);
+  max-width: px2vw(522);
+  text-align: center;
+  line-height: px2vw(37);
+}
+.img {
+  width: px2vw(346);
+  margin-top: px2vw(33);
+}
+.ewm {
+  width: px2vw(438);
+  height: px2vw(438);
+  padding: px2vw(10);
+  background: #2e4877;
+  box-sizing: border-box;
+  margin-top: px2vw(-34);
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+.btn {
+  width: px2vw(530);
+  margin-top: px2vw(100);
+  .van-button {
+    width: 100%;
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background: linear-gradient(#f9c94f, #ffb42a);
+  }
+  .van-button__text {
+    font-size: px2vw(34);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+  }
+}
+</style>

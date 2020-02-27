@@ -1,0 +1,231 @@
+<template>
+  <div class="stylesize">
+    <div id="myChart" :style="{width: '100%'}"></div>
+  </div>
+</template>
+
+<script>
+import echarts from "echarts";
+export default {
+  components: {},
+  data() {
+    return {
+      option: {}
+    };
+  },
+  props: {
+    chartData: {
+      require: true
+    },
+    chartType: {
+      type: String,
+      default: 'yield',
+      require: true
+    },
+    interval: {
+      type: Number,
+      default: 7
+    }
+  },
+  created() {
+    //请求数据
+    console.log(this.chartType);
+    let type;
+    let chartType = this.chartType;
+    if (chartType == "yield" || chartType == "prdValue") {
+      type = "time";
+    } else {
+      type = "value";
+    }
+  },
+  mounted() {
+    this.drawLine();
+  },
+  watch: {
+    chartData: {
+      handler(val) {
+        console.log(this.option);
+        this.drawLine();
+      }
+    }
+  },
+  methods: {
+    drawLine() {
+      // 基于准备好的dom，初始化echarts实例
+      console.log(this.chartData)
+      let myChart = echarts.init(document.getElementById("myChart"));
+      // 绘制图表
+      this.option = {
+        xAxis: {
+          type: "time",
+          boundaryGap: false,
+          splitLine: {
+            show: false,
+            color: "RGBA(243, 245, 254, 1)",
+            height: 1
+          },
+          axisTick: {
+            show: false
+          },
+          axisLine: {
+            show: false
+          },
+          axisLabel: {
+            show: true,
+            textStyle: {
+              color: "#7D7D7D", //更改坐标轴文字颜色
+              fontSize: 10 //更改坐标轴文字大小
+            }
+          }
+        },
+        grid: {
+          x: 50,
+          y: 25,
+          x2: 25,
+          y2: 40
+        },
+        tooltip: {
+          trigger: "axis",
+          confine: true,
+          axisPointer: {
+            type: "line",
+            label: {
+              backgroundColor: "#6a7985"
+            }
+          },
+          backgroundColor:"rgba(245,246,248,1)",
+          textStyle:{
+            color:"#F96159",
+            fontSize: 10
+          },
+          formatter: this.get
+          // trigger:'none'
+        },
+        yAxis: {
+          type: "value",
+          axisLine: {
+            show: false
+          },
+          axisTick: {
+            show: false
+          },
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: ["rgba(243, 245, 254, 1)"],
+              width: 1,
+              opacity: 0.1,
+              type: "solid"
+            }
+          },
+          axisLabel: {
+            textStyle: {
+              color: "#7D7D7D", //更改坐标轴文字颜色
+              fontSize: 10 //更改坐标轴文字大小
+            },
+            formatter: function (val) {
+              let data = (val * 100).toString();
+              let decIndex = data.indexOf(".") //小数点的索引值
+              if(decIndex < 0){
+                //整数
+                data += ".00%";
+              }else{
+                // 当数字的长度
+                if(data.length <= decIndex + 2){
+                  data += "0";
+                }
+                data += '%';
+              }
+              return data
+              // if (chartType == "prdValue") {
+              //   return Math.round(val * 100) / 100;
+              // } else if (chartType == "yield") {
+              //   return Math.round(val * 100) / 100 + "%";
+              // } else {
+              //   //incomedata
+              //   return Math.round(val * 1000) / 10 + "%";
+              // }
+            }
+          }
+        },
+        series: [
+          {
+            data: this.chartData,
+            type: "line",
+            lineStyle: {
+              color: "#3AABFF"
+            },
+            symbol: "circle",
+            symbolSize: "1",
+            showSymbol: false,
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                {
+                  offset: 0,
+                  color: "rgba(58, 138, 255, .6)"
+                },
+                {
+                  offset: 1,
+                  color: "rgba(58, 180, 255, .4)"
+                }
+              ])
+            },
+            itemStyle: {
+              normal: {
+                borderWidth: 3,
+                // borderColor: 'yellow',
+                color: "RGBA(39, 145, 250, 1)"
+              }
+            }
+          }
+        ]
+      };
+      myChart.setOption(this.option, true);
+      window.onresize = function () {
+        myChart.resize();
+        //myChart1.resize();    //若有多个图表变动，可多写
+      };
+    },
+    get(params) {
+      const item = params[0];
+      let data = Number(item.data[1])
+      return "+" + data * 100 + '%'
+      //      `
+      // 当前日期:${item.data[0]}
+      // 年化收益率:${Math.ceil(parseFloat(item.data[1]) * 100) / 100 + "%"}
+      // `;
+      if (this.chartType == "yield") {
+        return `  
+        当前日期:${this.Format(item.data[0], "MM-dd")}
+        </br>
+        年化收益率:${Math.ceil(parseFloat(item.data[1]) * 100) / 100 + "%"}`;
+      } else if (this.chartType == "prdValue") {
+        return `  
+        当前日期:${this.Format(item.data[0], "MM-dd")}
+        </br>
+        当前净值:${Math.ceil(parseFloat(item.data[1]) * 1000000) / 1000000}`;
+      } else {
+        return `  
+        当前期数:${item.data[0]}期
+        </br>
+        预期收益率:${Math.ceil(parseFloat(item.data[1]) * 10000) / 100 + "%"}`;
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.stylesize {
+  // width: 100%;
+  // height: px2vw(466);
+  background: rgba(255, 255, 255, 1);
+  // padding: 0 px2vw(40);
+  // box-sizing: border-box;
+}
+#myChart {
+  width: 100% !important;
+  height: px2vw(467);
+  // border: 1px solid red;
+  margin: 0 auto;
+}
+</style>

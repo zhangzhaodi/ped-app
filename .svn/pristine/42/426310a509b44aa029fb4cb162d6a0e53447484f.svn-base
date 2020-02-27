@@ -1,0 +1,264 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller>
+      <Pagetitle :title="titleInfo" :notice="noticeInfo"></Pagetitle>
+      <div @click="ScanOcrIDCard('100')" class="front-box">
+        <div v-if="imageObj.front" class="img-box">
+          <img :src="'data:image/png;base64,'+imageObj.front" alt />
+        </div>
+        <div v-else class="upload-box">
+          <img src="@/assets/bankIcon/icon_shenfenzhengdianjishangchuan.png" alt />
+          <p>点击上传身份证人像面</p>
+        </div>
+      </div>
+      <div @click="ScanOcrIDCard('200')" class="reverse-box">
+        <div v-if="imageObj.reverse" class="img-box">
+          <img :src="'data:image/png;base64,'+imageObj.reverse" alt />
+        </div>
+        <div v-else class="upload-box">
+          <img src="@/assets/bankIcon/icon_shenfenzhengdianjishangchuan.png" alt />
+          <p>点击上传身份证国徽面</p>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :style="styleObject" :disabled="forbidden" @click="next">下一步</van-button>
+        </div>
+      </div>
+      <MyDialog
+          :showCancel="showCancel"
+          @cancel="cancel"
+          title="提示"
+          :show="alertShow"
+          :isClose="false"
+          @con="alertShow = false"
+        >
+          <p slot="content" class="dialog-content">{{dialogText}}</p >
+        </MyDialog>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Pagetitle from "./components/Pagetitle";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { Button } from "vant";
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+
+
+export default {
+  components: {
+    Myheader: Header,
+    MyDialog: Dialog,
+    Scroller,
+    Pagetitle,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      titleInfo: "身份证信息录入",
+      noticeInfo: "请正确拍摄、避免证件缺失、模糊和光线强烈",
+      //是否禁用
+      forbidden: false,
+      styleObject: {
+        background: ""
+      },
+      imageObj: {
+        front: "",
+        reverse: ""
+      },
+      imgface:false,
+      imgrev:false,
+      //是否显示
+      alertShow: false,
+      //是否显示取消
+      showCancel: false,
+      dialogText:"身份证信息不匹配，请确认后重新验证",
+      info:{
+        Sex:'',
+        Rdtdmk:'',
+        ComAddress:'',
+        IssueOffice:'',
+        BeginDate:'',
+        EndDate:'',
+        Folk:'',
+        IDCard:"",
+        username:'',
+        Birthday:'',
+      }
+    };
+  },
+    computed: {
+    // 使用对象展开运算符将此对象混入到外部对象中
+    ...mapState("eleAccounts", {
+      form: "eleForm"
+    })
+    // ...mapGetters("eleAccounts", ["eleForm"])需要数据过滤配合created使用
+  },
+  created(){
+    console.log(this.form)
+  },
+  mounted(){
+  },
+  methods: {
+    ...mapActions("eleAccounts", ["updateEleForm"]),
+    ScanOcrIDCard(data) {
+      window.NativeCall.ScanOcrIDCard(data, param => {
+        // 100是人脸
+        // "IDImage" :  "imagebase64字符串" IDImage是原生返回图片
+        if (data == "100") {
+          // alert(param);
+        let par=JSON.parse(param)
+        // alert(par)
+        if(par.Sex== "女"){
+          this.info.Sex='F'
+        }else{
+          this.info.Sex='M'
+        }
+        this.info.Rdtdmk=par.Address
+        this.info.ComAddress=par.Address
+        this.info.Folk=par.Folk
+        this.info.IDCard = par.Cardno;
+        this.info.username =par.Name;
+        this.info.Birthday =par.Birthday;
+        this.imgface=true
+        this.imageObj.front=par.IDImage
+        this.verifyCheck();
+        }
+        // 200是国徽
+        // "IDImage" :  "imagebase64字符串" IDImage是原生返回图片
+        if (data == "200") {
+        // alert(param);
+        let parm=JSON.parse(param)
+        // alert(parm)
+        this.info.IssueOffice=parm.Authority
+        this.info.BeginDate=parm.Validdate1
+        this.info.EndDate=parm.Validdate2
+        this.imgrev=true
+        this.imageObj.reverse=parm.IDImage
+        this.verifyCheck();
+        }
+      });
+    },
+    //判断是否可以点击下一步按钮
+    verifyCheck() {
+       let newForm = {...this.form,...this.info}
+        this.updateEleForm(newForm);
+        // console.log(this.form);
+        // alert(this.form)
+      if (
+         this.imgface == true && this.imgrev == true
+      ) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    },
+    next () {
+      // this.alertShow=true;
+        //电子账户开户信息提交
+      this.request("OpenAcNoInfo",
+          {
+            BranchId:this.form.BranchId || "1666",
+            ChnlId:this.form.ChnlId || '62',
+            CustNm: this.form.username || '',
+            CertNo:this.form.IDCard || '',
+            CertType:"1" || '',
+            HostOrg:'1323424'|| "",
+            Phone:this.form.phone || '',
+            BeginDate:this.info.BeginDate || '',
+            EndDate:this.info.EndDate || '',
+            Rdtdmk:this.info.Rdtdmk||  "",
+            ComAddress:this.info.ComAddress ||  "",
+            IssueOffice:this.info.IssueOffice || '',
+            Sex:this.form. Sex|| '',
+            OpenInst: "70010" || '',
+            Folk:this.info.Folk || '',
+            Birthday:this.info.Birthday || '',
+        },true)
+        .then((res)=>{
+          console.log(res);
+           window.NativeCall.FaceRecognition(param => {
+        // alert(param);
+        // let par=JSON.parse(param)
+        if(param == "1"){
+          this.$router.push({ name: "addInformation" });
+        }else{
+         this.alertShow=true;
+        }
+
+        })
+        .catch((error)=>{
+              console.log(error);
+        })
+      });
+    },
+    goInfo() {
+      this.$router.push({ name: "addInformation" });
+    },
+    //隐藏dialog
+    cancel() {
+      this.alertShow = false;
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+.front-box {
+  padding: 0 px2vw(59);
+  background: url("~@/assets/bankIcon/img_shenfenzhengrenxiangmian.png")
+    no-repeat;
+  background-size: px2vw(632) px2vw(360);
+  background-position: px2vw(59) 0;
+  height: px2vw(360);
+  margin-top: px2vw(-56);
+}
+.reverse-box {
+  padding: 0 px2vw(59);
+  background: url("~@/assets/bankIcon/img_shenfenzhengguohiumian.png") no-repeat;
+  background-size: px2vw(632) px2vw(360);
+  background-position: px2vw(59) 0;
+  height: px2vw(360);
+  margin-top: px2vw(20);
+}
+.upload-box {
+  padding-top: px2vw(105);
+  margin-left: px2vw(167);
+  .img{
+    height: 100%;
+    width: 100%;
+  }
+}
+.upload-box img {
+  width: px2vw(90);
+  margin-left: px2vw(104);
+}
+.upload-box p {
+  margin-top: px2vw(19);
+  font-size: px2vw(30);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(30);
+}
+.img-box img {
+  width: 100%;
+}
+.footer-box{
+  display: flex;
+  justify-content: center;
+  .btn-box{
+    width: px2vw(670);
+  }
+}
+</style>

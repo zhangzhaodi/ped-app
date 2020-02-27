@@ -1,0 +1,256 @@
+<template>
+  <div class="viewport">
+    <Myheader title="缴费名册"
+              :params=" { leftShow: false }" />
+    <div class="content">
+      <md-tab-bar v-model="current"
+                  :items="nav"
+                  :maxLength="4"
+                  :ink-length="20"
+                  @change="onTabChange"></md-tab-bar>
+      <md-swiper ref="swiper"
+                 :autoplay="0"
+                 :is-prevent="false"
+                 :is-loop="false"
+                 :default-index="current"
+                 :has-dots="false"
+                 :dragable="false">
+        <md-swiper-item>
+          <Cell v-for="(item,index) in mobile"
+                :key="index"
+                :item="item"
+                @operation="handleOperation" />
+        </md-swiper-item>
+        <md-swiper-item>
+          <Cell v-for="(item,index) in water"
+                :key="index"
+                :item="item"
+                @operation="handleOperation" />
+        </md-swiper-item>
+        <md-swiper-item>
+          <Cell v-for="(item,index) in electricity"
+                :key="index"
+                :item="item"
+                @operation="handleOperation" />
+        </md-swiper-item>
+        <md-swiper-item>
+          <Cell v-for="(item,index) in gas"
+                :key="index"
+                :item="item"
+                @operation="handleOperation" />
+        </md-swiper-item>
+      </md-swiper>
+    </div>
+    <div class="add-btn"
+         @click="showPopup('add')">新增缴费</div>
+    <van-popup v-model="isPopupShow.add"
+               position="bottom"
+               closeable
+               round>
+      <div class="add-wrapper">
+        <h3>新建缴费</h3>
+        <ul>
+          <li v-for="(item,index) in nav"
+              :key="index"
+              @click="createNewType(payType)">
+            <img :src="item.icon">
+            <p>{{item.label}}</p>
+          </li>
+        </ul>
+      </div>
+    </van-popup>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header";
+import Cell from '../components/Cell'
+import { ScrollView, TabBar, Swiper, SwiperItem } from 'mand-mobile'
+import { Dialog } from 'vant';
+export default {
+  name: 'index',
+  data () {
+    return {
+      nav: [
+        { name: 0, label: '手机话费', icon: require("@/assets/payImages/icon_shoujihuafei.png"), type: 'mobile' },
+        { name: 1, label: '水费', icon: require("@/assets/payImages/icon_shuifei.png"), type: 'water' },
+        { name: 2, label: '电费', icon: require("@/assets/payImages/icon_dianfei.png"), type: 'electricity' },
+        { name: 3, label: '燃气费', icon: require("@/assets/payImages/icon_ranqifei.png"), type: 'gas' }
+      ],
+      mobile: [],
+      water: [],
+      electricity: [],
+      gas: [],
+      current: 0,
+      currentName: 'mobile',
+      isPopupShow: {}
+    }
+  },
+  components: {
+    Myheader: Header,
+    Cell,
+    [ScrollView.name]: ScrollView,
+    [TabBar.name]: TabBar,
+    [Swiper.name]: Swiper,
+    [SwiperItem.name]: SwiperItem
+  },
+  computed: {
+    // 0水费，1电费，2燃气费，4电话费操作类型为新增，修改和查询下必输
+    payType () {
+      return {
+        mobile: '4',
+        water: '0',
+        electricity: '1',
+        gas: '2'
+      }[this.currentName]
+    }
+  },
+  async mounted () {
+    await this.login()
+  },
+  async activated () {
+    await this.initList()
+  },
+  methods: {
+    async login () {
+      await this.request("login", {
+        BankId: "9999",
+        LoginId: "18039578108",
+        Password: "111111",
+        EquipmentId: "125657",
+        LoginType: "R",
+        LoginMode: "1",
+        BranchId: "01001",
+        ChnlId: "62",
+        AddrInfo: "zhengz"
+      }, true).then(response => {
+        console.log(response)
+      })
+    },
+    async initList () {
+      console.log(this.payType)
+      await this.request("PaymentRegister", {
+        OperationType: 3, // 操作类型  1新增2修改3查询4删除
+        Type: this.payType,
+        BankId: "9999",
+        BranchId: "1001",
+        ChnlId: "62",
+      }).then(response => {
+        this[this.currentName] = response.ListPaymentReg
+      })
+    },
+    showPopup (type) {
+      this.$set(this.isPopupShow, type, true)
+    },
+    createNewType (e) {
+      this.$router.push({ path: '/newPayType/' + e })
+    },
+    onTabChange (item, index) {
+      this.$refs.swiper.goto(index)
+      this.currentName = item.type
+      this.initList()
+    },
+    handleOperation ({ operateType, registerId, paymentName, paymentNo }) {
+      if (operateType === 'del') {
+        this.del(registerId)
+      }
+      if (operateType === 'edit') {
+        this.$router.push({ path: '/compilePage', query: { registerId, paymentName, paymentNo, payType: this.payType } })
+      }
+      if (operateType === 'detail') {
+        this.$router.push({ path: '/electricityCharge', query: { registerId, paymentName, paymentNo, payType: this.payType } })
+      }
+    },
+    del (registerId) {
+      Dialog.confirm({
+        title: '删除名册',
+        message: '删除该名册后不可恢复，是否删除？'
+      }).then(() => {
+        this.request("PaymentRegister", {
+          OperationType: 4, // 操作类型  1新增2修改3查询4删除
+          Type: this.payType,
+          PaymentId: registerId,
+          BankId: "9999",
+          BranchId: "1001",
+          ChnlId: "62",
+        }).then(response => {
+          if (response.ReturnCode === '000000') {
+            this.initList()
+          }
+        })
+      }).catch(() => {
+        // on cancel
+      });
+    }
+  }
+}
+</script>
+
+<style lang='scss'>
+.viewport {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: PingFangSC-Medium, PingFang SC;
+  font-weight: 400;
+
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    /deep/ .md-tab-bar {
+      margin-bottom: px2vw(20);
+      background: #ffffff;
+    }
+    /deep/ .md-tab-bar-item {
+      height: px2vw(60);
+      font-size: px2vw(26);
+      color: #7d7d7d;
+      &.is-active {
+        font-size: px2vw(30);
+        color: #262626;
+      }
+    }
+    /deep/ .md-tab-bar-ink {
+      background: #262626;
+    }
+    /deep/ .md-swiper {
+      flex: 1;
+    }
+  }
+  .add-btn {
+    line-height: px2vw(118);
+    text-align: center;
+    font-size: px2vw(34);
+    color: rgba(62, 143, 255, 1);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: px2vw(-5) px2vw(-5) px2vw(20) 0px rgba(69, 69, 83, 0.05);
+  }
+  .add-wrapper {
+    height: px2vw(300);
+    background: rgba(255, 255, 255, 1);
+    h3 {
+      padding-top: px2vw(20);
+      margin-bottom: px2vw(40);
+      text-align: center;
+      font-size: px2vw(34);
+      color: rgba(38, 38, 38, 1);
+    }
+    ul {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      li {
+        text-align: center;
+        img {
+          margin-bottom: px2vw(20);
+          width: px2vw(90);
+          height: px2vw(90);
+        }
+        p {
+          font-size: px2vw(24);
+        }
+      }
+    }
+  }
+}
+</style>

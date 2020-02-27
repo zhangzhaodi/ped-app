@@ -1,0 +1,436 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <Scroller>
+      <div class="user-info">
+        <div class="user-info--top">
+          <p>{{ info.UserName }}</p>
+          <div class="num-box">
+            <div class="num-text">手机号</div>
+            <div class="number">{{ info.MobilePhone | phoneNumber }}</div>
+          </div>
+          <div class="num-box">
+            <div class="num-text">身份证号</div>
+            <div class="number">{{ info.IdNo }}</div>
+          </div>
+        </div>
+        <div class="user-info--mid">
+          <div class="img-out">
+            <div class="img-box">
+              <img src="" alt="" />
+            </div>
+            <p>开户照片</p>
+          </div>
+          <div class="img-out">
+            <div class="img-box">
+              <img src="" alt="" />
+            </div>
+            <p>联网照片</p>
+          </div>
+        </div>
+        <div class="user-info--bottom">
+          <div class="photo">
+            <div class="img-out">
+              <div class="img-box">
+                <img src="" alt="" />
+              </div>
+            </div>
+            <p>身份证正面</p>
+          </div>
+          <div class="photo">
+            <div class="img-out">
+              <div class="img-box">
+                <img src="" alt="" />
+              </div>
+            </div>
+            <p>身份证背面</p>
+          </div>
+        </div>
+      </div>
+      <div class="account">
+        <div class="num-box">
+          <div class="num-text">绑定账号</div>
+          <div class="number">{{ info.BindAccountList[0].bindAccount }}</div>
+        </div>
+        <div class="num-box">
+          <div class="num-text">二类账号</div>
+          <div class="number">{{ info.EleAccountList[0].bindAccount }}</div>
+        </div>
+      </div>
+      <div class="hint">
+        <div class="line"></div>
+        <div class="text">请确认以上信息准确无误</div>
+        <div class="line"></div>
+      </div>
+      <div class="operator">
+        <mInput
+          v-model="operNum"
+          title="操作员号"
+          type="digit"
+          placeholder="请输入"
+          maxlength="18"
+        >
+        </mInput>
+        <mInput
+          v-model="tradersPsd"
+          @click.native="SecureKeyboard"
+          title="密码"
+          type="password"
+          placeholder="请输入"
+          maxlength="8"
+        >
+        </mInput>
+      </div>
+      <div class="evidence">
+        <p>合照凭证</p>
+        <div class="img-out">
+          <div class="img-box">
+            <img :src="groupPhoto" alt="" />
+          </div>
+        </div>
+      </div>
+    </Scroller>
+    <footer>
+      <div @click="alertShow = true" class="footer-left">拒绝</div>
+      <div @click="ScanCodeFaceApproveSubmit('Y')" class="footer-right">
+        通过
+      </div>
+    </footer>
+    <MyDialog
+      @cancel="cancel"
+      :show="alertShow"
+      :isClose="false"
+      @con="confirm"
+      title="拒绝审核"
+      confirmButtonText="确认"
+      cancelButtonText="取消"
+    >
+      <p slot="content" class="dialog-content">
+        是否拒绝该客户的升级审核？
+      </p>
+    </MyDialog>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { Toast } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    MyDialog: Dialog,
+    Scroller,
+    mInput,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      alertShow: false, //是否显示Dialog
+      operNum: "", //操作员号
+      passWord: "", //密码
+      tradersPsd: "",
+      groupPhoto: "",
+      info: {
+        // BindAccountList: [
+        //   { accountType: "1", bindAccount: "6223380066040011069" },1二类户
+        //   { accountType: "2", bindAccount: "6223380011080771990" }2绑定卡
+        // ],
+        //  EleAccountList: [
+        //   { accountType: "1", bindAccount: "6223380066040011069" },1二类户
+        //   { accountType: "2", bindAccount: "6223380011080771990" }2绑定卡
+        // ],
+        // BizTrackNo: "39191209000001203948914304225280",
+        // IdNo: "412702199502028178",
+        // MobilePhone: "17591168228",
+        // RespCode: "000000",
+        // RespMessage: "交易成功",
+        // RespTime: "20191209160604251",
+        // UserName: "张印",
+      },
+      cifNo: "",
+      currentDate: new Date().valueOf()
+    };
+  },
+  created() {
+    this.info = JSON.parse(this.$route.query.params);
+    this.cifNo = this.$route.query.cifNo;
+    console.log(this.info);
+  },
+  methods: {
+    //二类户升级
+    ScanCodeFaceApproveSubmit(value) {
+      if (this.tradersPsd) {
+        this.request("ScanCodeFaceApproveSubmit", {
+          BankId: "9999",
+          BranchId: "1699",
+          ChnlId: "39",
+          UserCifNo: this.cifNo, //核心客户号
+          ReviewNo: "", //审核员编号
+          ReviewTime: this.currentDate, //审核时间
+          ReviewAddr: "0100", //审核地点
+          ReviewResult: value, //审核结果
+          ReviewPwd: this.passWord, //操作员密码
+          ImgStr: this.agroupPhoto, //审核资料合照
+          AcctNo: this.info.EleAccountList[0].bindAccount, //二类户号
+          PapersNum: this.info.IdNo, //证件号码
+          PapersType: "00", //证件类型
+          Name: this.info.UserName //用户名
+        })
+          .then(res => {
+            console.log(res);
+            if (value == "Y") {
+              this.$router.push({
+                name: "resultPage"
+              });
+            } else {
+              this.$router.go(-1);
+            }
+          })
+          .catch(error => {
+            console.log(error);
+          });
+      } else {
+        Toast({
+          message: "请输入密码"
+        });
+      }
+    },
+    //dialog的确定
+    confirm() {
+      this.alertShow = false;
+      this.ScanCodeFaceApproveSubmit("N");
+    },
+    cancel() {
+      this.alertShow = false;
+    },
+    //安全键盘
+    SecureKeyboard() {
+      document.activeElement.blur();
+      window.NativeCall.SecureKeyboard(param => {
+        this.password = param;
+        this.tradersPsd = "******";
+      });
+    },
+    //拍照
+    CapturePhoto() {
+      window.NativeCall.CapturePhoto("1", value => {
+        this.agroupPhoto = value;
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  .scrollerBox {
+    background: #f5f6f8;
+    .user-info {
+      margin-top: px2vw(20);
+      padding: px2vw(56) px2vw(60) px2vw(6);
+      background: #fff;
+      .user-info--top {
+        padding-left: px2vw(20);
+        padding-bottom: px2vw(43);
+        border-bottom: 1px solid rgba(16, 122, 238, 0.14);
+        p {
+          margin-bottom: px2vw(60);
+          font-size: px2vw(32);
+          font-family: PingFangSC-Medium, PingFang SC;
+          font-weight: 500;
+          color: rgba(62, 143, 255, 1);
+          line-height: px2vw(32);
+        }
+        .num-box {
+          display: flex;
+          margin-bottom: px2vw(20);
+          .num-text {
+            width: px2vw(144);
+            font-size: px2vw(26);
+            font-family: PingFangSC-Light, PingFang SC;
+            font-weight: 300;
+            color: rgba(125, 125, 125, 1);
+            line-height: px2vw(26);
+          }
+          .number {
+            font-size: px2vw(26);
+            font-family: PingFangSC-Regular, PingFang SC;
+            font-weight: 400;
+            color: rgba(38, 38, 38, 1);
+            line-height: px2vw(30);
+          }
+        }
+      }
+      .user-info--mid {
+        padding: px2vw(48) px2vw(112) px2vw(80);
+        border-bottom: 1px solid rgba(16, 122, 238, 0.14);
+        display: flex;
+        justify-content: space-between;
+        .img-out {
+          width: px2vw(172);
+          height: px2vw(212);
+          background: url("~@/assets/scanFace/img_kaihuzhaopian@2x.png")
+            no-repeat;
+          background-size: px2vw(172) px2vw(212);
+          .img-box {
+            width: px2vw(120);
+            height: px2vw(160);
+            margin: 0 auto;
+            margin-top: px2vw(26);
+            img {
+              width: 100%;
+            }
+          }
+          p {
+            margin-top: px2vw(42);
+            font-size: px2vw(24);
+            font-family: PingFangSC-Regular, PingFang SC;
+            font-weight: 400;
+            color: rgba(38, 38, 38, 1);
+            text-align: center;
+          }
+        }
+      }
+      .user-info--bottom {
+        padding: px2vw(39) px2vw(149) 0;
+        .photo {
+          width: 100%;
+          margin-bottom: px2vw(40);
+          .img-out {
+            width: px2vw(332);
+            height: px2vw(228);
+            background: url("~@/assets/scanFace/img_shenfenzheng@2x.png")
+              no-repeat;
+            background-size: px2vw(332) px2vw(228);
+            .img-box {
+              margin: auto;
+              width: px2vw(280);
+              height: px2vw(176);
+              img {
+                width: 100%;
+              }
+            }
+          }
+          p {
+            margin-top: px2vw(12);
+            font-size: px2vw(24);
+            font-family: PingFangSC-Regular, PingFang SC;
+            font-weight: 400;
+            color: rgba(38, 38, 38, 1);
+            text-align: center;
+          }
+        }
+      }
+    }
+    .account {
+      margin-top: px2vw(20);
+      padding-left: px2vw(40);
+      background: #fff;
+      .num-box {
+        display: flex;
+        height: px2vw(100);
+        font-size: px2vw(30);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(100);
+        .num-text {
+          width: px2vw(160);
+        }
+      }
+    }
+    .hint {
+      margin-top: px2vw(20);
+      padding: 0 px2vw(102);
+      display: flex;
+      justify-content: space-between;
+      .line {
+        margin-top: px2vw(18);
+        width: px2vw(110);
+        border-top: 1px solid rgba(255, 64, 64, 0.4);
+      }
+      .text {
+        font-size: px2vw(26);
+        font-family: PingFangSC-Light, PingFang SC;
+        font-weight: 300;
+        color: rgba(255, 64, 64, 1);
+      }
+    }
+    .operator {
+      margin-top: px2vw(40);
+      padding: 0 px2vw(40);
+      background: #fff;
+      /deep/ .mand-input {
+        border-bottom: 1px solid #ebeef0;
+        .md-field-item-title {
+          width: px2vw(160);
+        }
+      }
+    }
+    .evidence {
+      margin-top: px2vw(20);
+      margin-bottom: px2vw(40);
+      padding-top: px2vw(30);
+      padding-bottom: px2vw(100);
+      background: #fff;
+      p {
+        font-size: px2vw(32);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+        text-indent: px2vw(40);
+      }
+      .img-out {
+        margin: 0 auto;
+        margin-top: px2vw(77);
+        width: px2vw(384);
+        height: px2vw(230);
+        background: url("~@/assets/scanFace/img_hezhaokuang@2x.png") no-repeat;
+        background-size: px2vw(384) px2vw(230);
+        .img-box {
+          padding: px2vw(7);
+          width: px2vw(370);
+          height: px2vw(216);
+          background: url("~@/assets/scanFace/img_hezhao_nor@2x.png") no-repeat;
+          background-size: px2vw(370) px2vw(216);
+          background-position: center;
+        }
+      }
+    }
+  }
+  footer {
+    display: flex;
+    height: px2vw(120);
+    .footer-left {
+      flex: 1;
+      font-size: px2vw(34);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(62, 143, 255, 1);
+      line-height: px2vw(120);
+      text-align: center;
+      background: #ffffff;
+    }
+    .footer-right {
+      flex: 1;
+      background: linear-gradient(
+        270deg,
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+      font-size: px2vw(34);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: #ffffff;
+      line-height: px2vw(120);
+      text-align: center;
+    }
+  }
+}
+</style>

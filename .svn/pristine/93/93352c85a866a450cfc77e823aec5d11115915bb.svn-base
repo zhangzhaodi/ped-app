@@ -1,0 +1,538 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <Scroller>
+      <div class="content">
+        <div class="header">
+          <div class="headerLeft" :class="{ headerRight: isChange }">
+            <p>总资产(人民币元)</p>
+            <span>{{ property | Money }}</span>
+          </div>
+          <div class="headerRight" :class="{ headerBox: isChange }">
+            <p>总负债(人民币元)</p>
+            <span>{{ liabilities | Money }}</span>
+          </div>
+        </div>
+        <div ref="main" class="echarts"></div>
+        <div class="hint">资金明细可能存在更新延迟情况，以上数据仅供参考</div>
+        <div class="transform">
+          <div class="transform-box" :class="{ change: isChange }">
+            <div
+              class="property"
+              :class="{ liabilities: isChange }"
+              @click="showLiabilities(data, 1)"
+            >
+              资产
+            </div>
+            <div
+              class="liabilities"
+              :class="{ propertyChange: isChange }"
+              @click="showLiabilities(params, 2)"
+            >
+              负债
+            </div>
+          </div>
+          <div class="refresh" @click="refresh()">
+            <span class="iconfont">&#xe631;</span>
+            <span>刷新</span>
+          </div>
+        </div>
+        <div class="advertising">
+          <img src="@/assets/assetsLiabilities/banner@3x.png" alt />
+        </div>
+      </div>
+    </Scroller>
+    <Footer @click="goDetail"></Footer>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Footer from "../components/Footer";
+import echarts from "echarts";
+import Scroller from "@/components/Scroller.vue";
+
+export default {
+  components: {
+    Myheader: Header,
+    Footer,
+    Scroller
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      property: "0",
+      liabilities: "0",
+      data: [
+        { value: 0, name: "活期余额" },
+        { value: 0, name: "整存整取余额" },
+        { value: 0, name: "通知存款余额" },
+        { value: 0, name: "大额存单持有金额" },
+        { value: 0, name: "智能存款余额" },
+        { value: 0, name: "理财持仓市值" },
+        { value: 0, name: "基金持仓市值" },
+        { value: 0, name: "宝类基金份额" }
+      ],
+      params: [
+        { value: 0, name: "贷款" }
+        // { value: 0, name: "理财持仓市值" },
+        // { value: 0, name: "基金持仓余额" },
+        // { value: 0, name: "定期存款余额" }
+      ],
+      isChange: false,
+      ecifContId: ""
+    };
+  },
+  created() {
+    window.NativeCall.getUserInfo(param => {
+      let res = JSON.parse(param);
+      this.ecifContId = res.EcifContId || res.CifNo;
+      this.assetsLiabilities();
+    });
+    // this.mLogin();
+  },
+  mounted() {},
+  methods: {
+    showLiabilities(data, type) {
+      if (type == 1) {
+        this.isChange = false;
+      } else if (type == 2) {
+        this.isChange = true;
+      }
+      let myEcharts = this.$refs.main;
+      let myChart = echarts.init(myEcharts);
+
+      // var width = $("#echartsBox").width();
+      // var height = $("#echartsBox").height();
+      // $("#echartsBox")
+      //   .css("width", width)
+      //   .css("height", height);
+
+      //修改首次进入时图的宽度
+      // setTimeout(function() {
+      //   this.$refs.main.resize();
+      // }, 200);
+      // 当浏览器窗口大小发生改变的时候修改图标的大小
+      // $(window).resize(function() {
+      //   $("#echartsBox").resize();
+      // });
+      myChart.setOption({
+        series: [
+          {
+            seriesLayoutBy: "row",
+            type: "pie",
+            minAngle: 30,
+            radius: ["22%", "37%"],
+            center: ["50%", "50%"],
+            data: data,
+            labelLine: {
+              show: false
+            },
+            label: {
+              show: false
+            },
+
+            itemStyle: {
+              emphasis: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: "rgba(0, 0, 0, 0.5)"
+              },
+              normal: {
+                color: function(params) {
+                  //自定义颜色
+                  var colorList = [
+                    "#597FF7",
+                    "#37CFCA",
+                    "#FDAA3F",
+                    "#F65959",
+                    "#eee",
+                    "#597FF7",
+                    "#37CFCA",
+                    "#FDAA3F"
+                  ];
+                  return colorList[params.dataIndex];
+                }
+              }
+            }
+          },
+          {
+            radius: ["37%", "40%"],
+            center: ["50%", "50%"],
+            type: "pie",
+            minAngle: 30,
+            seriesLayoutBy: "row",
+            data: data,
+            labelLine: {
+              // length: 7,
+              length2: 80
+              // color: "red"
+            },
+            label: {
+              normal: {
+                formatter: function(params) {
+                  var result = "",
+                    //   counter = 0,
+                    s = params.data.value;
+                  // num = (num || 0).toString().split("");
+                  // for (var i = num.length - 1; i >= 0; i--) {
+                  //   counter++;
+                  //   result.unshift(num[i]);
+                  //   if (!(counter % 3) && i != 0) {
+                  //     result.unshift(",");
+                  //   }
+                  // }
+                  // result.push(".00");
+
+                  if (!s) {
+                    result = "0.00";
+                  }
+                  var isNagtive = false;
+                  if (parseFloat(s + "") < 0) {
+                    isNagtive = true;
+                    s = s.toString();
+                    s = s.replace(/-/g, "");
+                  }
+                  var n = 2;
+                  s =
+                    parseFloat((s + "").replace(/[^\d.-]/g, "")).toFixed(n) +
+                    "";
+                  var I = s
+                    .split(".")[0]
+                    .split("")
+                    .reverse();
+                  var r = s.split(".")[1];
+                  var t = "";
+                  for (var i = 0; i < I.length; i++) {
+                    t +=
+                      I[i] +
+                      ((i + 1) % 3 === 0 && i + 1 !== I.length ? "," : "");
+                  }
+                  if (isNagtive) {
+                    result =
+                      "-" +
+                      t
+                        .split("")
+                        .reverse()
+                        .join("") +
+                      "." +
+                      r;
+                  } else {
+                    result =
+                      t
+                        .split("")
+                        .reverse()
+                        .join("") +
+                      "." +
+                      r;
+                  }
+
+                  result = "{c|" + result + "}\n\n{b|" + params.data.name + "}";
+                  return result;
+                },
+                rich: {
+                  c: {
+                    fontSize: 12,
+                    align: "center",
+                    color: "#333",
+                    fontFamily: "PingFangSC",
+                    fontWeight: 400
+                  },
+                  b: {
+                    width: 80,
+                    fontSize: 12,
+                    align: "center",
+                    color: "#333",
+                    fontFamily: "PingFangSC",
+                    fontWeight: 400
+                  }
+                },
+                padding: [0, -80]
+              }
+            },
+            itemStyle: {
+              normal: {
+                color: function(params) {
+                  //自定义颜色
+                  var colorList = [
+                    "#597FF7",
+                    "#37CFCA",
+                    "#FDAA3F",
+                    "#F65959",
+                    "#eee",
+                    "#597FF7",
+                    "#37CFCA",
+                    "#FDAA3F"
+                  ];
+                  return colorList[params.dataIndex];
+                },
+                opacity: 0
+              }
+            }
+          }
+        ]
+      });
+    },
+    //刷新
+    refresh() {
+      let data = [];
+      this.showLiabilities(data);
+      this.assetsLiabilities();
+    },
+    //获取资产负债信息
+    assetsLiabilities() {
+      this.request("assetsLiabilities", {
+        CustomerNo: this.ecifContId,
+        // CustomerNo: "12006760",
+        ChnlId: "62",
+        BranchId: "0110"
+      })
+        .then(res => {
+          console.log(res);
+          this.cardInfo = res.cardInfo;
+          this.property = res.totalMoney;
+          this.liabilities = res.totalLossMoney;
+          let data = [];
+          if (
+            res.totalDemandBal == 0 &&
+            res.totalTimeDepositBal == 0 &&
+            res.totalNotifyDepositBal == 0 &&
+            res.totalLargeDepositBal == 0 &&
+            res.totalSmartDepositBal == 0 &&
+            res.totalFinancialVal == 0 &&
+            res.totalFundVal == 0 &&
+            res.totalTreFundVal == 0
+          ) {
+            this.data[0].value = res.totalDemandBal; //活期余额
+            this.data[1].value = res.totalTimeDepositBal; //整存整取余额
+            this.data[2].value = res.totalNotifyDepositBal; //通知存款余额
+            this.data[3].value = res.totalLargeDepositBal; //大额存单持有金额
+            this.data[4].value = res.totalSmartDepositBal; //智能存款余额
+            this.data[5].value = res.totalFinancialVal; //理财持仓市值
+            this.data[6].value = res.totalFundVal; //基金持仓市值
+            this.data[7].value = res.totalTreFundVal; //宝类基金份额
+          } else {
+            if (res.totalDemandBal != 0) {
+              data.push({ value: res.totalDemandBal, name: "活期余额" });
+            }
+            if (res.totalTimeDepositBal != 0) {
+              data.push({
+                value: res.totalTimeDepositBal,
+                name: "整存整取余额"
+              });
+            }
+            if (res.totalNotifyDepositBal != 0) {
+              data.push({
+                value: res.totalNotifyDepositBal,
+                name: "通知存款余额"
+              });
+            }
+            if (res.totalLargeDepositBal != 0) {
+              data.push({
+                value: res.totalLargeDepositBal,
+                name: "大额存单持有金额"
+              });
+            }
+            if (res.totalSmartDepositBal != 0) {
+              data.push({
+                value: res.totalSmartDepositBal,
+                name: "智能存款余额"
+              });
+            }
+            if (res.totalFinancialVal != 0) {
+              data.push({
+                value: res.totalFinancialVal,
+                name: "理财持仓市值"
+              });
+            }
+            if (res.totalFundVal != 0) {
+              data.push({
+                value: res.totalFundVal,
+                name: "基金持仓市值"
+              });
+            }
+            if (res.totalTreFundVal != 0) {
+              data.push({
+                value: res.totalTreFundVal,
+                name: "宝类基金份额"
+              });
+            }
+            this.data = data;
+          }
+          console.log(this.params);
+          this.params[0].value = res.totalLossMoney; //贷款
+
+          //this.isChange false 资产 true 负债
+          if (this.isChange) {
+            this.showLiabilities(this.params);
+          } else {
+            this.showLiabilities(this.data);
+          }
+        })
+        .catch(error => {
+          console.log(error);
+          this.showLiabilities(this.data);
+        });
+    },
+    mLogin() {
+      this.request("login", {
+        BankId: "9999",
+        LoginId: "17591168228",
+        Password: "qwer1234",
+        EquipmentId: "125657",
+        LoginType: "R",
+        LoginMode: "1",
+        BranchId: "01001",
+        ChnlId: "62",
+        AddrInfo: "zhengz"
+      })
+        .then(res => {
+          console.log(res);
+          this.ecifContId = res.EcifContId || res.CifNo;
+          this.assetsLiabilities();
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    goDetail() {
+      console.log(11111, this.cardInfo);
+      this.$router.push({
+        name: "detail",
+        query: {
+          info: this.cardInfo
+        }
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  .scrollerBox {
+    background: rgba(245, 246, 248, 1);
+  }
+}
+.echarts {
+  height: px2vw(520);
+  border-top: 1px solid rgba(235, 238, 240, 1);
+  padding: 0 px2vw(40);
+  background: #fff;
+}
+.header {
+  display: flex;
+  background: #fff;
+  padding: px2vw(40) 0 px2vw(44);
+  .headerLeft {
+    border-right: 1px solid rgba(235, 238, 240, 1);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: rgba(62, 143, 255, 1);
+    p {
+      font-size: px2vw(26);
+      margin-bottom: px2vw(20);
+      font-family: PingFangSC;
+      font-weight: 400;
+    }
+    span {
+      font-size: px2vw(36);
+      font-family: PingFangSC;
+      font-weight: 500;
+    }
+  }
+  .headerRight {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: rgba(51, 51, 51, 1);
+    p {
+      font-size: px2vw(26);
+      margin-bottom: px2vw(20);
+      font-family: PingFangSC;
+      font-weight: 400;
+    }
+    span {
+      font-size: px2vw(36);
+      font-family: PingFangSC;
+      font-weight: 500;
+    }
+  }
+  .headerBox {
+    color: rgba(62, 143, 255, 1);
+  }
+}
+.hint {
+  text-align: center;
+  font-size: px2vw(20);
+  font-family: PingFangSC;
+  font-weight: 300;
+  color: rgba(125, 125, 125, 1);
+  background: #fff;
+}
+.transform {
+  padding: px2vw(30) px2vw(48) px2vw(40);
+  position: relative;
+  background: #fff;
+}
+.transform-box {
+  margin: 0 auto;
+  display: flex;
+  width: px2vw(260);
+  text-align: center;
+  font-size: px2vw(22);
+  font-family: PingFangSC;
+  font-weight: 400;
+  line-height: px2vw(52);
+  background: url("~@/assets/assetsLiabilities/button/Button_ghost@2x.png")
+    no-repeat;
+  background-size: px2vw(260) px2vw(50);
+}
+.change {
+  background: url("~@/assets/assetsLiabilities/button/Button_ghostbtn_press@2x.png")
+    no-repeat;
+  background-size: px2vw(260) px2vw(50);
+}
+.property {
+  color: #fff;
+  width: 50%;
+}
+.liabilities {
+  width: 50%;
+  color: rgba(62, 143, 255, 1);
+}
+.propertyChange {
+  color: #fff;
+  width: 50%;
+}
+.refresh {
+  position: absolute;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  right: px2vw(48);
+  top: px2vw(30);
+  width: px2vw(70);
+  height: px2vw(50);
+  span {
+    font-size: px2vw(20);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(125, 125, 125, 1);
+  }
+}
+.advertising {
+  padding: px2vw(20) px2vw(40);
+  margin-top: px2vw(22);
+  background: #fff;
+  img {
+    width: 100%;
+  }
+}
+</style>

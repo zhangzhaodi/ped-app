@@ -1,0 +1,36 @@
+import Vue from "vue";
+import Router from "vue-router";
+//充值提现
+import Index from "../pages/index";
+import ResultsPage from "../pages/resultsPage";
+
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    //充值
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "充值",
+        keepAlive: true
+      }
+    },
+    //充值成功
+    {
+      path: "/resultsPage",
+      name: "resultsPage",
+      component: ResultsPage,
+      meta: {
+        title: "充值结果",
+        keepAlive: true
+      }
+    }
+  ]
+});

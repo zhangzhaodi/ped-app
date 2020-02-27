@@ -1,0 +1,36 @@
+<template>
+  <div class="outer">
+    <Success :data="this.$route.params" v-if="this.$route.params.type==1"></Success>
+    <Fail :data="this.$route.params" v-if="this.$route.params.type==2"></Fail>
+  </div>
+</template>
+
+<script>
+import successResult from "../../components/successResult";
+import failResult from "../../components/failResult";
+export default {
+  components: {
+    Success: successResult,
+    Fail: failResult
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      }
+    };
+  },
+  created() {
+    //type为发送验证码后的结果
+    console.log(this.$route.params)
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer{
+  background-color: #fff;
+  height: 100vh;
+}
+</style>

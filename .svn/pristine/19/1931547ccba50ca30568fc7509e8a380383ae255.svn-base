@@ -1,0 +1,61 @@
+<template>
+  <div class="select-card">
+    <div class="cell">
+      <label>付款方式</label>
+      <div class="ways"
+           v-if="selectedCard">
+        <p>焦作中旅银行 | 买菜卡({{selectedCard.vouId.substr(-4)}})</p>
+        <p>可用余额：¥{{selectedCard.balance}}</p>
+      </div>
+    </div>
+    <van-popup>
+
+    </van-popup>
+  </div>
+
+</template>
+<script>
+export default {
+  name: 'SelectCard',
+  data () {
+    return {
+      selectedCard: null,
+      cardList: []
+    }
+  },
+  mounted () {
+    this.queryCards()
+    this.queryBank()
+  },
+  methods: {
+    queryCards () {
+      this.request('QryDebitCard', {
+        BranchId: '1699999999',
+        ChnlId: '39',
+        BankId: '9999'
+      }).then(response => {
+        this.cardList = response.QueryAddAccount
+        console.log(this.cardList)
+        this.selectedCard = this.cardList[0]
+      })
+    },
+    queryBank () {
+      this.request('QryBankList', {}).then(response => {
+        console.log(response)
+      })
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.select-card {
+  .cell {
+    padding: 0 px2vw(45);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: PingFangSC-Light, PingFang SC;
+    font-weight: 400;
+  }
+}
+</style>

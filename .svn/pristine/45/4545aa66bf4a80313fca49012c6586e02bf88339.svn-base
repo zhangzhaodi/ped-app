@@ -1,0 +1,136 @@
+<template>
+  <div class="viewport">
+    <div class="top">
+      <Header :params="{leftShow:false}"
+              :isWhite="true"
+              backgroundColor="transparent" />
+    </div>
+    <div class="content">
+      <p class="title">理赔步骤</p>
+      <img class="liyu-img"
+           src="@/assets/interestsRight/icon_delay.png">
+      <p class="title">理赔标准</p>
+    </div>
+    <div class="detail-rules">
+      <p class="rules-title">在我行近连续三个月月日均资产达到：</p>
+      <img src="@/assets/interestsRight/liyu_delay.png">
+    </div>
+    <div class="bot">
+      <!-- <div class="see-btn">查看机场列表></div> -->
+      <warm-tips :data="warmList" title="航班延误保险保障服务细则" />
+    </div>
+    <div class="delay-btn">
+      <div class="btn">立即理赔</div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from '@/components/Header/Header'
+import WarmTips from '../components/WarmTips'
+export default {
+  data () {
+    return {
+      warmList: [
+        '赔付范围仅限持卡本人通过我行商旅服务预订机票并实际乘坐的航班',
+        '延误是指机场或航司最后正式发布的航班实际到达目的地着'
+      ]
+    }
+  },
+  components: {
+    Header,
+    WarmTips
+  }
+}
+</script>
+<style lang="scss" scoped>
+.viewport {
+  height: 100vh;
+  overflow-y: scroll;
+  color: #262626;
+  font-family: PingFangSC-Medium, PingFang SC;
+  font-weight: 400;
+
+  .top {
+    position: relative;
+    width: 100%;
+    height: px2vw(1154);
+    background-image: url(../../../assets/interestsRight/delay.png);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    z-index: 2;
+  }
+  .content {
+    position: relative;
+    margin-top: px2vw(-60);
+    padding: px2vw(60) px2vw(40) 0 px2vw(40);
+    background-color: #fff;
+    z-index: 1;
+    .title {
+      padding: px2vw(50) 0;
+      text-align: center;
+      font-size: px2vw(40);
+      font-weight: 500;
+      color: #262626;
+    }
+    .liyu-img {
+      display: block;
+      margin: 0 auto px2vw(50) auto;
+      width: px2vw(637);
+      height: px2vw(82);
+    }
+  }
+  .detail-rules {
+    background: linear-gradient(rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+    .rules-title {
+      padding-left: px2vw(40);
+      font-size: px2vw(26);
+      color: #212121;
+    }
+    img {
+      width: px2vw(750);
+      height: px2vw(1010);
+    }
+  }
+  .bot {
+    padding-top: px2vw(50);
+    padding-bottom: px2vw(170);
+    background-image: url(../../../assets/interestsRight/bg_delay.png);
+    background-position: bottom right;
+    background-repeat: no-repeat;
+    background-size: 100% px2vw(650);
+
+    .see-btn {
+      margin: 0 auto;
+      width: px2vw(300);
+      height: px2vw(64);
+      line-height: px2vw(64);
+      text-align: center;
+      border-radius: px2vw(4);
+      border: px2vw(1) solid #7d7d7d;
+      font-size: px2vw(24);
+    }
+  }
+  .delay-btn {
+    height: px2vw(130);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0px px2vw(-5) px2vw(20) 0px rgba(69, 69, 83, 0.05);
+    .btn {
+      width: px2vw(670);
+      height: px2vw(90);
+      line-height: px2vw(90);
+      text-align: center;
+      border-radius: px2vw(45);
+      font-size: px2vw(34);
+      color: #fff;
+      background: linear-gradient(
+        158deg,
+        rgba(255, 250, 240, 1) 0%,
+        rgba(244, 192, 117, 1) 100%
+      );
+    }
+  }
+}
+</style>

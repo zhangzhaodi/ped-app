@@ -1,0 +1,71 @@
+<template>
+  <div :class="['tab',{'noPadding':this.$route.query.index==='5'}]" v-if="data">
+    <div class="item" v-for="(item,index) in data.tab" :key="index">
+      <img :src="item.img" class="itemImg" />
+      <p class="text">{{item.text}}</p>
+      <a :href="'tel:'+item.tel" class="tel" v-if="item.tel">{{item.tel}}</a>
+    </div>
+    <img
+      :src="data.tabImg"
+      :class="['tabImg',{'tabImg5':this.$route.query.index==='5'}]"
+      v-if="data.tabImg"
+    />
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {};
+  },
+  props: {
+    data: {
+      require: true,
+      default: {}
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.tab {
+  display: flex;
+  flex-direction: row;
+  margin-top: px2vw(40);
+  justify-content: space-between;
+  padding: 0 px2vw(70);
+  .item {
+    display: flex;
+    flex-direction: column;
+    max-width: px2vw(136);
+    .itemImg {
+      width: px2vw(118);
+    }
+
+    .text,
+    .tel {
+      margin-top: px2vw(7);
+      font-size: px2vw(22);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(30);
+      text-align: center;
+    }
+    .tel {
+      color: #3e8fff;
+    }
+  }
+  .tabImg {
+    width: px2vw(637);
+    height: px2vw(82);
+  }
+  .tabImg5 {
+    width: px2vw(750);
+    height: px2vw(152);
+  }
+}
+.noPadding{
+  padding: 0;
+}
+</style>

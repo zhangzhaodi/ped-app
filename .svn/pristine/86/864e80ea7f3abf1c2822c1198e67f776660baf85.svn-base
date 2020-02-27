@@ -1,0 +1,1091 @@
+<template>
+  <div class="outer phone-transfer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller style="background:#F5F6F8;">
+      <section class="field-section">
+        <header class='field-header'>
+          <img src="@/assets/transferAccounts/icon_shoukuanfang@2x.png" alt="">
+          <span class="title">收款方信息</span>
+        </header>
+
+        <div class="filed_cell">
+          <div class="label">收款人</div>
+          <div class="filed">
+            <m-input :maxlength="20" v-model="payee.name" :value="payee.name" placeholder="请输入收款人名称" @blur="payeeNameCheck">
+              <template slot="right">
+                <img class="right-icon" src="@/assets/transferAccounts/icon_shoukuanren@2x.png" @click='accountListShow=true' />
+              </template>
+            </m-input>
+          </div>
+        </div>
+        <div class="filed_cell">
+          <div class="label">收款账号</div>
+          <div class="filed">
+            <m-input :maxlength="19" type="bankCard" v-model="payee.bankCard" :value="payee.bankCard" @change="bankCardChange" placeholder="请输入收款账号">
+              <template slot="right">
+                <img class="right-icon" src="@/assets/transferAccounts/icon_dianzizanghu_saomiao@2x.png" @click="ScanOcrBankCard" alt />
+              </template>
+            </m-input>
+          </div>
+        </div>
+        <div class="filed_cell picker">
+          <van-cell @click="openBankList">
+            <template slot="title" class="label">
+              <span class="custom-title">收款银行</span>
+            </template>
+            <template>
+              <div v-if="payee.bankName" style="color:#262626;">{{payee.bankName}}</div>
+              <div class="placeholder" v-else>请选择收款银行</div>
+              <span class="iconfont picker-arrow">&#xe649;</span>
+            </template>
+          </van-cell>
+        </div>
+
+        <div class="filed_cell picker" v-show="ibpsBankList.length > 1 && !netSelectShow">
+          <van-cell is-link @click="openBankIbpsList">
+            <template slot="title" class="label">
+              <span class="custom-title">汇入地</span>
+            </template>
+            <template>
+              <div style="color:#262626;" v-if="payee.bankaliasname">{{payee.bankaliasname}}</div>
+              <div class="placeholder" v-else>请选择汇入地</div>
+            </template>
+          </van-cell>
+        </div>
+
+      </section>
+
+      <section class="field-section">
+        <debit-card :label="`付款账户`" @select="selectPayeeCard"></debit-card>
+      </section>
+
+      <section class="field-section">
+        <header class='field-header'>
+          <span class="title">转账金额</span>
+        </header>
+        <transAmt v-model="transAmt"  :balance="debitCard.balance" placeholder="请输入" @change="onInputChange"></transAmt>
+        <div class="accounting-date" v-if="payee.bankName && transAmt > 0 && !isYuyue">
+          到账时间
+          <img class="tip" src="@/assets/help.png" alt="" @click="alertShow = true">
+          <div class="time">{{order.text || '预计实时到账'}}</div>
+          <!-- <div class="btn">更换</div> -->
+        </div>
+        <div class="accounting-date" v-else>
+          到账时间以收款银行为准
+        </div>
+      </section>
+      <!-- 非本行卡 或者 金额超过100w 或者 没有超级网银时需选择 -->
+      <section class="field-section open-info" v-if="netSelectShow">
+        <div class="filed_cell picker">
+          <van-cell @click="openArea">
+            <template slot="title">
+              <span class="custom-title">收款方开户地</span>
+            </template>
+            <template>
+              <div v-if="payee.openCity" style="color:#262626;">{{payee.openCity}}</div>
+              <div class="placeholder" v-else>请选择城市</div>
+            </template>
+          </van-cell>
+        </div>
+        <div class="filed_cell picker">
+          <van-cell @click="openBankNetWork">
+            <template slot="title" class="label">
+              <span class="custom-title">开户网点</span>
+            </template>
+            <template>
+              <div v-if="payee.dotName" style="color:#262626;">{{payee.dotName}}</div>
+              <div class="placeholder" v-else>请选择开户网点</div>
+            </template>
+          </van-cell>
+        </div>
+      </section>
+
+      <section class="field-section">
+        <div class="filed_cell">
+          <div class="label">用途</div>
+          <div class="filed">
+            <m-input :maxlength="16" v-model="payee.transUsage" :value="payee.transUsage" placeholder="请输入（选填，最多可输入16字）" @input="changeTransUsage"></m-input>
+          </div>
+        </div>
+        <div class="filed_cell">
+          <van-switch-cell v-model="notifyPayee" title="通知收款人" />
+        </div>
+        <div class="filed_cell notify_payee-filed" v-if="notifyPayee">
+          <div class="label">收款人手机号</div>
+          <div class="filed">
+            <m-input type="phone" :maxlength="11" v-model="payee.phone" :value="payee.phone" placeholder="请输入手机号">
+              <template slot="right">
+                <img class="right-icon" src="@/assets/transferAccounts/icon_tongxunlu@2x.png" @click="openAddressBook" alt />
+              </template>
+            </m-input>
+          </div>
+        </div>
+      </section>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="disNext" class="marginLR40" @click="checkLimit" :loading="nextLoading">下一步</van-button>
+        </div>
+      </div>
+
+      <div class="explain">
+        <p>温馨提示</p>
+        <p>1.为了您的资金安全，切勿轻信陌生人或以公检法、亲戚朋友之名通过网络聊天、直播、电话、短信等方式提供的代办大额信用卡、刷单、高额投资理财等非正规渠道的转账贷款，谨防诈骗。请当面核实或到合法正规金融机构办理转账业务。</p>
+        <p>2.请妥善保管本人卡号、密码、短信验证码等中重要信息,切勿通过任何方式告诉任何人。</p>
+      </div>
+    </Scroller>
+    <!-- 弹出组件 -->
+    <!-- 收款人列表 -->
+    <accountList :show.sync="accountListShow" @select="selectPayee"></accountList>
+    <!-- 开户网点 -->
+    <BankNetWorkList :show.sync="bankNetWorkListShow" :bankName="payee.bankName" :bankId="payee.bankId" :cityCode="payee.payeeCityCd" @select="selectBankNewWork"></BankNetWorkList>
+    <!-- 省市选择 -->
+    <area-picker :visible.sync="areaShow" :title="`请选择开户地址`" :params="area" @confirm="selectArea" @select="getAreaName"></area-picker>
+    <!-- 银行卡列表 -->
+    <bankList :show.sync="bankListShow" :zl="true" @select="selectBank"></bankList>
+    <!-- 二级银行卡列表 汇入地选择 -->
+    <secondBankList :show.sync="ibpsBankListshow" :bankList="ibpsBankList" @select="selectIbpsBank" :bankId="payee.bankId"></secondBankList>
+    <!-- 银行卡选择后选择超网银行列表 -->
+    <!-- <van-action-sheet class="ibps-list" v-model="ibpsBankListshow" :actions="ibpsBankList" @select="selectIbpsBank" cancel-text="取消" /> -->
+    <!-- 手机验证码 -->
+    <captcha :visible.sync="captchaShow" @confirm="transferCheck"></Captcha>
+    <!-- 选择安全工具弹窗 -->
+    <security :visible.sync="securityShow" :form='payee' @confirm="handleConfirm"></security>
+
+    <myDialog :show.sync="alertShow" :isClose="false" :showCancel="false" :confirmButtonText="`我知道了`">
+      <p slot="content" class="dialog-content" style="text-align:left;">
+        到账时间：<br/>
+        1.行内转账一般为实时到账，7*24小时受理<br/>
+        2.跨行转账100万元（含）以下一般为实时到账，7*24小时受理<br/>
+        3.跨行转账100万元以上，工作日交易时间受理（前一日20:30-当日17:30）一般为实时到账；非工作日交易时间受理，顺延至下个工作日
+      </p>
+    </myDialog>
+
+    <myDialog :show.sync="confirm100w" :isClose="false" :confirmButtonText="`继续转账`" :cancelButtonText="`调整金额`" @con="pass100w = true,confirm100w = false,checkLimit()">
+      <p slot="content" class="dialog-content" style="text-align:left;">
+        单笔转账超过{{superNetLimitUpper}}<br />
+        到账时间为工作日00:00-17:30,20:30-24:00
+        <br />
+        <br />
+        您可以选择：<br />
+        1.继续转账，顺延至下个工作日到账 <br />
+        2.调整金额，拆分成多笔，每笔小于{{superNetLimitUpper}}可实时转账<br />
+      </p>
+    </myDialog>
+
+    <myDialog :show.sync="confirmSingle" title="超出单笔限额" :isClose="true" :confirmButtonText="`修改限额`" :cancelButtonText="`调整金额`" @con="goLimitMoney">
+      <p slot="content" class="dialog-content" style="text-align:left;">
+        当前单笔转账限额为￥{{this.limitRule.singleLimit | Money}},您可以:<br />
+        <br />
+        <br />
+        1.调低转账金额<br />
+        2.修改转账限额 <br />
+      </p>
+    </myDialog>
+
+    <myDialog :show.sync="confirmDayAmt" title="超出每日限额" :isClose="true" :confirmButtonText="`修改限额`" :cancelButtonText="`调整金额`" @con="goLimitMoney">
+      <p slot="content" class="dialog-content" style="text-align:left;">
+        今日累计转账剩余限额为￥{{this.limitRule.dayBalance | Money}}，您可以：<br />
+        <br />
+        <br />
+        1.调低转账金额<br />
+        2.修改转账限额<br />
+      </p>
+    </myDialog>
+
+    <myDialog :show.sync="confirmCount" title="转账笔数不足" :isClose="true" :confirmButtonText="`修改限额`" :cancelButtonText="`调整金额`" @con="goLimitMoney">
+      <p slot="content" class="dialog-content">
+        每日转账限额{{this.limitRule.dayTotalCount}}笔，您可以修改每日转帐笔数限制后再进行操作。
+      </p>
+    </myDialog>
+
+    <van-overlay :z-index="100" :show="loading">
+      <div class="wrapper">
+        <div class="loading-img" slot="img">
+          <img class="loading-img" src="~@/assets/loading-blue.gif" />
+        </div>
+       
+        <p class="loading-info">处理中,等待结果反馈…</p>
+      </div>
+    </van-overlay>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import DebitCard from "./components/DebitCard"
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import { SwitchCell, Picker, Toast, Overlay, ActionSheet } from "vant";
+import { Amount, InputItem } from "mand-mobile";
+import PopupRound from "@/components/PopupRound";
+import AreaPicker from '@/components/Picker/Area'
+import myDialog from '@/components/Dialog/Dialog'
+import Security from '@/components/Popup/Security'
+import Captcha from '@/components/Popup/Captcha'
+import AccountList from "./components/accountList";
+import BankList from "@/components/Picker/bankList";
+import SecondBankList from "@/components/Picker/secondBankList";
+import BankNetWorkList from "./components/bankNetWorkList";
+import TransAmt from "@/components/Input/transAmt.vue"
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    mInput,
+    DebitCard,
+    [SwitchCell.name]: SwitchCell,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [Picker.name]: Picker,
+    [Toast.name]: Toast,
+    [Overlay.name]: Overlay,
+    [ActionSheet.name]: ActionSheet,
+    PopupRound,
+    AreaPicker,
+    myDialog,
+    AccountList,
+    BankList,
+    SecondBankList,
+    Captcha,
+    Security,
+    BankNetWorkList,
+    TransAmt
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      //是否通过收款人列表直接选择收款人对象， 注：选择之后不能再改变状态，除非刷新或者重新进入页面
+      // payeeSelectFlag: false,
+      // 收款人对象
+      payee: {
+        name: '',
+        bankName: '',
+        bankCard: '',
+        bankId: '',
+        openCity: '',
+        payeeCityCd: '',
+        dotNbr: '',
+        dotName: '',
+        payeeProvinceCd: '',
+        phone: '',//通知的收款人手机号
+        IBPSFlag: 0,//支持超网标记
+      },
+      // 转账金额
+      transAmt: null,
+      debitCard: {
+        bankName: '',
+        acctName: "",
+        vouId: '',
+        balance: ''
+      },
+      // 通知收款人开关
+      notifyPayee: false,
+      bankList: [],
+      ibpsBankList: [],//超网银行列表
+      order: {
+        text: '预计实时到账',
+        id: '1'
+      },
+      areaShow: false,//省市选择开关
+      alertShow: false,
+      accountListShow: false,
+      bankNetWorkListShow: false,
+      bankListShow: false,
+      ibpsBankListshow: false,
+      securityShow: false,//确认弹窗开关
+      captchaShow: false,//验证码弹窗开关
+      ownBank: true,//是否为本行交易
+      ownerCard: false,//是否为本人卡
+      area: {
+        provinceCode: '',
+        cityCode: ''
+      },
+      loading: false,
+      params: {},
+      isYuyue: this.$route.query.yuyue || false, //是否预约  影响转账接口选择
+      limitRule: {},
+      nextLoading: false,
+      pass100w: false,
+      confirm100w: false,
+      confirmSingle: false,
+      confirmDayAmt: false,
+      confirmCount: false,
+      isWorkDay: false,//是否工作日工作时间
+      ExtTransTypCd: '1102',//1102银行账户转账 1103手机号转账
+      timer: '',
+      transTimer: null,
+      superNetLimit: 1000000,
+      superNetLimitUpper: "100万"
+    };
+  },
+  computed: {
+    ...mapState('transferAccounts', ['yuyue']),
+    wrongShow() {
+      let show = false;
+      if (Number(this.transAmt) > Number(this.debitCard.balance)) {
+        show = true;
+      }
+      return show
+    },
+    // 开户省市开户网点选择是否显示
+    netSelectShow() {
+      // console.log("开户网点是否需要显示", this.ownBank)
+      if (!this.ownBank) {
+        if (this.transAmt <= this.superNetLimit && (this.payee.bankCard && this.payee.bankId)) {
+          if (this.payee.IBPSFlag == 1) {//别行卡小于等于100w且支持超网
+            return false
+          } else {
+            return true
+          }
+        } else if (this.transAmt > this.superNetLimit && (this.payee.bankCard)) {//别行卡超过100w
+          return true
+        }
+      } else {//本行卡无需选择
+        return false
+      }
+    },
+    disNext() {
+      let disabled = true;
+      if (!this.payee.name) {
+        disabled = true;
+      } else if (!this.payee.bankCard) {
+        disabled = true;
+      } else if (!this.payee.bankName) {
+        disabled = true;
+      } else if (!this.transAmt || this.transAmt <= 0) {
+        disabled = true;
+      } else if (this.wrongShow) {
+        disabled = true;
+      } else if (!this.payee.bankNbr) { //清算行号
+        disabled = true;
+      } else if (this.ibpsBankList.length > 1 && !this.netSelectShow && !this.payee.bankaliasname) {//汇入地展示时，未选择汇入地
+        disabled = true;
+      } else if (this.notifyPayee && !this.payee.phone) { //勾选是否通知收款人，手机号码必输
+        disabled = true;
+      } else if ((!this.ownBank && this.payee.IBPSFlag == 0) && (!this.payee.bankNbr || !this.payee.dotNbr || !this.payee.dotName || !this.payee.openCity)) {
+        disabled = true;
+      } else if (!this.ownBank && this.payee.IBPSFlag == 1 && Number(this.transAmt) > this.superNetLimit && (!this.payee.bankNbr || !this.payee.dotNbr || !this.payee.dotName || !this.payee.openCity)) {
+        disabled = true;
+      } else {
+        disabled = false;
+      }
+      return disabled
+    }
+  },
+  created() {
+    if (this.$route.params.payee) {
+      this.selectPayee(this.$route.params.payee);
+    }
+    if (this.isYuyue) {
+      this.payee.transUsage = this.yuyue.TransUsage;
+    }
+
+  },
+  mounted() { },
+  methods: {
+    ...mapMutations('transferAccounts', ['YUYUE']),
+    // 收款人列表选择收款人
+    selectPayee(data) {
+      console.log("选择收款账户", data)
+      this.payee.bankaliasname = '';
+      this.ibpsBankList = []; //重置汇入地
+      // this.payeeSelectFlag = true;
+      this.payee.name = data.payeeName;
+      this.payee.bankCard = data.payeeAcctNbr;
+      this.payee.bankName = data.bankName;
+      this.payee.payeeProvinceCd = data.payeeProvinceCd;
+      this.payee.payeeCityCd = data.payeeCityCd;
+      this.payee.bankNbr = data.bankNbr;
+      this.payee.dotNbr = data.dotNbr;
+      this.payee.dotName = data.dotName;
+      this.payee.phone = data.payeePhoneNbr;
+      this.payee.reconciliation = data.reconciliation;
+      this.area = {
+        provinceCode: data.payeeProvinceCd,
+        cityCode: data.payeeCityCd
+      }
+      if (data.openCity) {
+        this.payee.openCity = data.openCity;
+      }
+      // 判断是否本行卡 1 为本行卡  0为他行卡
+      if (data.reconciliation == 0) {
+        this.ownBank = false;
+      } else {
+        this.ownBank = true;
+      }
+      this.qryBankBin(data.payeeAcctNbr);//收款账户信息全的话，不需要查卡bin
+      // console.log("this.payee",this.payee,this.ownBank)
+      this.checkWorkDate();
+    },
+    bankCardChange(value) {
+      console.log(value)
+      if (value == '') {
+        // 重置银行相关信息
+        this.payee.bankNbr = "";
+        this.payee.bankName = "";
+        this.payee.bankId = "";
+        this.payee.dotName = '';
+        this.payee.dotNbr = '';
+        this.ibpsBankList = [];
+        this.payee.bankaliasname = "";
+      }
+
+    },
+    payeeNameCheck() {
+      var regEn = /[`+~!@#$%^&*()_\-\=\\+<>?:"{},\/;'[\]]/g;
+      var regCn = /[·！#￥（——）：；“”‘、，|《。》？、【】[\]]/g;
+      var regBlank = /\s/g;
+      if (regBlank.test(this.payee.name)) {//检查是否包含空格
+        this.$toast("收款人输入错误,请重新输入");
+        return false;
+      }
+      if (regEn.test(this.payee.name) || regCn.test(this.payee.name)) {//检查是否包含除了.以外的其其它特殊字符
+        this.$toast("收款人输入错误,请重新输入");
+        return false;
+      }
+      return true
+    },
+    // 调用原生银行卡扫描
+    ScanOcrBankCard() {
+      // if (!this.payeeSelectFlag) {
+      console.log("执行ocr扫描")
+      window.NativeCall.ScanOcrBankCard(param => {
+        let res = JSON.parse(param);
+        this.payee.bankCard = res.CardNum;
+      });
+      // }
+    },
+    // 打开手机通讯录
+    openAddressBook() {
+      window.NativeCall.SearchBySystem(params => {
+        let data = JSON.parse(params);
+        //userAgent 属性是一个只读的字符串，声明了浏览器用于 HTTP 请求的用户代理头的值
+        let u = navigator.userAgent;
+        let isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1;
+        let isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/);
+        if (isAndroid) {
+          let phone = data.UserNumber.replace(/[+-\s]/g, '').slice(-11);
+          this.payee.phone = phone;
+        }
+        if (isiOS) {
+          let phone = data.Phone.replace(/[+-\s]/g, '').slice(-11);
+          this.payee.phone = phone;
+        }
+      });
+    },
+    changeTransUsage() {
+      console.log("记录用途", this.payee.transUsage)
+      let yuyue = { ...this.yuyue }
+      yuyue.TransUsage = this.payee.transUsage;
+      this.YUYUE(yuyue);
+    },
+    //打开选择银行列表
+    async openBankList() {
+      // if (!this.payeeSelectFlag) { // 判断是否通过组件选择过付款人 付款人账号附带银行无需打开银行卡列表
+      if (this.payee.bankCard.length >= 13) {
+        if (!this.payee.bankName) {
+          try {
+            await this.qryBankBin(this.payee.bankCard);
+            if (!this.payee.bankName || !this.payee.bankNbr) {
+              this.bankListShow = true;
+            }
+          }
+          catch (err) {
+            console.log("错误")
+            // 卡bin信息不存在则打开银行卡列表
+            this.bankListShow = true;
+          }
+        } else {
+          this.bankListShow = true;
+        }
+
+      } else {
+        this.bankListShow = true;
+      }
+      // } else {
+      //   if (!this.payee.bankName) {
+      //     this.bankListShow = true;
+      //     this.payeeSelectFlag = false;
+      //   }
+      // }
+    },
+    //选择付款卡
+    selectPayeeCard(item) {
+      console.log('选择的付款卡', item)
+      this.debitCard = { ...item };
+    },
+
+    //查询卡bin
+    async qryBankBin(card) {
+      let params = {
+        AcctNbr: card,
+        //branchId: '2336',
+        ChnlId: '62'
+      }
+      let res = await this.request('BankBinQuery', params, true, true)
+      let { InnerCardFlag, OpenIbpsYn, BankId, PayeeBankName, ClearBankNo } = res;
+      // 是否为本行卡或别行卡标记
+      this.payee.InnerCardFlag = InnerCardFlag;
+      if (InnerCardFlag == 0) {
+        this.ownBank = false;
+        this.payee.reconciliation = 0;
+      } else if (InnerCardFlag == 1) {
+        this.ownBank = true;
+        this.payee.reconciliation = 1;
+      }
+      // 超网标志
+      if (OpenIbpsYn === 'Y') {
+        this.payee.IBPSFlag = 1;
+      } else {
+        this.payee.IBPSFlag = 0;
+      }
+
+      if (PayeeBankName) {//卡bin设置银行
+        this.payee.bankName = PayeeBankName;
+        this.payee.bankNbr = ClearBankNo;//设置清算行号
+        this.payee.bankId = BankId;
+      } else {
+        this.payee.bankName = "";
+        this.payee.bankNbr = "";//设置清算行号
+        this.payee.bankId = "";
+      }
+      this.checkWorkDate();
+    },
+    //查询是否本人卡
+    async qryIsPersonal() {
+      let params = {
+        PayeeAcctNbr: this.payee.bankCard,
+        //branchId: '2336',
+        ChnlId: '62'
+      }
+      try{
+        let res = await this.request('QryIsPersonalCard',params, true)
+        let { flag } = res;
+        if (flag === 'Y') {
+          this.ownerCard = true;  //@unfinished
+        } else {
+          this.ownerCard = false;
+        }
+        return true
+      }
+      catch(err){
+        console.log(err,"查询本人卡错误")
+        return false
+      }
+      
+    },
+
+    // 校验转账到账时间
+    checkWorkDate() {//value=>转账金额
+      if (this.ownBank) {
+        //本行卡无需校验
+        this.order.text = "预计实时到账";
+      } else {
+        let apiCheck = false;//满足调用服务器时间查询的条件
+
+        if (this.transAmt > 0) {
+          let params = {
+            TransAmt: this.transAmt,
+            //branchId: "2336",
+            ChnlId: "62"
+          }
+          if (Number(this.transAmt) > this.superNetLimit) {
+            apiCheck = true;
+          } else {
+            if (this.payee.IBPSFlag == 0) {
+              apiCheck = true;
+            }
+          }
+
+          if (apiCheck) {
+            this.request('QryPaymentDate',
+              params, true
+            ).then((res) => {
+              console.log('预计到账时间判断', res);
+              let { PaymentDate, QryChannel } = res;
+              let text = '';
+              this.order.text = "预计" + PaymentDate;
+
+              if (QryChannel == 'nextDay' || QryChannel == 'nextWorkDay') {  //Y大额工作时间 N是非大额工作时间
+                this.isWorkDay = true;
+              } else {
+                this.isWorkDay = false;
+              }
+            }).catch((error) => {
+              console.log(error)
+            })
+
+
+          } else {
+            this.order.text = "预计实时到账";
+          }
+
+        }
+      }
+    },
+    openArea() {
+      this.areaShow = true;
+    },
+    // 接受省市选择数据
+    selectArea(data) {
+      if (data.length > 1) {
+        // let str = '';
+        // for (let item of data) {
+        //   str += item.text
+        // }
+        // this.payee.openCity = str;
+        // 重置网点信息
+        if (data[1].value != this.payee.payeeCityCd) {
+          this.payee.dotNbr = "";
+          this.payee.dotName = "";
+          this.payee.bankNbr = "";
+        }
+        this.payee.payeeProvinceCd = data[0].value;
+        this.payee.payeeCityCd = data[1].value;
+        this.payee.openCity = data[0].text + data[1].text;
+        this.areaShow = false;
+        // this.area = {
+        //   provinceCode: this.payee.payeeProvinceCd,
+        //   cityCode: this.payee.payeeCityCd
+        // }
+      }
+    },
+    // 获取收款人附带的省市信息  结合area变化
+    getAreaName(data) {
+      this.payee.payeeProvinceCd = data[0].value;
+      this.payee.payeeCityCd = data[1].value;
+      // this.payee.openCity = data[0].text + data[1].text;
+      if (this.payee.payeeCityCd) {
+        let str = '';
+        for (let item of data) {
+          str += item.text
+        }
+        this.$set(this.payee, 'openCity', str)//直接赋值，不能展示，需使用$set
+      }
+    },
+    // 选择银行
+    selectBank(data) {
+      console.log(data, '选择银行');
+      this.payee.bankName = data.bankName;
+      this.payee.bankId = data.bankId;
+      if (data.ibpsBankList.length > 0) {
+        this.ibpsBankList = data.ibpsBankList;
+        let keyIndex = 0, hasIBPS = false;
+        data.ibpsBankList.map((item, index) => {
+          if (data.bankName == item.bankaliasname) {
+            keyIndex = index;
+            hasIBPS = true;
+          }
+        })
+        if (hasIBPS) {
+          this.payee.bankNbr = data.ibpsBankList[keyIndex].bankagent;
+          this.payee.bankaliasname = data.ibpsBankList[keyIndex].bankaliasname
+        } else {
+          this.payee.bankNbr = '';
+          this.payee.bankaliasname = '';
+        }
+      }else{
+        this.ibpsBankList = [];
+        this.payee.bankNbr = '';
+        this.payee.bankaliasname = '';
+      }
+      // 开户网点信息置空
+      this.payee.dotNbr = '';
+      this.payee.dotName = '';
+      // 超网标志
+      if (data.ibpsFlage === 'Y') {
+        this.payee.IBPSFlag = 1;
+      } else {
+        this.payee.IBPSFlag = 0;
+      }
+      // 判断是否本行卡
+      if (data.bankName != '焦作中旅银行') {
+        this.ownBank = false;
+        this.payee.reconciliation = 0;
+      } else {
+        this.ownBank = true;
+        this.payee.reconciliation = 1;
+        this.payee.IBPSFlag = 1;
+      }
+      this.checkWorkDate();
+    },
+    openBankIbpsList() {
+      if (this.ibpsBankList.length > 1) {
+        this.ibpsBankListshow = true;
+      }
+    },
+    selectIbpsBank(item) {
+      // console.log(item);
+      this.payee.bankNbr = item.bankagent;
+      this.payee.bankaliasname = item.bankaliasname;
+      this.payee.bankName = item.bankaliasname;
+      this.ibpsBankListshow = false;
+      this.payee.dotNbr = '';
+      this.payee.dotName = '';
+      if (item.ibpsFlage && item.ibpsFlage === 'N') {
+        this.payee.IBPSFlag = 0;
+      }
+      if (item.bankaliasname != '焦作中旅银行') {
+        this.ownBank = false;
+        this.payee.reconciliation = 0;
+      } else {
+        this.ownBank = true;
+        this.payee.reconciliation = 1;
+      }
+    },
+    // 转账金额变化
+    onInputChange(value) {
+      // 跨行判断金额超过100w时，或者小额不支持超网时 需判断是否为工作日
+      // this.transAmt = this.transAmt.replace(/[^\d.]/g,'');
+      if (this.ownBank) return
+      // console.log(value)
+      // this.transAmt = value;
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(() => {
+        this.checkWorkDate();
+      }, 400)
+    },
+    //打开开户网点组件
+    openBankNetWork() {
+      // console.log(this.payee.payeeCityCd, "开启判断")
+      if (!this.payee.payeeCityCd) {
+        Toast("请先选择省市")
+      } else {
+        this.bankNetWorkListShow = true;
+      }
+    },
+    //接受开户网点选择数据
+    selectBankNewWork(data) {
+      console.log('选择开户网点', data)
+      this.payee.dotNbr = data.bankno;
+      this.payee.dotName = data.bankname;
+      this.payee.bankNbr = data.directbankno;
+      this.payee = { ...this.payee }//必须加才能触发下一步按钮disabled验证，不清楚原因，
+      this.checkWorkDate();
+    },
+    //查询账户限额
+    async checkLimit() {
+      this.nextLoading = true;
+      let validateRes = await this.payeeNameCheck();
+      
+      if (!validateRes) {
+        this.nextLoading = false;
+        return
+      }
+      let qryPersonal = await this.qryIsPersonal();
+      if(!qryPersonal) {
+        this.nextLoading = false;
+        return
+      }
+      // this.next();
+      // return
+      // @unfinished 需与远程增加跳转页面插件
+      if (!this.isYuyue && !this.ownerCard) { //非预约，且非本人卡转账
+        console.log("校验限额")
+        // 跨行转账>100w，非工作日提示
+        if (this.transAmt > this.superNetLimit && this.isWorkDay == true && !this.pass100w) {
+          this.confirm100w = true;
+          this.nextLoading = false;
+          return
+        }
+        let params = {
+          AcNo: this.debitCard.vouId,
+          AcSeq: this.debitCard.userAcctId,
+          BranchId: '2336',
+          ChnlId: '62',
+        }
+
+        try {
+          let res = await this.request('LimitMtCoutQry', params, true);
+          this.limitRule = res.PersLimitRule[0];
+          // console.log(this.limitRule)
+          let dayTotalLimit = this.limitRule.dayTotalLimit;// || this.limitRule.bankDayTotalLimit
+          let dayCountLimit = this.limitRule.dayTotalCount;
+          let singleLimit = this.limitRule.singleLimit;
+          console.log(this.transAmt, singleLimit, dayTotalLimit, dayCountLimit, "检测")
+          this.limitRule.dayBalance = Number(dayTotalLimit) - Number(this.limitRule.dayUseAmt);
+          
+          // 超出单笔限额
+          if (Number(this.transAmt) > Number(singleLimit)) {
+            this.confirmSingle = true;
+            this.nextLoading = false;
+            return
+          }
+          // 超出每日日限额
+          if (Number(this.transAmt) + Number(this.limitRule.dayUseAmt) > Number(dayTotalLimit)) {
+            this.confirmDayAmt = true;
+            this.nextLoading = false;
+            return
+          }
+          // 超出日转账限制次数
+          if (Number(dayCountLimit) - Number(this.limitRule.dayUseCount) < 1) {
+            this.confirmCount = true;
+            this.nextLoading = false;
+            return
+          }
+          this.next();
+        } catch (err) {
+          // 前端获取限额数据失败转为后台校验
+          this.nextLoading = false;
+          return 
+        }
+      } else {
+        this.next();
+      }
+
+    },
+    //点击下一步，存储参数，调出确认转账工具
+    next() {
+      this.payee.transAmt = this.transAmt;
+      //本地浏览器调试需加 BranchId:''
+      this.params = {
+        ChnlId: '62',
+        // BranchId: '63',
+        PayerAcctNbr: this.debitCard.vouId,//付款人银行卡
+        TrsAcNo: this.debitCard.vouId,
+        PayeeAcctNbr: this.payee.bankCard,//收款人银行卡
+        TransAmt: this.transAmt,
+        ExtTransTypCd: this.ExtTransTypCd,
+        IsFGBiz: '2',
+        PayerAcctName: this.debitCard.acctName,//付款人姓名
+        PayeeAcctName: this.payee.name,//收款人姓名
+        PayeeBankName: this.payee.bankaliasname || this.payee.bankName, //this.payee.bankaliasname超网银行列表银行名，
+        PayeeOpenAcctBankCode: this.payee.bankNbr,// 超网行号    transMode = 1 ,  大小额2
+        PayeeBankNbr: this.payee.dotNbr,//接收清算行行号    bankno 开户行行号
+        TransMode: this.payee.IBPSFlag == "1" ? '1' : '2',
+        CheckAccPassw: '0',
+        TransUsage: this.payee.transUsage,//转账用途/附言
+        IBPSFlag: this.payee.IBPSFlag,
+        Phone: this.notifyPayee ? this.payee.phone : '',//
+      };
+      if (this.isYuyue) {
+        // this.params.AppointmentType = this.yuyue.AppointmentType;
+        // this.params.CreateDate = this.yuyue.CreateDate;
+        // this.params.EndDate = this.yuyue.EndDate;
+        // this.params.PeriodTyp = this.yuyue.PeriodTyp;
+        // this.params.PeriodVal = this.yuyue.PeriodVal;
+        this.params = { ...this.yuyue, ...this.params };
+        this.payee = { ...this.yuyue, ...this.payee }
+        console.log(this.params, this.payee, "预约参数")
+      }
+      if (this.ownerCard) {
+        this.ownerCardTransfer();
+      } else {
+        // 非本人卡转账打开确认工具
+        this.securityShow = true;
+        this.nextLoading = false;
+      }
+      
+    },
+  
+    //本人卡无需验证验证码及密码
+    ownerCardTransfer() {
+      if (this.payee.bankCard == this.debitCard.vouId) {
+        Toast("收付款卡不能是同一张银行卡")
+        this.nextLoading = false;
+        return
+      }
+      if (!this.isYuyue) {
+        this.request('TransferConfirm', this.params).then(res => {
+          this.params._tokenName = res._tokenName;
+          this.nextLoading = false;
+          this.securityShow = true; // 开启确认弹窗（个人卡转账需提前发送confirm）
+        }).catch(err=>{
+          this.nextLoading = false;
+        });
+      } else {
+        this.request('CISYConfirm', this.params).then(res => {
+          this.params._tokenName = res._tokenName;
+          this.securityShow = true;
+        }).catch(err=>{
+          this.nextLoading = false;
+        });
+      }
+    },
+      // 确认窗点击下一步触发， 调用后台参数校验
+    handleConfirm() {
+      console.log("确认转账下一步")
+      if (this.ownerCard) {
+        this.bankTransfer();
+        this.securityShow = false
+      } else {
+        this.securityShow = false;
+        this.captchaShow = true;
+      }
+    },
+    // 验证手机验证码
+    transferCheck(data = {}) {
+      console.log(data, "接受验证码组件参数")
+      this.params.OTPPassword = data.code;
+      this.params.SmsNbr = data.SmsNbr;
+      console.log(this.isYuyue, "是否预约")
+      this.captchaShow = false;
+      if (this.transTimer) clearTimeout(this.transTimer)
+      // 防重复处理
+      this.transTimer = setTimeout(() => {
+        if (!this.isYuyue) {
+          this.request('TransferConfirm',
+            this.params
+          ).then((res) => {
+            console.log('后台校验转账参数', res);
+            // 打开验证码
+            this.params._tokenName = res._tokenName;
+            this.passwordCheck();
+          }).catch((error) => {
+            console.log(error)
+            // Toast("传入参数有误，请重试");+
+          })
+        } else {
+          this.request('CISYConfirm',
+            this.params
+          ).then((res) => {
+            console.log('后台校验预约转账参数', res);
+            // 打开验证码
+            this.params._tokenName = res._tokenName;
+            this.passwordCheck();
+          }).catch((error) => {
+            console.log(error)
+            // Toast("传入参数有误，请重试");
+          })
+        }
+      }, 300)
+
+
+    },
+    // 输入完验证码后调用密码组件
+    passwordCheck() {
+      if (process.env.NODE_ENV == "development") {//随时删除
+        this.params.Password1 = '111111';//本地测试无法调用密码组件 写死
+        this.bankTransfer();
+      } else {
+        window.NativeCall.SecureKeyboard(param => {
+          this.params.Password1 = param;
+          // this.params.Password = '111111';
+          this.bankTransfer();
+        });
+      }
+    },
+    //银行账户转账
+    bankTransfer() {
+      this.loading = true;
+      if (!this.isYuyue) { //银行账户转账
+        this.request('Transfer',
+          this.params, true
+        ).then((res) => {
+          console.log('执行转账结果', res);
+          this.payee.PayeeBankNbr = res.PayeeBankNbr
+          this.payee.PayeeOpenAcctBankCode = res.PayeeOpenAcctBankCode;
+          this.payee.ArriveTime = res.ArriveTime;
+          this.$router.replace({ name: 'result', query: { success: 1 }, params: { payee: this.payee, res: res } })
+          // this.loading = false;
+        }).catch((error) => {
+          console.log(error)
+          if (error._RejCode == "999999" || error._RejCode == "TimeOut") {
+            if (error._RejMessage.indexOf("密码输入不正确") > 0 || error._RejMessage.indexOf("密码错误") > 0) {
+              Toast(error._RejMessage)
+              this.loading = false;
+            } else if (error.jsonError && error.jsonError[0]._exceptionMessageCode == 'PWD7') {
+              Toast(error._RejMessage)
+              this.loading = false;
+            } else {
+              this.$router.replace({ name: 'result', query: { success: 0 }, params: { payee: this.payee, res: error } })
+            }
+          } else {
+            this.loading = false;
+            Toast(error._RejMessage)
+          }
+
+          // if(process.env.NODE_ENV == "production" && error._RejCode == "999999" && error._RejMessage == '交易密码输入不正确'){
+          //   this.loading = false;
+          // }
+          // if (error.jsonError[0]._exceptionMessageCode == 'PWD7') {
+          //   this.loading = false;
+          // } else {
+          //   this.$router.replace({ name: 'result', query: { success: 0 }, params: { payee: this.payee, res: error } })
+          //   this.loading = false;
+          // }
+          // this.loading = false;
+        })
+      } else { //预约转账
+        this.request('CISY',
+          this.params, true
+        ).then((res) => {
+          console.log('执行预约转账结果', res);
+          this.payee.PayeeBankNbr = res.PayeeBankNbr
+          this.payee.PayeeOpenAcctBankCode = res.PayeeOpenAcctBankCode;
+          this.payee.ArriveTime = res.ArriveTime;
+          this.$router.replace({ name: 'result', query: { success: 1, yuyue: 1 }, params: { payee: this.payee, res: res } })
+          // this.loading = false;
+        }).catch((error) => {
+          if (error._RejCode == "999999" || error._RejCode == "TimeOut") {
+            if (error._RejMessage.indexOf("密码输入不正确") > 0 || error._RejMessage.indexOf("密码错误") > 0) {
+              Toast(error._RejMessage)
+              this.loading = false;
+            } else if (error.jsonError && error.jsonError[0]._exceptionMessageCode == 'PWD7') {
+              Toast(error._RejMessage)
+              this.loading = false;
+            } else {
+              this.$router.replace({ name: 'result', query: { success: 0, yuyue: 1 }, params: { payee: this.payee, res: error } })
+            }
+          } else {
+            this.loading = false;
+            Toast(error._RejMessage)
+          }
+        })
+      }
+
+    },
+    goLimitMoney() {
+      let params = {
+        ios: 'DLimitMoneyController',
+        ClassName: "com.example.zlv_master.activity.mine.XianErActivity"
+      }
+      window.NativeCall.goToNativePage(params, res => {
+      });
+    },
+  },
+  watch: {
+  },
+};
+</script>
+<style lang="scss" scoped>
+/deep/ .van-hairline--top-bottom::after {
+  border: none;
+}
+/deep/ .van-cell {
+  padding: 0;
+}
+/deep/ .open-info .van-cell .van-cell__title {
+  width: px2vw(180);
+}
+/deep/ .md-input-item.is-disabled .md-input-item-input {
+  color: #262626;
+  -webkit-text-fill-color: #262626;
+}
+
+.footer-box {
+  margin-top: px2vw(101);
+}
+.explain {
+  font-size: px2vw(22);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: #7d7d7d;
+  line-height: px2vw(30);
+  text-align: justify;
+  padding: px2vw(39) px2vw(40);
+}
+.dialog-content {
+  color: $color-text;
+  font-size: px2vw(26);
+  line-height: px2vw(36);
+  font-family: $font-family;
+  margin-bottom: px2vw(50);
+}
+</style>

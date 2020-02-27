@@ -1,0 +1,1133 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader
+      :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'white'"
+      :isWhite="false"
+    >
+      <i slot="left" class="iconfont">&#xe63d;</i>
+    </Myheader>
+    <div class="content">
+      <div class="temp">
+        <!-- //轮播 -->
+        <div class="jianjieout">
+          <div class="jianjie">
+            <van-swipe :loop="false" @change="onChangeswipe">
+              <van-swipe-item>
+                <img src="@/assets/deposit/index/banner_daikuan@2x.png" alt />
+              </van-swipe-item>
+              <van-swipe-item>
+                <img src="@/assets/deposit/index/banner_daikuan@2x.png" alt />
+              </van-swipe-item>
+            </van-swipe>
+            <!-- <img src="@/assets/deposit/index/banner_cunkuan@2x.png" alt /> -->
+          </div>
+        </div>
+        <!-- 头部 -->
+        <div class="topout">
+          <div class="top">
+            <div @click="gotoSpecialdeposit" class="top_one">
+              <img src="@/assets/deposit/index/icon_tesecunkuan@2x.png" alt />
+              <p>特色存款</p>
+            </div>
+            <div @click="gotobigreceipt" class="top_one">
+              <img src="@/assets/deposit/index/icon_daecundan@2x.png" alt />
+              <p>大额存单</p>
+            </div>
+            <div @click="goTowholedeposit('')" class="top_one">
+              <img src="@/assets/deposit/index/icon_zhengcunzhengqu@2x.png" alt />
+              <p>整存整取</p>
+            </div>
+            <div @click="gotocalldatail('')" class="top_one">
+              <img src="@/assets/deposit/index/icon_tongzhicunkuan@2x.png" alt />
+              <p>通知存款</p>
+            </div>
+            <div @click="gotodepositCal" class="top_one">
+              <img src="@/assets/deposit/index/icon_cunkuanjisuanqi@2x.png" alt />
+              <p>存款计算器</p>
+            </div>
+          </div>
+        </div>
+        <!-- 特色存款 -->
+        <!-- <div class="tesedeposit titletop">
+          <h5>特色存款</h5>
+          <van-tabs v-model="activetese" :swipeable="true" :border="false" line-width="100">
+            <van-tab title="标签 1">
+              <div v-for="(item,i) in specialRate" class="teseone" @click="gotospecialdetail(item)">
+                <div class="left">
+                  <p>{{item.PrdName}}</p>
+                  <h4>
+                    {{item.Rate | toFixedNum}}<span>%</span>
+                  </h4>
+                  <li>{{item.MinFixAmt | toFixedNum }}元起购</li>
+                  <h3>立即存入</h3>
+                </div>
+              </div>
+            </van-tab>
+          </van-tabs>
+        </div> -->
+        <!-- 整存整取 -->
+        <div class="zhengcundeposit titletop">
+          <h5>整存整取</h5>
+          <van-grid :column-num="3" :clickable="true">
+            <van-grid-item
+              v-for="(item,index) in WholeRate"
+              :key="index"
+              @click="goTowholedeposit(item)"
+            >
+            <p  v-if="item.activity == '三个月'" class="p">3个月</p>
+            <p  v-if="item.activity == '六个月'" class="p">6个月</p>
+            <p  v-if="item.activity == '一年'" class="p">1年</p>
+            <p  v-if="item.activity == '两年'" class="p">2年</p>
+            <p  v-if="item.activity == '三年'" class="p">3年</p>
+            <p  v-if="item.activity == '五年'" class="p">5年</p>
+              <h5>
+                利率
+                <span>
+                  {{item.execution_rate | toFixedNum}}%
+                </span>
+              </h5>
+            </van-grid-item>
+          </van-grid>
+        </div>
+        <!-- 通知存款 -->
+        <div class="tongzhideposit titletop">
+          <h5>通知存款</h5>
+          <div class="teseone tongzhione">
+            <div class="left" v-for="(item,i) in NoticltRate " :key="i"  @click="gotocalldatail(item)">
+              <p  v-if="item.activity == '一天'" class="p">1天</p>
+              <p  v-if="item.activity == '七天'" class="p">7天</p>
+              <ul class="ul">
+                利率
+                <span>
+                  {{item.execution_rate | toFixedNum}}%
+                </span>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <!-- 大额存单 -->
+        <div class="bigdeposit titletop">
+          <h5>
+            大额存单
+            <span class="spantop" @click="gotobigreceipt"><i slot="left" class="iconfont little_arror">&#xe649;</i></span>
+          </h5>
+          <div v-for="(itme,inden) in biglist" @click="gotodetail(itme)" class=" biglist">
+        <div class="mainList"  >
+          <div class="name">
+            <p>
+              {{itme.DepositAllName}}<span v-if="itme.PayInterest == '2'">月月付息</span><span v-if="itme.PayInterest == '1'">利随本清</span>
+            </p>
+          </div>
+          <div class="bigliststyle">
+            <div class="left">
+              <p>
+                {{itme.EndIntRate | toFixedNumBer}}<span>%</span>
+              </p>
+              <h5 class="aa">年利率</h5>
+            </div>
+            <div class="middle">
+              <div v-if="itme.PeriodUnit == 'M'">
+                <h4>期限:<span class="day">{{itme.DepositPeriod}}个月</span></h4>
+                <h3>剩余额度:<span class="color">{{itme.CurrentBalance/itme.CurrentIssueQuota*100 | toFixedNum}}%</span></h3>
+              </div>
+              <div v-else>
+                <h4 >期限:<span class="day">{{itme.DepositPeriod}}年</span></h4>
+                <h3>剩余额度:<span class="color">{{itme.CurrentBalance/itme.CurrentIssueQuota*100 | toFixedNum}}%</span>
+                </h3>
+              </div>
+            </div>
+          </div>
+          <!-- <div v-if="itme.PayInterest == '2'" class="right">
+            <img src="@/assets/deposit/index/icon_yueyuefuxi@2x.png" alt />
+            <span>月月付息</span>
+          </div> -->
+        </div>
+          </div>
+        </div>
+      </div>
+      <div class="lastP">中旅银行，开启您的财富大门</div>
+    </div>
+    <!-- 足部 -->
+    <div class="foot">
+      <div :class="activeClass == 0? 'active':''" @click="qh(0)">
+        <img v-if="activeClass == 0" src="@/assets/deposit/index/icon_tabbar_jingxuan@2x.png" alt />
+        <img v-else src="@/assets/deposit/index/icon_tabbar_jingxuan_nor@2x.png" alt />
+        <p>精选</p>
+      </div>
+      <div :class="activeClass == 1? 'active':''" @click="qh(1)">
+        <div class="foot_right">
+          <img v-if="activeClass == 1" src="@/assets/deposit/index/icon_wodecunkuan_sel@2x.png" alt />
+          <img v-else src="@/assets/deposit/index/icon_wodecunkuan_nor@2x.png" alt />
+          <p>我的存款</p>
+        </div>
+      </div>
+    </div>
+    <!-- 提示 -->
+    <MyDialog
+      :showCancel="showCancel"
+      @cancel="cancel"
+      title="提示"
+      :show="alertShow"
+      :isClose="false"
+      @con="config"
+    >
+      <p slot="content" class="dialog-content">{{dialogText}}</p>
+    </MyDialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { Button, Tab, Tabs, Swipe, SwipeItem, Grid, GridItem } from "vant";
+import { parse } from "url";
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+import { error } from "util";
+export default {
+  components: {
+    Myheader: Header, //头部组件
+    [Button.name]: Button,
+    MyDialog: Dialog
+  },
+  data() {
+    return {
+      dataprice: "",
+      temp: true,
+      activeClass: 0, // 0为默认选择第一个，-1为不选择
+      active: 1,
+      activetese: 2, //特殊轮播
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      title: "",
+      IDcode: {},
+      specialRate: [], //特色费率
+      NoticltRate: [], //通知费率
+      WholeRate: [], //整存费率
+      biglist: [], //大额产品信息
+      alertShow: false, //是否显示
+      showCancel: true, //弹框显示
+      isLogin: false, //判断登陆
+      ISCARD:false,//判断是否有卡
+      dialogText: "",
+      flag: true,//判断其他模块跳转
+      ISSHOWTS:false,//特色开放
+    };
+  },
+  created() {},
+  beforeMount() {
+    // this.initData();
+    if (process.env.NODE_ENV == "production") {
+      this.getrate();
+      window.NativeCall.getUserInfo(params => {
+        let par = JSON.parse(params);
+        if (par.queryNoLogin == "1") {
+          this.isLogin = false;
+        } else {
+          this.isLogin = true;
+          if(par.AcList.length>0){
+            this.ISCARD = true
+          }else{
+            this.ISCARD = false
+          }
+          // this.getrate();
+          // this.getbig();
+          // this.getdepositdata();
+          this.getUserInfo();
+        }
+      });
+    } else {
+      this.initData();
+    }
+  },
+  mounted() {},
+  computed: {
+    ...mapState("deposit", {
+      user: "info"
+    }),
+    ...mapGetters("deposit", ["Setuserinfo"]),
+    ...mapState("common", ["userInfo"])
+  },
+  methods: {
+    // 调用actions
+    ...mapActions("deposit", ["setuserinfo"]),
+    ...mapActions("common", ["getUserInfo"]),
+    // 获取用户数据
+    async initData() {
+      await this.getUserInfo();
+      await this.getrate();
+      await this.checkInfo();
+      // await this.getbig();
+      // await this.getdepositdata();
+      // await this.getbigdata();
+    },
+    //核实客户信息
+    checkInfo() {
+      console.log(this.userInfo);
+      //pc端
+      if (this.userInfo.queryNoLogin == "1") {
+        this.isLogin = false;
+      } else {
+        this.isLogin = true;
+        if(this.userInfo.AcList.length>0){
+            this.ISCARD = true
+          }else{
+            this.ISCARD = false
+          }
+          console.log(this.ISCARD)
+        // this.getbig()
+        // this.getdepositdata()
+      }
+    },
+    //未登录跳转登陆
+    config() {
+      if(this.ISSHOWTS == true){
+        this.alertShow = false;
+        this.ISSHOWTS = false
+        console.log(this.ISSHOWTS)
+      }else{
+      this.alertShow = false;
+      if(this.isLogin == false){
+        window.NativeCall.goToNativePage({
+        ios: "DLoginVController",
+        ClassName:"com.example.zlv_master.activity.login.login.LoginActivity"
+      },
+      params => {
+        // alert(params);
+        let par=JSON.parse(params)
+        // alert(par)
+        if (par.queryNoLogin == "1") {
+          this.isLogin = false;
+        } else {
+          this.isLogin = true;
+          if(par.AcList.length>0){
+            this.ISCARD = true
+          }else{
+            this.ISCARD = false
+          }
+        }
+        });
+      }else{
+        let params = {
+        package: "addBankCard",
+        router: "",
+        routerDic: ''
+        };
+        window.NativeCall.goToPackage(params);
+      }
+      }
+    },
+    //跳转登录页
+    gotologin(){
+      window.NativeCall.goToNativePage({
+        ios: "DLoginVController",
+        ClassName:"com.example.zlv_master.activity.login.login.LoginActivity"
+      },
+      params => {
+        // alert(params);
+        let par=JSON.parse(params)
+        // alert(par)
+        if (par.queryNoLogin == "1") {
+          this.isLogin = false;
+        } else {
+          this.isLogin = true;
+          if(par.AcList.length>0){
+            this.ISCARD = true
+          }else{
+            this.ISCARD = false
+          }
+        }
+        });
+    },
+    //跳转加挂卡
+    gotoaddcard(){
+        let params = {
+        package: "addBankCard",
+        router: "",
+        routerDic: ''
+        };
+        window.NativeCall.goToPackage(params);
+    },
+    //查询费率
+    getrate() {
+      this.request(
+        "DepositRateQry",
+        {
+          BranchId: "1999",
+          BankId: "9999",
+          ChnlId: "62"
+        },
+      false
+      )
+        .then(res => {
+          console.log(res);
+          this.WholeRate = res.wholeStorageRate;
+          this.NoticltRate = res.noticeRate;
+          if (res.bigList.length > 2) {
+            this.biglist = [res.bigList[0], res.bigList[1]];
+          } else {
+            this.biglist = res.bigList;
+          }
+          if (res.baoList.length > 2) {
+            this.specialRate = [res.baoList[0], res.baoList[1]];
+          } else {
+            this.specialRate = res.baoList;
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //隐藏dialog
+    cancel() {
+      this.alertShow = false;
+    },
+    // 轮播图
+    onChangeswipe(index) {
+      console.log(index);
+    },
+    //控制显示滑块
+    qh(t) {
+      if (this.isLogin == true && this.ISCARD == true) {
+        console.log(t);
+        // this.activeClass = t;
+        if (t == "1") {
+          this.$router.push({
+            path: "/mydeposit",
+            query: {
+              id: "1"
+            }
+          });
+        }
+        // console.log(this.$store.state.deposit.info);
+      } else {
+        this.alertShow = true;
+        if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+      }
+    },
+    //跳转特色存款
+    gotoSpecialdeposit() {
+      if (this.isLogin == true && this.ISCARD == true) {
+      this.alertShow = true;
+      this.ISSHOWTS = true;
+      this.dialogText = "功能暂未开放，敬请期待"
+        // this.$router.push({
+        //   path: "/Specialdeposit",
+        //   query: {
+        //     title: "特色存款"
+        //   }
+        // });
+      } else {
+        this.alertShow = true;
+        if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+      }
+    },
+    //跳转整取详情
+    goTowholedeposit(val) {
+      if (this.isLogin == true && this.ISCARD == true) {
+        this.$router.push({
+          path: "/wholedeposit",
+          query: {
+            title: "整存整取",
+            id: val,
+            info:this.WholeRate
+          }
+        });
+      } else {
+        this.alertShow = true;
+        if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+      }
+    },
+    //跳转通知详情
+    gotocalldatail(val) {
+      console.log('ok')
+      if (this.isLogin == true && this.ISCARD == true) {
+        this.$router.push({
+          path: "/call",
+          query: {
+            title: "通知存款",
+            id: val,
+            info:this.NoticltRate
+          }
+        });
+      } else {
+        this.alertShow = true;
+        if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+      }
+    },
+    //跳转大额存单详情
+    gotodetail(e) {
+      if (this.isLogin == true && this.ISCARD == true) {
+        this.setuserinfo({ ...e });
+        console.log(e);
+        var Info = JSON.stringify(e);
+        this.$router.push({
+          path: "/detail",
+          query: {
+            Info,
+            e
+          }
+        });
+      } else {
+        this.alertShow = true;
+        if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+      }
+    },
+    //跳转特色存款详情
+    gotospecialdetail(e) {
+      if (this.isLogin == true && this.ISCARD == true) {
+        this.setuserinfo({ ...e });
+        console.log(e);
+        if (e.PrdName.indexOf("鑫贵宝") !== -1) {
+          this.$router.push({
+            path: "/expensiveTreasurerollin",
+            query: {
+              e
+            }
+          });
+        }
+        if (e.PrdName.indexOf("鑫农宝") !== -1) {
+          this.$router.push({
+            path: "/farmersTreasurerollin",
+            query: {
+              e
+            }
+          });
+        }
+      } else {
+        this.alertShow = true;
+        if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+      }
+    },
+    //跳转大额存单
+    gotobigreceipt() {
+      if (this.isLogin == true && this.ISCARD == true) {
+        this.$router.push({
+          path: "/bigreceipt",
+          query: {
+            id: 123
+          }
+        });
+      } else {
+        this.alertShow = true;
+        if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+      }
+    },
+    // // 跳转通知存款
+    // gotocall() {
+    //   if (this.isLogin == true) {
+    //     this.$router.push({
+    //       path: "/call",
+    //       query: {
+    //         title: "通知存款"
+    //       }
+    //     });
+    //   } else {
+    //     this.alertShow = true;
+    //   }
+    // },
+    //跳转整存整取
+    gotowholedeposit() {
+      if (this.isLogin == true && this.ISCARD == true) {
+        this.$router.push({
+          path: "/wholedeposit",
+          query: {
+            title: "整存整取"
+          }
+        });
+      } else {
+        this.alertShow = true;
+        if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+      }
+    },
+    //跳转存款计算器
+        gotodepositCal() {
+        if (this.isLogin == true && this.ISCARD == true) {
+        let params = {
+        package: "depositCal",
+        router: "",
+        routerDic:'',
+      };
+      window.NativeCall.goToPackage(params);
+        } else {
+          this.alertShow = true;
+          if(this.isLogin == false){
+          this.dialogText = "请先登录手机银行"
+        }else{
+          this.dialogText = "请先绑定银行卡"
+        }
+        }
+      }
+  },
+  // beforeRouteEnter: (to, from, next) => {
+  //   next(vm => {
+  //     if (vm.flag) {
+  //       window.NativeCall.goToRouter(res => {
+  //         let obj = JSON.parse(res);
+  //         // alert(res.router);
+  //         vm.$router.options.routes.map((item, index) => {
+  //           if (item.name == obj.router) {
+  //             item.meta.goToNative = true;
+  //             vm.$router.options.routes.splice(index, item);
+  //             next({ name: obj.router, params: obj.routerDic });
+  //           }
+  //         });
+  //       });
+  //       vm.flag = false;
+  //     }
+  //   });
+  // }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  // background: url("~@/assets/deposit/index/bg_cunkuan@2x.png") no-repeat;
+  // background-size: 100% px2vw(514);
+  background:#f5f6f8;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.temp {
+  width: 100%;
+  background:rgba(251,251,251,1);
+}
+.topout {
+  // padding: 0 px2vw(40) 0;
+  background:#Fff;
+}
+.top {
+  display: flex;
+  justify-content: space-around;
+  padding-top: px2vw(50);
+  width: 100%;
+  height: px2vw(186);
+  box-sizing: border-box;
+  .top_one {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  img {
+    width: px2vw(48);
+    height: px2vw(48);
+  }
+  p {
+    height: px2vw(24);
+    font-size: px2vw(26);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: #262626FF;
+    line-height: px2vw(24);
+    margin-top: px2vw(26);
+  }
+}
+// 轮播
+
+.jianjieout {
+  display: flex;
+  padding-top: px2vw(25);
+  justify-content: center;
+  height: px2vw(270);
+  background: #fff;
+}
+.jianjie {
+  width: px2vw(670);
+  height: px2vw(270);
+  background: #fff;
+  img {
+    height: 100%;
+    width: 100%;
+  }
+}
+/deep/ .van-swipe__track {
+  height: px2vw(270);
+}
+/deep/ .van-swipe__indicators {
+  bottom: px2vw(20);
+}
+/deep/ .van-swipe__indicator {
+  width: px2vw(8);
+  height: px2vw(8);
+  background: rgba(0, 0, 0, 0.5);
+}
+/deep/ .van-swipe__indicator--active {
+  height: px2vw(8);
+  width: px2vw(20);
+  background: #fff;
+  border-radius: px2vw(4);
+}
+
+// 公共部分
+.titletop {
+  box-sizing: border-box;
+  background: #fff;
+  h5 {
+    height: px2vw(90);
+    font-size: px2vw(32);
+    font-family: PingFangSC-Medium, PingFangSC;
+    font-weight: 500;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(90);
+    margin-left: px2vw(40);
+  }
+}
+.teseone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 px2vw(40) 0;
+  p {
+    height: px2vw(28);
+    font-size: px2vw(28);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(28);
+    margin-bottom: px2vw(20);
+  }
+  h4 {
+    height: px2vw(40);
+    font-size: px2vw(40);
+    font-family: PingFangSC-Medium, PingFangSC;
+    font-weight: 500;
+    color: rgba(249, 97, 89, 1);
+    margin-bottom: px2vw(10);
+    line-height: px2vw(40);
+    span,
+    i {
+      font-size: px2vw(26);
+      font-weight: 500;
+      font-family:PingFangSC-Medium,PingFang SC;
+    }
+  }
+  li {
+    height: px2vw(22);
+    font-size: px2vw(22);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(168, 168, 168, 1);
+    line-height: px2vw(22);
+    margin-bottom: px2vw(22);
+  }
+  h3 {
+    font-size: px2vw(24);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    height: px2vw(40);
+    width: px2vw(140);
+    text-align: center;
+    line-height: px2vw(40);
+    background: linear-gradient(
+      270deg,
+      rgba(220, 159, 125, 1) 0%,
+      rgba(243, 202, 173, 1) 100%
+    );
+    border-radius: px2vw(6);
+  }
+  .left {
+    display: flex;
+    flex-direction: column;
+    // justify-content: center;
+    align-items: center;
+  }
+  // .middle {
+  //   width: px2vw(1);
+  //   height: px2vw(140);
+  //   background: rgba(239, 240, 241, 1);
+  // }
+  // .right {
+  //   display: flex;
+  //   flex-direction: column;
+  //   justify-content: center;
+  //   align-items: center;
+  // }
+}
+// 特殊存款
+.tesedeposit {
+  width: 100%;
+  height: px2vw(362);
+  margin-top: px2vw(20);
+  /deep/ .van-tab {
+    flex: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    .van-ellipsis {
+      visibility: hidden;
+    }
+  }
+  /deep/ .van-tabs__wrap {
+    margin-top: px2vw(210);
+  }
+  /deep/ .van-tabs__content {
+    margin-top: px2vw(-285);
+  }
+  /deep/ .van-tab__pane {
+    display: flex !important;
+    justify-content: space-around !important;
+  }
+  /deep/ .van-tabs__nav {
+    height: px2vw(30);
+    display: flex;
+    width: 100%;
+    justify-content: center;
+  }
+  /deep/ .van-tabs__line {
+    height: px2vw(8);
+    width: px2vw(20) !important;
+    background: #C0C0C0FF;
+    // rgba(192,192,192,1) ;
+    border-radius: px2vw(4);
+  }
+}
+//整存整取
+.zhengcundeposit {
+  margin-top: px2vw(20);
+  .van-grid-item {
+    width:px2vw(250);
+    height:px2vw(170);
+    box-sizing: border-box;
+    p {
+      height: px2vw(32);
+      font-size: px2vw(32);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(32);
+    }
+    h5 {
+      width: 100%;
+      margin-top: px2vw(20);
+      height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+    }
+    span {
+      margin-left: px2vw(15);
+      height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Medium, PingFangSC;
+      font-weight: 500;
+      color: rgba(247, 90, 80, 1);
+      line-height: px2vw(24);
+    }
+  }
+}
+//通知存款
+.tongzhideposit {
+  margin-top: px2vw(20);
+  .tongzhione {
+    height: px2vw(180);
+    box-sizing:border-box;
+    padding: 0 px2vw(120) px2vw(20);
+    .p {
+      height: px2vw(32);
+      font-size: px2vw(32);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(32);
+    }
+  }
+  .ul {
+    height: px2vw(24);
+    font-size: px2vw(24);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(168, 168, 168, 1);
+    line-height: px2vw(24);
+    span {
+      margin-left: px2vw(15);
+      height: px2vw(24);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Medium, PingFangSC;
+      font-weight: 500;
+      color: rgba(247, 90, 80, 1);
+      line-height: px2vw(24);
+    }
+  }
+}
+
+//大额存单
+.bigdeposit {
+  margin-top: px2vw(20);
+  background: #fff;
+  .spantop{
+    float: right;
+    margin-top: px2vw(29);
+    margin-right: px2vw(40);
+    height: px2vw(26);
+    font-size: px2vw(26);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(153, 156, 160, 1);
+    line-height: px2vw(26);
+    .iconfont {
+      font-size: px2vw(22);
+    }
+  }
+}
+.lastP{
+  width: 100%;
+  height:px2vw(68);
+  font-size:px2vw(20);
+  font-family:PingFangSC-Light,PingFang SC;
+  font-weight:300;
+  color:rgba(168,168,168,1);
+  line-height:px2vw(68);
+  text-align: center;
+}
+//足部
+.foot {
+  height: px2vw(100);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #fff;
+  border-top: 1px rgba(239, 240, 241, 1) solid;
+  .foot_right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  img {
+    height: px2vw(54);
+    width: px2vw(54);
+  }
+  p {
+    text-align: center;
+    height: px2vw(20);
+    font-size: px2vw(20);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(98, 100, 106, 1);
+    line-height: px2vw(20);
+  }
+  .active p {
+    color:rgba(218,154,120,1);
+  }
+}
+.biglist {
+  .mainList{
+    height: px2vw(236);
+    padding:0 px2vw(60) 0;
+    .name{
+      padding-top:px2vw(40) ;
+      height:px2vw(32);
+      font-size:px2vw(32);
+      font-family:PingFangSC-Regular,PingFang SC;
+      font-weight:400;
+      color:rgba(38,38,38,1);
+      line-height:px2vw(32);
+      span{
+          background:rgba(62,143,255,0.1);
+          border-radius:px2vw(4);
+          color:#3E8FFFFF;
+          font-size: px2vw(22);
+          height:px2vw(32);
+          line-height:px2vw(32);
+          margin-left: px2vw(10);
+        }
+    }
+  }
+  .bigliststyle {
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-scart;
+    justify-content: end;
+    height: px2vw(164);
+    width: 100%;
+    // padding-top:px2vw(40) ;
+    // border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+    h5 {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+      margin-top: px2vw(28);
+    }
+    h4{
+      margin-top: px2vw(40);
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+    }
+    h3{
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(24);
+      margin-top: px2vw(25);
+    }
+    .left {
+      p {
+        width: px2vw(200);
+        height: px2vw(46);
+        font-size: px2vw(54);
+        font-family: PingFangSC-Medium, PingFangSC;
+        font-weight: 500;
+        color: rgba(247, 90, 80, 1);
+        line-height: px2vw(46);
+        margin-top: px2vw(40);
+        span {
+        font-size:px2vw(36);
+        font-family:PingFangSC-Medium,PingFang SC;
+        font-weight:500;
+        color:rgba(247,90,80,1);
+        }
+      }
+    }
+    .middle {
+      height: px2vw(46);
+      font-size: px2vw(32);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(46);
+      margin-left: px2vw(200);
+      display: flex;
+      flex-direction: column;
+      p{
+        height:px2vw(46);
+        font-size:px2vw(32);
+        font-family:PingFangSC-Regular,PingFang SC;
+        font-weight:400;
+        color:rgba(38,38,38,1);
+        line-height:px2vw(46);
+        display: flex;
+        align-items: center;
+        span{
+          background:rgba(62,143,255,0.1);
+          border-radius:px2vw(4);
+          color:#3E8FFFFF;
+          font-size: px2vw(22);
+          margin-left: px2vw(10);
+        }
+      }
+      .yuexi {
+        width: 100%;
+        height: px2vw(28);
+        background: linear-gradient(
+          155deg,
+          rgba(58, 138, 255, 0.1) 0%,
+          rgba(58, 180, 255, 0.1) 100%
+        );
+        border-radius: px2vw(4);
+        font-size: px2vw(20);
+        line-height: px2vw(28);
+        font-weight: 400;
+        color: rgba(62, 143, 255, 1);
+        padding: px2vw(4) px2vw(8);
+        margin-left: px2vw(10);
+      }
+      .day {
+        margin-right: px2vw(20);
+        color: #F75A50FF;
+      }
+      span {
+        color: rgba(38, 38, 38, 1);
+         height: px2vw(40);
+         line-height: px2vw(40);
+      }
+      .color{
+        color: #F75A50FF;
+      }
+    }
+    .right {
+      img {
+        width: px2vw(22);
+        height: px2vw(22);
+      }
+      margin-top: px2vw(40);
+      display: flex;
+      color: rgba(62, 143, 255, 1);
+      align-items: center;
+      justify-content: flex-end;
+      height: px2vw(24);
+      font-size: px2vw(18);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      width:px2vw(106);
+      height:px2vw(28);
+      background:linear-gradient(155deg,rgba(58,138,255,0.1) 0%,rgba(58,180,255,0.1) 100%);
+      line-height: px2vw(18);
+    }
+  }
+}
+</style>

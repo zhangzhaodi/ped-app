@@ -1,0 +1,97 @@
+<template>
+  <van-popup v-model="show" position="bottom" :close-on-click-overlay="false" lazy-render>
+    <van-datetime-picker
+      v-model="currentDate"
+      :min-date="minDate"
+      type="date"
+      :title="title"
+      confirm-button-text="完成"
+      :formatter="formatter"
+      @cancel="onCancel"
+      @confirm="onConfirm"
+    />
+  </van-popup>
+</template>
+
+<script>
+import { DatetimePicker, Popup } from "vant";
+export default {
+  components: {
+    [DatetimePicker.name]: DatetimePicker,
+    [Popup.name]: Popup
+  },
+  props: {
+    selectBirthFlag: {
+      require: false,
+      default: false
+    }
+  },
+  data() {
+    return {
+      currentDate: new Date(788889600000),
+      minDate: new Date(-2208988800000),
+      show: false,
+      title: "请选择出生日期"
+    };
+  },
+  methods: {
+    formatter(type, value) {
+      if (type === "year") {
+        return `${value}年`;
+      } else if (type === "month") {
+        return `${value}月`;
+      } else {
+        return `${value}日`;
+      }
+      return value;
+    },
+    onCancel() {
+      this.show = false;
+      this.$parent.selectBirth = false;
+    },
+
+    onConfirm(picker) {
+      let year = new Date(picker).getFullYear();
+      let month = new Date(picker).getMonth() + 1;
+      let day = new Date(picker).getDate();
+      console.log(picker);
+      let data =
+        year +
+        "-" +
+        (month > 9 ? month : "0" + month) +
+        "-" +
+        (day > 9 ? day : "0" + day);
+      this.show = false;
+      this.$parent.selectBirthFlag = false;
+      this.$parent.form.Birthday = data;
+      this.$emit("pass");
+    }
+  },
+  watch: {
+    selectBirthFlag: {
+      handler(val) {
+        this.show = val;
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+/deep/ .van-picker__cancel,
+/deep/ .van-picker__confirm {
+  padding: 0 px2vw(40);
+  font-size: px2vw(30);
+  font-weight: 400;
+  color: #262626;
+}
+/deep/ .van-picker__confirm {
+  color: #107aee;
+}
+/deep/ .van-picker__title {
+  font-size: px2vw(34);
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  letter-spacing: px2vw(1);
+}
+</style>

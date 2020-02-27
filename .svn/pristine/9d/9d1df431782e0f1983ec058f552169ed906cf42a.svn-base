@@ -1,0 +1,274 @@
+<template>
+  <div>
+    <div class="group">
+      <van-cell-group>
+        <van-field v-model="form.name" label="姓名" />
+      </van-cell-group>
+      <div class="line"></div>
+      <van-cell-group>
+        <van-field
+          v-model="form.payer.bankaliasname"
+          label="开户行"
+          placeholder="请选择所属开户行"
+          disabled
+          right-icon="arrow"
+          @click="select"
+          :class="{active:form.payer}"
+        />
+      </van-cell-group>
+      <div class="line"></div>
+      <van-cell-group>
+        <van-field
+          v-model="form.phone"
+          maxlength="11"
+          type="tel"
+          label="手机号码"
+          placeholder="请输入手机号"
+          @change="check"
+          @blur="checkPhone"
+        />
+      </van-cell-group>
+      <!-- <div class="line"></div> -->
+      <!-- <van-cell-group>
+        <van-field v-model="form.source" label="短信验证码" placeholder="请输入短信验证码">
+          <van-button
+            slot="button"
+            v-show="count_down"
+            size="small"
+            type="default"
+            @click="startCountdown"
+            class="msg"
+          >{{verCode}}</van-button>
+          <van-button
+            slot="button"
+            v-show="!count_down"
+            size="small"
+            type="default"
+            @click="startCountdown"
+            class="msg"
+          >{{time_60}}秒后重新获取</van-button>
+        </van-field>
+      </van-cell-group>-->
+    </div>
+    <!-- <Mybutton :disabled="disabled" @click.native="next"></Mybutton> -->
+    <Mybutton :disabled="disabled" @next="next"></Mybutton>
+    <Mydialog
+      :title="title"
+      :show="show"
+      :isClose="isClose"
+      :showCancel="showCancel"
+      :confirmButtonText="confirmText"
+      @con="checkPhone"
+    >
+      <div class="content" slot="content">未能查询到相应的账户，请查看手机号是否输入无误</div>
+    </Mydialog>
+    <!-- 测试 -->
+    <!-- <div class="test1" style="background:url('https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=1085446177,1382949253&fm=26&gp=0.jpg')">
+      <img
+        class="test"
+        src="https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=1085446177,1382949253&fm=26&gp=0.jpg"
+        alt
+      />
+    </div>-->
+    <!-- 银行卡列表 -->
+    <bankList :show.sync="bankListShow" :zl="true" @select="selectBank"></bankList>
+    <!-- 二级银行卡列表 汇入地选择 -->
+    <secondBankList :show.sync="ibpsBankListshow" :bankList="ibpsBankList" @select="selectIbpsBank"></secondBankList>
+  </div>
+</template>
+
+<script>
+import button from "../../components/button";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import BankList from "@/components/Picker/bankList";
+import SecondBankList from "@/components/Picker/secondBankList";
+import { Toast } from "vant";
+export default {
+  components: {
+    Mybutton: button,
+    Mydialog: Dialog,
+    [Toast.name]: Toast,
+    BankList,
+    SecondBankList
+  },
+  data() {
+    return {
+      form: {
+        name: this.$store.state.userInfo.Name,
+        payer: {} //付款卡
+      },
+      disabled: true,
+      show: false,
+      isClose: false,
+      showCancel: false,
+      confirmText: "我知道了",
+      title: "提示",
+      time_60: 60,
+      count_down: true,
+      verCode: "发送验证码",
+      bankListShow: false,
+      bankList: [],
+      ibpsBankListshow: false,
+      ibpsBankList: []
+    };
+  },
+  methods: {
+    startCountdown() {
+      if (this.count_down) {
+        this.count_down = false;
+        var timer = window.setInterval(() => {
+          this.time_60 -= 1;
+          if (this.time_60 <= 0) {
+            this.time_60 = 60;
+            this.count_down = true;
+            window.clearInterval(timer);
+          }
+        }, 1000);
+      }
+    },
+    openBankIbpsList() {
+      if (this.ibpsBankList.length > 1) {
+        this.ibpsBankListshow = true;
+      }
+    },
+    select() {
+      console.log(1111);
+      this.bankListShow = true;
+    },
+    // 选择银行
+    selectBank(data) {
+      this.form.payer = data;
+      // this.form.payer.bankId = data.bankId;
+      if (data.ibpsBankList.length > 0) {
+        this.ibpsBankList = data.ibpsBankList;
+        let keyIndex = 0;
+        data.ibpsBankList.map((item, index) => {
+          if (data.bankName == item.bankaliasname) {
+            keyIndex = index;
+          }
+        });
+        this.form.payer.bankNbr = data.ibpsBankList[keyIndex].bankagent;
+        this.form.payer.bankaliasname =
+          data.ibpsBankList[keyIndex].bankaliasname;
+        console.log("bankNbr", this.form.payer);
+      }
+      // // 开户网点信息置空
+      this.form.payer.dotNbr = "";
+      this.form.payer.dotName = "";
+      // 超网标志
+      if (data.ibpsFlage === "Y") {
+        this.form.payer.IBPSFlag = 1;
+      } else {
+        this.form.payer.IBPSFlag = 0;
+      }
+      console.log(this.form.payer);
+    },
+    // 选择超网银行汇入地
+    selectIbpsBank(item) {
+      console.log(item);
+      // this.form.payer.bankNbr = item.bankagent;
+      // this.form.payer.bankaliasname = item.bankaliasname
+      // this.ibpsBankListshow = false;
+      // this.form.payer.
+    },
+    next() {
+      //点击按钮后
+      this.check().then(res => {
+        if (res) {
+          let params = {
+            PayerAcBankId: this.form.payer.bankNbr,
+            TelephoneNum: this.form.phone,
+            BranchId: "0100",
+            ChnlId: "62",
+            PayeeAcctName: this.form.name
+          };
+          this.request("MobileBindQry", params).then(res => {
+            console.log(res);
+            if (res.UserNameFlag === "0" && res.PayerAcNo) {
+              let data = {
+                ...this.form.payer,
+                PayerAcNo: res.PayerAcNo,
+                PayerPhoneNo: this.form.phone,
+                PayerAcctName: this.form.name
+              };
+              this.$router.push({ name: "phoneConfirm", params: { ...data } });
+            } else {
+              this.show = true;
+            }
+          });
+        }
+      });
+    },
+    async check() {
+      //input值修改后触发的事件
+      if (this.form.payer.bankaliasname && this.form.phone.length == 11) {
+        this.disabled = false;
+        return true;
+      } else {
+        // console.log(this.form.phone.length);
+        return false;
+      }
+      // return true;
+    },
+    checkPhone() {
+      //检验手机号正确性
+      const regPhone = /^1[3456789]\d{9}$/;
+      if (!regPhone.test(this.form.phone) && this.form.phone) {
+        this.$toast("手机号输入错误，请重新输入");
+        this.$children[2].focus();
+        // console.log(this.$children)
+      }
+    },
+    con() {
+      //dialog回调的函数
+      this.show = false;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+/deep/ .van-hairline--top-bottom::after {
+  border-width: 0;
+}
+.content {
+  font-size: px2vw(26);
+  font-weight: 400;
+  color: #262626;
+  line-height: px2vw(46);
+  text-align: center;
+  margin-top: px2vw(30);
+  margin-bottom: px2vw(50);
+  letter-spacing: px2vw(1.5);
+  padding: 0 px2vw(10);
+}
+.msg {
+  font-size: px2vw(28);
+  font-weight: 400;
+  color: #3e8fff;
+}
+.active {
+  /deep/ .van-field__control:disabled {
+    color: #262626;
+    margin-top: px2vw(-6);
+  }
+}
+/deep/ .van-nav-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+/deep/ .van-nav-bar__left {
+  bottom: auto;
+}
+.test1 {
+  width: px2vw(200);
+  height: px2vw(200);
+  background: paleturquoise;
+  .test {
+    width: 100%;
+    height: 100%;
+  }
+}
+</style>

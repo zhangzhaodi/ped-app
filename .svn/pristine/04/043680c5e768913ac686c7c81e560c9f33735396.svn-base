@@ -1,0 +1,38 @@
+> 1、资金归集首页入口index
+```
+用户进入资金归集首页时会判断用户是否有资金归集记录，若有不跳转页面，如没有跳转到资金归集输入页面startGathering
+getUserList 用来获取用户当前进行中的资金归集记录
+accountLists 用于获取用户的付款卡
+getList 获取用户的加挂账号 这里用户加挂卡跟用户名下的付款卡绑定、当前默认获取的是accountLists付款卡中的第一个付款卡，当用户选择付款卡时会重新调取getList方法（目前的方式觉得不是很合理，按照目前需求，最好能够选择收款卡对应绑定的收款卡也能跟着出来，需要对付款卡和收款卡的数据进行整合）
+executeListFlag 这个字段是我用来判断用户有没有进行撤销操作和资金归集操作，两者任一成功后，改变executeListFlag状态，初始为false
+```
+> 2、资金归集输入页面startGathering
+```
+这里有两个入口
+crossBankGathering>input 跨行收款入口
+phoneGathering>input 手机号收款入口
+```
+> 2、跨行收款收款页面crossBankGathering>input
+```
+需要注意的地方：
+
+选择付款卡时银行图标会传出来
+
+定时收款时单次
+<everyDay v-if="typeId==0"></everyDay>
+定时收款每周
+<everyWeek v-if="typeId==2"></everyWeek>
+定时收款每月
+<everyMonth v-if="typeId==1"></everyMonth>
+根据typeId判断
+这里的请求分为实时和定时
+定时请求流程
+toResult>this.form.isTiming==true>isTimingConfirm>secureKeyboard>confirm>isTiming>toResultPage
+实时请求流程
+toResult>this.form.isTiming==false>notTimingConfirm>secureKeyboard>confirm>notTiming>toResultPage
+```
+> 3、绑定银行卡
+```
+注意的地方：
+银行卡输入这里onblur后会调bankbin接口获取银行卡信息，用户也可以扫描银行卡获取卡信息，再掉bankbin获取银行名称
+```

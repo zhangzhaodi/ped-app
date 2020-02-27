@@ -1,0 +1,686 @@
+<template>
+  <div id="input">
+    <div class="top group">
+      <div class="left" @click="choosePayCard(1)">
+        <img :src="form.from.bankImg" v-if="form.from.bankImg" />
+        <img src="@/assets/fundCollection/icon_yinhangqia@2x.png" v-else />
+        <!-- <p class="name" v-if="cardchoose">{{form.from.name}}</p> -->
+        <p class="name">付款卡</p>
+        <p
+          class="bank"
+          v-if="form.from.BankName"
+        >{{form.from.BankName}}({{form.from.PayerAccount.slice(-4)}})</p>
+      </div>
+      <div class="center"></div>
+      <div class="right" @click="choosePayCard(2)">
+        <img src="https://mobile.jzctb.com:8002/zl/bankIcons/CTS.png" />
+        <p class="name">收款卡</p>
+        <p class="bank">焦作中旅银行({{form.to.vouId.slice(-4)}})</p>
+      </div>
+    </div>
+    <div class="card group">
+      <van-cell-group>
+        <van-field
+          :value="getPayerValue(form.from)"
+          label="付款卡"
+          placeholder="请选择付款卡"
+          right-icon="arrow"
+          @click="choosePayCard(1)"
+          disabled
+          :class="{active: form.from.bank!=''}"
+        />
+      </van-cell-group>
+      <div class="line"></div>
+      <van-cell-group>
+        <van-field
+          :value="getValue(form.to)"
+          label="收款卡"
+          placeholder="请选择收款卡"
+          right-icon="arrow"
+          disabled
+          :class="{active: form.to.bank!=''}"
+          @click="choosePayCard(2)"
+        />
+      </van-cell-group>
+    </div>
+    <div class="money group">
+      <van-cell-group>
+        <p class="cellTitle">转账金额(人民币)</p>
+        <div class="input">
+          <md-amount
+            :value="form.upperMoney"
+            is-capital
+            :style="{'visibility': form.money?'visible':'hidden'}"
+          ></md-amount>
+          <md-input-item
+            type="money"
+            v-model="form.money"
+            @change="onInputChange"
+            placeholder="请输入"
+            maxlength="9"
+          ></md-input-item>
+        </div>
+      </van-cell-group>
+    </div>
+    <div class="timing group">
+      <van-cell-group>
+        <van-switch-cell v-model="form.isTiming" @change="check" title="定时收款" />
+      </van-cell-group>
+    </div>
+    <Mytiming v-if="form.isTiming"></Mytiming>
+    <Mybutton :disabled="disabled" @next="next"></Mybutton>
+
+    <MyPopup :show="bottomFlag" :cardType="cardType" @chooseCard="chooseCard" @toAdd="toAdd"></MyPopup>
+    <!-- 转账弹出 -->
+    <Myconfirm :form="form" :popupFlag="popupFlag" @toResult="toResult"></Myconfirm>
+    <Captcha
+      :title="Captcha.title"
+      :visible.sync="Captcha.visible"
+      :phoneNum="phoneNumber"
+      @confirm="confirm"
+    ></Captcha>
+  </div>
+</template>
+<script>
+import header from "../../components/header";
+import button from "../../components/button";
+import confirm from "../../components/confirm";
+import { Field, Cell, CellGroup, SwitchCell } from "vant";
+import { Amount, InputItem } from "mand-mobile";
+import Timing from "../../components/timing";
+import BottomPopup from "../../components/bottomPopup";
+import Captcha from "@/components/Popup/Captcha";
+export default {
+  components: {
+    Myheader: header,
+    Mybutton: button,
+    Mytiming: Timing,
+    MyPopup: BottomPopup,
+    Myconfirm: confirm,
+    [Field.name]: Field,
+    [Cell.name]: Cell,
+    [CellGroup.name]: CellGroup,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [SwitchCell.name]: SwitchCell,
+    Captcha
+  },
+  data() {
+    return {
+      disabled: true,
+      form: {},
+      bottomFlag: false, //控制底部付款卡选择弹框
+      cardType: null, //1付款卡2收款卡
+      confirmFlag: false, //控制确认订单弹框
+      cardchoose: false, //付款卡是否选择
+      popupFlag: false, //支付弹框
+      public: null, //接口通用参数
+      Captcha: {
+        title: "请输入短信验证码",
+        visible: false
+      },
+      phoneNumber: "",
+      nameJson: {
+        // E1: "村镇银行卡",
+        // E2: "市民卡",
+        // E3: "活期一本通",
+        // E5: "借记卡",
+        // E6: "信用卡",
+        // E7: "银贷通（信用卡）",
+        // E8: "抵贷通(信用卡）",
+        // E9: "金贷通(信用卡）",
+        // Em: "新市民卡",
+        // Eb: "社保卡"
+        2: "借记卡",
+        1: "电子账户",
+        6: "存折"
+      },
+      tokenName: null,
+      ProtocolNo: null,
+      timeData: {}
+    };
+  },
+  created() {
+    this.form = {
+      from: this.$route.params,
+      to: this.$store.state.fundCollection.cardList[0],
+      methods: "跨行收款",
+      // money: null,
+      tool: "手机验证码"
+    };
+    this.$store.state.fundCollection.payeer = this.$store.state.fundCollection.cardList[0];
+    // console.log(this.form);
+  },
+  watch: {
+    "form.money": {
+      handler: function(val, oldVal) {
+        // console.log(val, oldVal);
+        val = val.toString();
+        var arr0 = val.split("");
+        var arr = val.split(".");
+        // 第一位输入的是0的时候进行处理采用第二位的数字
+        if (arr0.length == 2 && arr0[0] == "0" && arr0[1] !== ".") {
+          this.form.money = Number(arr0[1]);
+          return;
+        }
+        //小数点后超过两位时取前两位
+        if (val == "") {
+          this.form.money = "";
+        } else if (
+          (arr.length == 2 && arr[1].length > 2) ||
+          arr[0].length > 14
+        ) {
+          this.form.money = Number(oldVal);
+        }
+      }
+    }
+  },
+  methods: {
+    tab(val) {
+      //tab切换
+      if (val != this.$store.state.nowIndex) {
+        this.$store.state.nowIndex = val;
+        this.$router.push({ name: "index" });
+      }
+    },
+    onInputChange(name, value) {
+      this.check();
+      this.form.upperMoney = parseFloat(value);
+    },
+    check() {
+      if (!this.form.isTiming) {
+        if (this.form.from.PayerAccount && this.form.money) {
+          this.disabled = false;
+        }
+      } else {
+        // console.log(this.form)
+        this.disabled = true;
+        if (this.form.typeId == 0 && this.form.exeTime && this.form.money) {
+          // console.log(1)
+          this.disabled = false;
+        }
+        if (
+          this.form.typeId == 2 &&
+          this.form.exeTime &&
+          this.form.endTime &&
+          this.form.week &&
+          this.form.money
+        ) {
+          // console.log(2)
+          this.disabled = false;
+        }
+        if (
+          this.form.typeId == 1 &&
+          this.form.exeTime &&
+          this.form.endTime &&
+          this.form.eachMonth &&
+          this.form.money
+        ) {
+          // console.log(3)
+          this.disabled = false;
+        }
+      }
+    },
+    next() {
+      this.popupFlag = true;
+      console.log("弹出");
+    },
+    choosePayCard(val) {
+      //1选择付款卡
+      //2选择收款卡
+      this.cardType = val;
+      this.bottomFlag = true;
+    },
+    getList(PayeeAcNo) {
+      let params = {
+        BankId: "9999",
+        CustomerNo: this.$store.state.userInfo.CifNo,
+        ChildBatchNum: "1",
+        LeftChildNum: "5",
+        LoginType: "R",
+        BranchId: "7010",
+        ChnlId: "62",
+        //测试
+        PayeeAcNo: PayeeAcNo
+      };
+      this.request("CrossBankGetheringQry", params).then(res => {
+        // console.log(res);
+        this.$store.state.fundCollection.signInfo = res.AddInfo;
+        let arr = [];
+        //把PayerAcList和addInfo的数据放一块
+        res.PayerAcList.map((item, index) => {
+          arr.push({ ...item, ...res.AddInfo[index] });
+        });
+        // console.log(arr)
+        // this.$store.state.fundCollection.payerList = res.PayerAcList; //正确的
+        this.$store.state.fundCollection.payerList = arr; //正确的
+      });
+    },
+    chooseCard(val) {
+      if (val.cardType == "1") {
+        //付款卡
+        this.cardchoose = true;
+        this.form.from = { ...val };
+        this.phoneNumber = val.TelephoneNum;
+        console.log(this.form);
+      } else {
+        //收款卡
+        this.form.to = { ...val };
+        this.$store.state.fundCollection.payeer = { ...val };
+        this.getList(this.form.to.vouId)
+      }
+      this.check();
+    },
+    toAdd() {
+      this.bottomFlag = false;
+      this.$router.push({ name: "addCard" });
+    },
+    //定时收款
+    isTiming(sms) {
+      let params = {
+        PhoneNumber: this.phoneNumber,
+        _tokenName: this.tokenName,
+        ...sms,
+        ...this.public,
+        ...this.timeData
+        // ConcenCycle:
+      };
+      return this.request("TimingReceiptNewEntry", params);
+    },
+    //实时收款
+    notTiming(sms) {
+      let params = {
+        ...this.public,
+        PhoneNumber: this.phoneNumber,
+        _tokenName: this.tokenName,
+        ProtocolNo: this.ProtocolNo,
+        ...sms
+      };
+      return this.request("CrossBankCollection", params);
+    },
+    //定时收款确认
+    isTimingConfirm() {
+      let params;
+      if (this.form.typeId == 0) {
+        //每日
+        params = {
+          ...this.public,
+          CreateDate: this.form.exeTime,
+          PayerMobilePhone: this.phoneNumber,
+          ConcenCycle: this.form.typeId
+        };
+      } else if (this.form.typeId == 1) {
+        //每月
+        params = {
+          ...this.public,
+          EndDate: this.form.endTime,
+          CreateDate: this.form.exeTime,
+          PayerMobilePhone: this.phoneNumber,
+          ConcenCycle: this.form.eachMonth == "32" ? "3" : this.form.typeId,
+          ConcenDay: this.form.eachMonth
+        };
+        console.log(params);
+      } else {
+        //每周
+        params = {
+          ...this.public,
+          EndDate: this.form.endTime,
+          CreateDate: this.form.exeTime,
+          PayerMobilePhone: this.phoneNumber,
+          ConcenCycle: this.form.typeId,
+          ConcenDay: this.form.week
+        };
+      }
+      this.timeData = params;
+      return this.request("TimingReceiptNewEntryConfirm", params);
+    },
+    //实时收款确认
+    notTimingConfirm() {
+      console.log("实时收款确认");
+      let params = {
+        ...this.public,
+        TelephoneNum: this.phoneNumber,
+        PhoneNumber: this.phoneNumber
+      };
+      return this.request("CrossBankCollectionConfirm", params);
+    },
+    //调用短信验证码
+    secureKeyboard() {
+      this.Captcha.visible = true;
+    },
+    //跳转结果页
+    toResultPage(obj) {
+      console.log(this.form);
+      this.$store.state.fundCollection.executeListFlag = false;
+      this.$router.push({
+        name: "result",
+        params: obj
+      });
+    },
+    getValue(item) {
+      return (
+        "焦作中旅银行" +
+        "|" +
+        this.nameJson[item.contTypCd] +
+        "(" +
+        item.vouId.slice(-4) +
+        ")"
+      );
+    },
+    getPayerValue(item) {
+      // console.log(item)
+      if (!item.BankName) {
+        return "";
+      } else {
+        return item.BankName + "|" + "(" + item.PayerAccount.slice(-4) + ")";
+      }
+    },
+    //收款确认
+    toResult(val) {
+      // 弹框关闭
+      console.log("弹框关闭");
+      this.popupFlag = false;
+      this.public = {
+        BankId: "9999",
+        BranchId: "7010",
+        ChnlId: "62",
+        LoginType: "R",
+        IdType: this.$store.state.userInfo.Identity.type,
+        IdNo: this.$store.state.userInfo.Identity.no,
+        // ProtocolNo: "CAAC2019101810002008",
+        ProtocolNo: this.form.from.ProtocolNo,
+        PayeeAcNo: this.form.to.vouId,
+        PayeeAcName: this.form.to.acctName,
+        PayerAcNo: this.form.from.PayerAccount,
+        PayerAcName: this.form.to.acctName,
+        Amount: this.form.money,
+        ApprTyp: "1",
+        PayerBankName: this.form.from.BankName,
+        TransAmt: this.form.money
+        // PhoneNumber:
+      };
+      if (this.form.isTiming) {
+        //定时收款
+        console.log("定时收款确认");
+        this.isTimingConfirm(this.public)
+          .then(res => {
+            this.tokenName = res._tokenName;
+            this.ProtocolNo = res.ProtocolNo;
+            this.secureKeyboard();
+          })
+          .catch(err => {
+            this.$toast(err._RejMessage);
+          });
+      } else {
+        //实时
+        console.log("进入实时收款");
+        //测试
+        // this.secureKeyboard();
+        this.notTimingConfirm()
+          .then(res => {
+            this.tokenName = res._tokenName;
+            this.ProtocolNo = res.ProtocolNo;
+            this.secureKeyboard();
+          })
+          .catch(err => {
+            this.$toast(err._RejMessage);
+          });
+      }
+    },
+    // 短信验证码确认
+    confirm(val) {
+      let sms = {
+        SmsCode: val.code,
+        UserSmsId: val.UserSmsId,
+        SmsNbr: val.SmsNbr
+      };
+      console.log("confirm交易结束");
+      this.Captcha.visible = false;
+      if (this.form.isTiming) {
+        //定时
+        this.isTiming(sms)
+          .then(res => {
+            let obj = { ...this.form, type: 1 };
+            this.toResultPage(obj);
+          })
+          .catch(err => {
+            let obj = { ...this.form, ...err, type: 2 };
+            this.toResultPage(obj);
+          });
+      } else {
+        //实时
+        console.log(sms);
+        console.log("实时收款确认结束");
+        this.notTiming(sms)
+          .then(res => {
+            let obj = { ...res, type: 1 };
+            this.toResultPage(obj);
+          })
+          .catch(err => {
+            let obj = { ...err, type: 2 };
+            this.toResultPage(obj);
+          });
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+// @import "../../../../assets/IconFont/iconfont.css";
+// .outer {
+//   background-color: #f5f6f8;
+// }
+#input{
+  -webkit-overflow-scrolling: touch;
+}
+.tab {
+  padding: 0 px2vw(40);
+  height: px2vw(90);
+  background-color: #fff;
+  display: flex;
+  flex-direction: row;
+  p {
+    font-size: px2vw(26);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: #7d7d7d;
+    line-height: px2vw(90);
+    flex: 1;
+    text-align: center;
+  }
+}
+.top {
+  height: px2vw(310);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  .left {
+    width: 40%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    img {
+      width: px2vw(86);
+      height: px2vw(86);
+      margin-bottom: px2vw(20);
+      margin-top: px2vw(67);
+    }
+    .name {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: #262626;
+      line-height: px2vw(30);
+      letter-spacing: px2vw(1);
+      margin-bottom: px2vw(16);
+    }
+    .bank {
+      font-size: px2vw(24);
+      color: #7d7d7d;
+      font-weight: 300;
+      line-height: px2vw(24);
+      text-align: center;
+    }
+  }
+  .center {
+    width: px2vw(78);
+    height: px2vw(78);
+    background: url("~@/assets/transferAccounts/icon_to.png");
+    background-size: 100% 100%;
+    border-radius: 50%;
+    box-shadow: 0 px2vw(8) px2vw(39) rgba(146, 154, 196, 0.13);
+  }
+  .right {
+    width: 40%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    img {
+      width: px2vw(86);
+      height: px2vw(86);
+      margin-bottom: px2vw(20);
+      margin-top: px2vw(67);
+    }
+    .name {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: #262626;
+      line-height: px2vw(30);
+      letter-spacing: px2vw(1);
+      margin-bottom: px2vw(16);
+    }
+    .bank {
+      font-size: px2vw(24);
+      color: #7d7d7d;
+      font-weight: 300;
+      line-height: px2vw(24);
+      text-align: center;
+    }
+  }
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #fff;
+
+  /deep/ .van-cell {
+    justify-content: space-between;
+  }
+  /deep/ .van-field__body {
+    height: px2vw(110);
+    line-height: px2vw(110);
+    input {
+      height: px2vw(110);
+      line-height: px2vw(110);
+    }
+  }
+  /deep/ .van-field__control {
+    height: px2vw(30);
+    line-height: px2vw(30);
+  }
+  /deep/ .van-cell__title {
+    width: px2vw(90);
+    margin-right: px2vw(40);
+    font-size: px2vw(30);
+    line-height: px2vw(30);
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /deep/ .van-cell__value {
+    flex: 1;
+    text-align: left;
+    font-size: px2vw(30);
+  }
+  /deep/ .van-hairline--top-bottom::after {
+    border-width: 0;
+  }
+  .nowBank {
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: #262626;
+    line-height: px2vw(30);
+    letter-spacing: px2vw(1);
+  }
+  .canUse {
+    font-size: px2vw(24);
+    font-weight: 300;
+    color: #7d7d7d;
+    line-height: px2vw(24);
+    margin-top: px2vw(16);
+  }
+  /deep/ .van-icon-arrow:before {
+    content: " ";
+    width: px2vw(12);
+    height: px2vw(22);
+    background: url("~@/assets/electronicAccounts/icon_home_more.png");
+    background-size: 100% 100%;
+  }
+  /deep/ .van-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+  }
+}
+.money {
+  height: px2vw(200);
+  .cellTitle {
+    height: px2vw(80);
+    line-height: px2vw(80);
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+  }
+  .input {
+    padding-top: px2vw(18);
+    padding-bottom: px2vw(59);
+    height: px2vw(102);
+    /deep/ .md-amount {
+      color: #ffb52b;
+      font-size: px2vw(24);
+    }
+  }
+  /deep/ .van-field__body {
+    width: px2vw(452);
+    font-size: px2vw(40);
+  }
+  /deep/ .md-field-item-content::before {
+    border-bottom: 0;
+  }
+
+  /deep/ .van-cell-group {
+    padding: 0 px2vw(40);
+  }
+}
+.timing {
+  /deep/ .van-cell__value {
+    align-items: flex-end;
+  }
+}
+/deep/.active {
+  .van-field__control:disabled {
+    color: #262626;
+    margin-top: px2vw(-6);
+  }
+}
+/deep/ .md-field-item-content {
+  min-height: 0;
+}
+/deep/ .md-input-item-input {
+  height: auto;
+  font-size: px2vw(40);
+  font-weight: 500;
+  color: #262626;
+  line-height: px2vw(40);
+  margin-top: px2vw(8);
+}
+</style>

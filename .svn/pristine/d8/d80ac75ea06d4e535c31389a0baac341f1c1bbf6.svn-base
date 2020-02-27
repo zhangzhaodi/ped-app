@@ -1,0 +1,220 @@
+<template>
+  <div class="result">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="content">
+      <div class="top">
+        <img src="@/assets/fundCollection/icon_chenggong@2x.png" alt class="img" />
+        <p class="msg" v-if="!data.isTiming">收款成功</p>
+        <p class="msg" v-else>定时收款添加成功</p>
+      </div>
+      <div class="line"></div>
+      <div class="detail">
+        <div class="payer">
+          <p class="left">付款人</p>
+          <p class="center">
+            <span>{{data.from.PayerName}}</span>
+            <span>-</span>
+            <span>{{data.from.Bankaliasname}}</span>
+            <span>({{+data.from.PayerAccount.slice(-4)}})</span>
+          </p>
+        </div>
+        <div class="money">
+          <p class="left">转账金额</p>
+          <p class="center">{{data.money | Money}}</p>
+          <p class="right" @click="toDetail">查看交易明细</p>
+        </div>
+        <div class="notice" v-if="data.isTiming">
+          <div class="left">
+            <span v-if="data.typeId==0">{{data.exeTime}}</span>
+            <span v-if="data.typeId==1">每月{{data.eachMonth=='32'?'月末':data.eachMonth+'日'}}</span>
+            <span v-if="data.typeId==2">每周{{data.week|week}}</span>
+            <span>为您推送定时收款提醒</span>
+          </div>
+          <div class="right" @click="toNative">查看提醒</div>
+        </div>
+      </div>
+      <div class="btn">
+        <van-button type="default" class="again" @click="again">再转一笔</van-button>
+        <van-button type="default" class="final" @click="final">完成</van-button>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  components: {
+    Myheader: Header
+  },
+  props: {
+    data: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      }
+    };
+  },
+  filters: {
+    week(val) {
+      let obj = {
+        1: "一",
+        2: "二",
+        3: "三",
+        4: "四",
+        5: "五",
+        6: "六",
+        7: "日"
+      };
+      return obj[val];
+    }
+  },
+  created(){
+    this.$router.options.routes[2].meta.goToNative = false;
+  },
+  methods: {
+    final() {
+      this.$router.push({ name: "index" });
+    },
+    again() {
+      this.$router.push({ name: "startGathering" });
+    },
+    toDetail() {
+      //跳转到收支明细
+      let params = {
+        package: "incomeExpendDetail",
+        router: "",
+        routerDic: ""
+      };
+      window.NativeCall.goToPackage(params);
+    },
+    toNative() {
+      //跳转到金融日历
+      let params = {
+        name: "calendar"
+      };
+      window.NativeCall.goToNative(params);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+.content {
+  font-family: PingFangSC;
+  .top {
+    height: px2vw(348);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    .img {
+      height: px2vw(110);
+      width: px2vw(110);
+    }
+    .msg {
+      font-size: px2vw(40);
+      font-weight: 400;
+      color: #262626;
+      text-align: center;
+      line-height: px2vw(40);
+      margin-top: px2vw(40);
+    }
+  }
+  .line{
+    width:px2vw(660);
+    height: px2vw(1);
+    background: rgba(239, 240, 241, 1);
+    margin: 0 auto;
+  }
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer,
+    .money,
+    .notice {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        width: px2vw(152);
+        flex: none;
+        font-size: px2vw(28);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(0, 0, 0, 1);
+      }
+      .center {
+        flex: 1;
+        color: #000;
+        font-weight: 400;
+        font-family: PingFangSC-Regular, PingFang SC;
+      }
+      .right {
+        color: #008bff;
+        flex: none;
+      }
+    }
+    .notice {
+      margin-top: px2vw(64);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      .left {
+        flex: 1;
+        font-size: 0;
+        span {
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(0, 0, 0, 1);
+        }
+      }
+    }
+  }
+  .btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(100);
+    font-size: px2vw(30);
+    font-weight: 400;
+    padding: 0 px2vw(40);
+    box-sizing: border-box;
+    /deep/ .van-button {
+      height: px2vw(90);
+      width: px2vw(310);
+      border-radius: px2vw(45);
+    }
+    .again {
+      background-color: #fff;
+      border: px2vw(1) solid #3e8fff;
+      color: #3e8fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .final {
+      background-color: #3e8fff;
+      border: px2vw(1) solid #3e8fff;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+  }
+}
+</style>

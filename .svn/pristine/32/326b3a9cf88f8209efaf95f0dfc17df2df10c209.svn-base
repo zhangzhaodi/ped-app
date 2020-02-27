@@ -1,0 +1,421 @@
+<template>
+  <div class="viewport">
+    <!-- <Header title="贷款计算器"
+            :params="{rightShow: false}">
+      <span slot="left"
+            style="color:#008bff"
+            @click="$router.push({path:'/rateList'})">利率表</span>
+    </Header> -->
+    <nav class="nav">
+      <span class="iconfont iconic_back"
+            @click="navBack"></span>
+      <p class="title">贷款计算器</p>
+      <span class="tips"
+            @click="$router.push({path:'/rateList'})">利率表</span>
+    </nav>
+    <div class="content">
+      <ul class="menu">
+        <li v-for="(tab,index) in menu"
+            :class="{'active':index===tabIndex}"
+            :key="index"
+            @click="switchTab(index)">{{tab}}</li>
+      </ul>
+      <ul class="money">
+        <li>
+          <p class="amount">{{monthlySupply.toFixed(2)}}</p>
+          <p class="name">{{tabIndex===1?'首':'每'}}月月供参考(元)</p>
+        </li>
+        <li>
+          <p class="amount">{{interest.toFixed(2)}}</p>
+          <p class="name">支付利息(元)</p>
+        </li>
+        <li v-if="tabIndex===1">
+          <p class="amount">{{reduce.toFixed(2)}}</p>
+          <p class="name">每月递减(元)</p>
+        </li>
+      </ul>
+      <div class="filters">
+        <div class="cell"
+             @click="showPopup('loanType')">
+          <label>贷款类型</label>
+          <div class="right">{{loanType}}<span class="iconfont iconic_back"></span></div>
+        </div>
+        <md-field v-if="loanTypeIndex===0 || loanTypeIndex===2">
+          <md-input-item type="digit"
+                         title="商贷金额"
+                         v-model="businessLoansAmount"
+                         :solid="false"
+                         maxlength="4"
+                         placeholder="请输入金额"
+                         is-amount
+                         align="right">
+            <div class="input-operator"
+                 slot="right">万</div>
+          </md-input-item>
+        </md-field>
+        <md-field v-if="loanTypeIndex===1 || loanTypeIndex===2">
+          <md-input-item type="digit"
+                         title="公积金贷金额"
+                         v-model="accumulationLoansAmount"
+                         :solid="false"
+                         maxlength="4"
+                         placeholder="请输入金额"
+                         is-amount
+                         align="right">
+            <div class="input-operator"
+                 slot="right">万</div>
+          </md-input-item>
+        </md-field>
+        <div class="cell"
+             @click="showPopup('term')">
+          <label>期限</label>
+          <div class="right">{{term}}年<span class="iconfont iconic_back"></span></div>
+        </div>
+        <md-field v-if="loanTypeIndex===0 || loanTypeIndex===2">
+          <md-input-item type="money"
+                         title="商贷利率"
+                         v-model="businessLoansYearRate"
+                         :solid="false"
+                         maxlength="5"
+                         @change="changeValue('businessLoansYearRate',businessLoansYearRate)"
+                         placeholder="请输入利率"
+                         is-amount
+                         align="right">
+            <div class="input-operator"
+                 slot="right">%</div>
+          </md-input-item>
+        </md-field>
+        <md-field v-if="loanTypeIndex===1 || loanTypeIndex===2">
+          <md-input-item type="money"
+                         title="公积金贷利率"
+                         v-model="accumulationLoansYearRate"
+                         :solid="false"
+                         maxlength="5"
+                         @change="changeValue('accumulationLoansYearRate',accumulationLoansYearRate)"
+                         placeholder="请输入利率"
+                         is-amount
+                         align="right">
+            <div class="input-operator"
+                 slot="right">%</div>
+          </md-input-item>
+        </md-field>
+      </div>
+      <p class="tips">以上为央行2019年最新公布的贷款基准利率</p>
+      <div class="calc"
+           @click="calc">立即计算</div>
+    </div>
+    <!-- 贷款类型 -->
+    <van-popup v-model="isPopupShow.loanType"
+               round
+               position="bottom">
+      <van-picker show-toolbar
+                  title="贷款类型选择"
+                  :columns="loanTypes"
+                  @cancel="hidePopup('loanType')"
+                  @confirm="loanTypeConfirm" />
+    </van-popup>
+    <!-- 贷款期限 -->
+    <van-popup v-model="isPopupShow.term"
+               round
+               position="bottom">
+      <van-picker show-toolbar
+                  title="贷款期限选择"
+                  :columns="terms"
+                  @cancel="hidePopup('term')"
+                  @confirm="termConfirm" />
+    </van-popup>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header";
+import { Popup, Picker } from 'vant'
+import { Toast, InputItem, Field } from 'mand-mobile'
+export default {
+  data () {
+    return {
+      // 开关集合
+      isPopupShow: {},
+      tabIndex: 0,
+      monthlySupply: 0,
+      interest: 0,
+      reduce: 0,
+      menu: ['等额本息', '按月递减'],
+      loanType: '商业贷款',
+      loanTypeIndex: 0,
+      businessLoansAmount: '',
+      accumulationLoansAmount: '',
+      term: 5,
+      businessLoansYearRate: '',
+      accumulationLoansYearRate: '',
+      loanTypes: ['商业贷款', '公积金贷款', '组合贷款'],
+      terms: [5, 10, 15, 20, 25, 30],
+    }
+  },
+  components: {
+    Header,
+    [Popup.name]: Popup,
+    [Picker.name]: Picker,
+    [Field.name]: Field,
+    [InputItem.name]: InputItem
+  },
+  computed: {
+    // 商业贷款总额
+    businessLoansRealAmount () {
+      return this.businessLoansAmount * 10000
+    },
+    // 商业贷款总额
+    accumulationLoansRealAmount () {
+      return this.accumulationLoansAmount * 10000
+    },
+    // 商业贷款月利率
+    businessLoansMonthlyRate () {
+      return this.businessLoansYearRate / 12 / 100
+    },
+    // 公积金贷款月利率
+    accumulationLoansMonthlyRate () {
+      return this.accumulationLoansYearRate / 12 / 100
+    },
+    // 贷款月数
+    monthlyTerm () {
+      return this.term * 12
+    }
+  },
+  methods: {
+    navBack () {
+      window.NativeCall.BackNative()
+    },
+    // 开启
+    showPopup (type) {
+      this.$set(this.isPopupShow, type, true)
+    },
+    // 关闭
+    hidePopup (type) {
+      this.$set(this.isPopupShow, type, false)
+    },
+    switchTab (index) {
+      this.tabIndex = index
+      this.monthlySupply = 0
+      this.interest = 0
+      this.reduce = 0
+    },
+    changeValue (name, value) {
+      if (value >= 10) {
+        Toast.failed('年利率不超过10%')
+        this[name] = ''
+      }
+    },
+    loanTypeConfirm (value, index) {
+      this.loanType = value
+      this.loanTypeIndex = index
+      // 切换时清空
+      if (index === 0) {
+        this.accumulationLoansAmount = ''
+        this.businessLoansYearRate = ''
+      }
+      if (index === 1) {
+        this.businessLoansAmount = ''
+        this.accumulationLoansYearRate = ''
+      }
+      this.hidePopup('loanType')
+    },
+    termConfirm (value, index) {
+      this.term = value
+      this.hidePopup('term')
+    },
+    calc () {
+      if (this.tabIndex === 0) {
+        const business = this.eqRateCalc(this.businessLoansRealAmount, this.businessLoansMonthlyRate, this.monthlyTerm)
+        const accumulation = this.eqRateCalc(this.accumulationLoansRealAmount, this.accumulationLoansMonthlyRate, this.monthlyTerm)
+        this.monthlySupply = business.monthlySupply + accumulation.monthlySupply
+        this.interest = business.interest + accumulation.interest
+      } else {
+        const business = this.eqAmountCalc(this.businessLoansRealAmount, this.businessLoansMonthlyRate, this.monthlyTerm)
+        const accumulation = this.eqAmountCalc(this.accumulationLoansRealAmount, this.accumulationLoansMonthlyRate, this.monthlyTerm)
+        this.monthlySupply = business.monthlySupply + accumulation.monthlySupply
+        this.interest = business.interest + accumulation.interest
+        this.reduce = business.reduce + accumulation.reduce
+      }
+    },
+    /**
+     * 等额本息还款月供和总利息计算 
+     * @param { Number} loansAmount 贷款金额
+     * @param { Number} monthlyRate 月利率
+     * @param { Number} term 贷款月数
+     * */
+    eqRateCalc (loansAmount, monthlyRate, term) {
+      if (loansAmount && monthlyRate && term) {
+        const monthlySupply = loansAmount * monthlyRate * Math.pow((monthlyRate + 1), term) / (Math.pow((monthlyRate + 1), term) - 1)
+        const interest = monthlySupply * term - loansAmount
+        return { monthlySupply, interest }
+      }
+      return { monthlySupply: 0, interest: 0 }
+    },
+    /**
+     * 等额本金还款月供和总利息计算 
+     * @param { Number} loansAmount 贷款金额
+     * @param { Number} monthlyRate 月利率
+     * @param { Number} term 贷款月数
+     * */
+    eqAmountCalc (loansAmount, monthlyRate, term) {
+      if (loansAmount && monthlyRate && term) {
+        // 首月月供
+        const monthlySupply = loansAmount / term + loansAmount * monthlyRate
+        // 总利息
+        const interest = (term + 1) * loansAmount * monthlyRate / 2
+        // 每月递减
+        const reduce = loansAmount / term * monthlyRate
+        return { monthlySupply, interest, reduce }
+      }
+      return { monthlySupply: 0, interest: 0, reduce: 0 }
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+// 重置插件样式
+/deep/.md-field {
+  padding: 0;
+}
+.viewport {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: #262626;
+  .nav {
+    margin-bottom: px2vw(20);
+    height: px2vw(88);
+    padding: 0 px2vw(20);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .iconfont {
+      padding: px2vw(20);
+      font-size: px2vw(30);
+    }
+    .title {
+      font-size: px2vw(36);
+      font-weight: 500;
+    }
+    .tips {
+      padding: px2vw(20);
+      font-size: px2vw(30);
+      color: #008bff;
+    }
+  }
+  .content {
+    flex: 1;
+    background-color: #f5f6f8;
+    overflow-y: scroll;
+    .menu {
+      padding: px2vw(30) px2vw(100);
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+      box-sizing: border-box;
+      background-color: #ffffff;
+      li {
+        width: px2vw(280);
+        line-height: px2vw(60);
+        text-align: center;
+        border: px2vw(1) solid #6ba5fe;
+        font-size: px2vw(26);
+        color: #3e8fff;
+        &:first-child {
+          border-radius: px2vw(100) 0 0 px2vw(100);
+          border-right: none;
+        }
+        &:last-child {
+          border-radius: 0 px2vw(100) px2vw(100) 0;
+          border-left: none;
+        }
+
+        &.active {
+          font-size: px2vw(30);
+          font-weight: 500;
+          color: #ffffff;
+          background: linear-gradient(
+            270deg,
+            rgba(107, 171, 255, 1) 0%,
+            rgba(108, 138, 249, 1) 100%
+          );
+        }
+      }
+    }
+    .money {
+      padding: px2vw(30) px2vw(100);
+      display: flex;
+      flex-wrap: wrap;
+      overflow: hidden;
+      box-sizing: border-box;
+      background-color: #ffffff;
+      li {
+        margin-bottom: px2vw(30);
+        width: 50%;
+        text-align: center;
+        .amount {
+          font-size: px2vw(44);
+          font-weight: 500;
+        }
+        .name {
+          font-size: px2vw(26);
+          color: #7d7d7d;
+        }
+      }
+    }
+    .filters {
+      margin-top: px2vw(20);
+      padding: 0 px2vw(40);
+      background-color: #ffffff;
+      .cell {
+        height: px2vw(110);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: px2vw(30);
+        border-bottom: px2vw(2) solid #e2e4ea;
+        &:last-child {
+          border: none;
+        }
+        .right {
+          display: flex;
+          align-items: center;
+          input {
+            margin-right: px2vw(10);
+            text-align: right;
+          }
+          span {
+            display: block;
+            margin-left: px2vw(10);
+            transform: rotate(180deg);
+            font-size: px2vw(26);
+          }
+        }
+      }
+    }
+    .tips {
+      padding-left: px2vw(40);
+      margin-top: px2vw(30);
+      font-size: px2vw(22);
+      color: #7d7d7d;
+    }
+    .calc {
+      margin: px2vw(20) auto;
+      width: px2vw(380);
+      height: px2vw(80);
+      line-height: px2vw(80);
+      text-align: center;
+      font-size: px2vw(30);
+      font-weight: 500;
+      color: #ffffff;
+      background: linear-gradient(
+        270deg,
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+      border-radius: px2vw(100);
+    }
+  }
+}
+</style>

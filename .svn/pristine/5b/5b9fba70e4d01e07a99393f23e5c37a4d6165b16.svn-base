@@ -1,0 +1,494 @@
+<template>
+  <div class="outer all-payee">
+    <Myheader :title="$route.meta.title" :params="headerParams">
+      <div class="edit" slot="left" @click="editShow = !editShow,result = [],checkAll = false;">{{editShow ? '完成' : '编辑'}}</div>
+    </Myheader>
+    <search :placeholder="`请输入账户名`" @search="searchPayeeList" @clear="searchPayeeList"></search>
+    <router-link class="add-btn" :to="{name:'payeeAdd'}">
+      <span class="icon">
+        <img :src="require(`@/assets/transferAccounts/icon_tianjia@2x.png`)" alt />
+      </span>
+      <span>新增收款人</span>
+    </router-link>
+    <Scroller class="scroll-box">
+      <van-index-bar :z-index="10" :index-list="indexAnchor" highlight-color="#262626">
+        <van-checkbox-group v-model="result" :disabled="!editShow" ref="checkboxGroup">
+
+          <div v-for="(item,index) in indexListData" :key="index" class="index-group">
+            <van-index-anchor :index="item.anchor">{{item.anchor}}</van-index-anchor>
+            <div class="payee-group" v-for="(child,index) in item.children" :key="index">
+              <van-swipe-cell :disabled="editShow">
+                <van-checkbox :name="child" ref="checkboxes">
+                  <van-cell :clickable="!editShow" @click="handleSelect(child)">
+                    <template slot="title">
+                      <div slot="title" class="payee-col paddingLR40">
+                        <div class="payee-icon">
+                          <img :src="require(`@/assets/bankIcons/default.png`)" v-bankIcon="child.bankNbr" alt />
+                        </div>
+                        <div class="payee-right">
+                          <div>{{child.payeeName}}</div>
+                          <div class="info">
+                            {{child.payeeAcctNbr | CardProtect}}
+                            <span v-if="child.bankName">&nbsp;|&nbsp;</span>{{child.bankName}}
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </van-cell>
+
+                  <img slot="icon" v-if="editShow" slot-scope="props" class="icon-wrap" :src="props.checked ? icon.active : icon.inactive">
+
+                </van-checkbox>
+
+                <template slot="right">
+                  <van-button class="swipe-delete" square @click="beforeDelete(child)" text="删除" />
+                </template>
+              </van-swipe-cell>
+              <div class="bottom-line"></div>
+            </div>
+
+          </div>
+
+        </van-checkbox-group>
+      </van-index-bar>
+    </Scroller>
+
+    <div class="footer" v-if="editShow">
+      <div class='left'>
+        <van-checkbox v-model="checkAll" @change="checkAllFund">
+          全选
+          <img slot="icon" slot-scope="props" class="icon-wrap" :src="props.checked ? icon.active : icon.inactive">
+          <!-- <div slot="icon" slot-scope="props" class="icon-wrap">
+            <div class="checked" v-if="props.checked">
+              <i class="iconfont">&#xe620;</i>
+            </div>
+            <div v-else class="unchecked"></div>
+          </div> -->
+        </van-checkbox>
+      </div>
+      <van-button :disabled="!result.length > 0" class="delete-btn" type="danger" @click="cancelConfirm = true">删除{{result.length > 0 ? `(${result.length})` : '' }}</van-button>
+    </div>
+    <MyDialog :show="cancelConfirm" :isClose="false" :confirmButtonText="`我再想想`" :cancelButtonText="`删除`" @cancel="handleDelete" @con="cancelConfirm = false">
+      <p slot="content" class="dialog-content">
+        删除后无法恢复，是否继续？
+      </p>
+    </MyDialog>
+  </div>
+</template>
+<script>
+import { IndexBar, IndexAnchor, Popup, Toast, SwipeCell } from "vant";
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import Search from "@/components/Search";
+import { mapGetters, mapActions, mapState } from "vuex";
+import Dialog from "@/components/Dialog/Dialog.vue";
+var Pinyin = require("@/tools/pinyin.js").Pinyin;
+export default {
+  components: {
+    Search,
+    Myheader: Header,
+    [IndexBar.name]: IndexBar,
+    [IndexAnchor.name]: IndexAnchor,
+    [Toast.name]: Toast,
+    [Popup.name]: Popup,
+    [SwipeCell.name]: SwipeCell,
+    Scroller,
+    MyDialog: Dialog
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      //右侧锚点列表
+      indexAnchor: [],
+      //带锚点的数据列表
+      indexListData: [],
+      selectItem: {},
+      data: [],
+      cancelConfirm: false,
+      editShow: false,
+      checkAll: false,//全选
+      result: [],//选中的数组
+      icon: {
+        active: require("@/assets/checked.png"),
+        inactive: require("@/assets/unchecked.png"),
+      },
+    };
+  },
+  created() {
+    this.getData();
+  },
+  computed: {
+    ...mapState('transferAccounts', ['linkManLists']),
+  },
+  methods: {
+    ...mapActions('transferAccounts', ['getLinkManLists']),
+    async getData() {
+      if (this.linkManLists.length > 0) {
+        this.data = [...this.linkManLists];
+        this.getIndexList();
+      }
+      await this.getLinkManLists();
+      this.data = [...this.linkManLists];
+      this.getIndexList();
+    },
+    searchPayeeList(data) {
+      let params = {
+        //branchId: '2336',
+        ChnlId: '62',
+        PayeeName: data
+      }
+      this.request('QryPayeeList', params).then((res) => {
+        this.data = res.AcctPayeeList;
+        this.getIndexList();
+        console.log('获取收款人', res);
+      }).catch((error) => {
+        console.log(error)
+      })
+    },
+    getIndexList() {
+
+      let data = [...this.data];
+      //第一轮生成带有26个字母的锚点列表
+      let arrList = [];
+      for (let i = 0; i < 26; i++) {
+        let item = {
+          anchor: String.fromCharCode((65 + i)),
+          children: []
+        }
+        arrList.push(item);
+      }
+      let sitem = {
+        anchor: '#',
+        children: []
+      }
+      // console.log('arrList', arrList);
+      //将对应字母数据插入到indexList里
+      data.map(item => {
+        let name = item.payeeName || "无名";
+        item.payeeName = item.payeeName || "无名"
+        let PinYin = Pinyin.parse(name)[0];
+        let firstStr = PinYin.target.substring(0, 1).toUpperCase();
+        for (let child of arrList) {
+          //可以加入其他判断 比如 我的账户（使用id作对比）
+          //字母索引插入
+          if (child.anchor === firstStr) {
+            child.children.push(item)
+          }
+        }
+        // 判断非字母 则加入至#;
+        let reg = /^[A-Za-z]+$/;
+        if (!reg.test(firstStr)) {
+          sitem.children.push(item);
+        }
+      })
+      arrList.push(sitem);
+      // 第三轮遍历arrList过滤掉无内容素的item,避免空占位
+      let indexList = [], indexAnchor = [];
+      for (let item of arrList) {
+        if (item.children.length > 0) {
+          indexList.push(item);
+          indexAnchor.push(item.anchor)
+        }
+      }
+      this.indexListData = indexList;
+      this.indexAnchor = indexAnchor;
+    },
+    handleSelect(item) {
+      if (!this.editShow) {
+        this.$router.push({ name: 'payeeDetail', params: { payee: item } })
+      }
+      //   this.selectItem = item;
+      //   this.visible = false;
+      //   this.$emit("select", this.selectItem);
+    },
+    // 删除收款人，开启确认弹窗
+    beforeDelete(data) {
+      this.selectItem = { ...data };
+      this.cancelConfirm = true;
+    },
+    handleDelete(data) {
+      if (!this.editShow) {//是否开启批量删除
+        let params = {
+          PayeeAcctNbr: this.selectItem.payeeAcctNbr,
+          AssertTyp: 2,
+          //branchId: '2336',
+          ChnlId: '62'
+        }
+        this.request('UpdatePayeeRoster',
+          params
+        ).then((res) => {
+          let { data } = res;
+          if (res.RespCode == '000000') {
+            Toast("删除成功")
+            this.cancelConfirm = false;
+            this.getData()
+          }
+
+        }).catch((error) => {
+          console.log(error)
+          this.cancelConfirm = false;
+        })
+      } else {//批量删除
+        if (this.result.length > 0) {
+          let arr = [];
+          for (let item of this.result) {
+            arr.push(item.payeeAcctNbr)
+          }
+          let str = arr.join(",");//使用逗号分隔选择的卡号
+          let params = {
+            PayeeAcctNbr: str,
+            AssertTyp: 3,
+            //branchId: '2336',
+            ChnlId: '62'
+          }
+          this.cancelConfirm = false;
+          this.request('UpdatePayeeRoster',
+            params
+          ).then((res) => {
+            let { data } = res;
+            if (res.RespCode == '000000') {
+              Toast("删除成功")
+              this.cancelConfirm = false;
+              this.result = [];
+              this.getData()
+              this.editShow = false;
+            }
+
+          }).catch((error) => {
+            console.log(error)
+            this.cancelConfirm = false;
+          })
+        }
+
+      }
+
+      // Update,PayeeRoster
+    },
+    // 点击全选按钮
+    checkAllFund(value) {
+      if (value) {
+        this.$refs.checkboxGroup.toggleAll(true);
+      } else {
+        this.$refs.checkboxGroup.toggleAll(false);
+      }
+    },
+  },
+  watch: {
+    //route.push进来后没有执行获取数据的方法可以watch下路由，有变化后再次获取数据，而不是靠刷新一次来获取数据
+    '$route'(to, from) {
+      console.log("路由变化")
+      this.getData()
+    },
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.mint-header {
+  .edit {
+    font-size: px2vw(26);
+  }
+}
+.add-btn {
+  height: px2vw(110);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: px2vw(34);
+  font-weight: 400;
+  font-family: $font-family;
+  color: #262626;
+  background: #fff;
+  .icon {
+    width: px2vw(31);
+    margin-right: px2vw(11);
+    img {
+      width: 100%;
+    }
+  }
+}
+/deep/ .scroll-box {
+  background: #f5f6f8;
+  .payee-group {
+    background: #fff;
+  }
+  .swipe-delete {
+    width: px2vw(120);
+    font-size: px2vw(30);
+    height: 100%;
+    color:#fff;
+    background: #ff4040;
+  }
+  .van-nav-bar {
+    z-index: 5 !important;
+    &.van-hairline--bottom::after {
+      border-bottom-width: 0;
+    }
+  }
+  .van-index-bar__sidebar {
+    margin-right: px2vw(16);
+  }
+  .van-nav-bar .van-icon {
+    color: #333;
+  }
+  .van-index-bar__index--active {
+    color: #333 !important;
+  }
+  .van-index-bar__index {
+    color: #0085ff;
+    line-height: px2vw(36);
+  }
+  .van-checkbox__label {
+    width: 100%;
+  }
+  .van-cell.van-cell--clickable:active{
+    background: transparent;
+  }
+  .index-group {
+    .payee-group:last-child .bottom-line{
+      border: none;
+    }
+    .bottom-line{
+      border-bottom: $border-bottom;
+      height:px2vw(1);
+      //  border-bottom: 10px solid red;
+      margin:0 px2vw(40);
+    }
+  }
+  .van-cell {
+    // margin: 0;
+    height: px2vw(110);
+    // padding: 0;
+    display: flex;
+    align-items: center;
+    background: transparent;
+  }
+  .van-index-anchor {
+    background: #f5f6f8;
+    height: px2vw(61);
+    padding: 0 px2vw(40);
+    font-size: px2vw(24);
+    color: $color-text;
+    font-weight: 500;
+  }
+  .payee-col {
+    display: flex;
+    align-items: center;
+    .payee-icon {
+      width: px2vw(55);
+      max-height: px2vw(55);
+      margin-right: px2vw(20);
+      img {
+        width: 100%;
+      }
+    }
+    .payee-right {
+      color: #262626;
+      font-weight: 400;
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      letter-spacing: px2vw(1);
+      .info {
+        color: #7d7d7d;
+        font-size: px2vw(24);
+        line-height: initial;
+      }
+      //徽标
+    }
+  }
+}
+.icon-wrap {
+  margin-left: px2vw(40);
+  height: px2vw(40);
+  button {
+    width: 100%;
+    height: 100%;
+    background: rgba(244, 245, 248, 1);
+    border-radius: 6px;
+    font-size: px2vw(24);
+    line-height: px2vw(60);
+    text-align: center;
+  }
+}
+/deep/ .van-checkbox-group {
+  .van-checkbox__label {
+    margin-left: 0;
+  }
+  // .van-checkbox__icon {
+  //   .icon-wrap {
+  //     margin-left:px2vw(40);
+  //     height: px2vw(40);
+  //     button {
+  //       width: 100%;
+  //       height: 100%;
+  //       background: rgba(244, 245, 248, 1);
+  //       border-radius: 6px;
+  //       font-size: px2vw(24);
+  //       line-height: px2vw(60);
+  //       text-align: center;
+  //     }
+  //   }
+  // }
+}
+.checked {
+  background: linear-gradient(
+    137deg,
+    rgba(224, 207, 174, 1) 0%,
+    rgba(199, 165, 127, 1) 100%
+  );
+  width: px2vw(32);
+  height: px2vw(32);
+  padding: px2vw(2);
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .iconfont {
+    font-size: px2vw(24);
+    color: #fff;
+  }
+}
+.unchecked {
+  width: px2vw(32);
+  height: px2vw(32);
+  border-radius: 6px;
+  border: px2vw(2) solid rgba(212, 212, 212, 1);
+}
+.footer {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+  height: px2vw(120);
+  box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.05);
+  .left {
+    display: flex;
+    padding-left: px2vw(40);
+    height: 100%;
+    align-items: center;
+    font-size: px2vw(28);
+    /deep/ .van-checkbox {
+      height: 100%;
+      overflow: auto;
+      /deep/ .van-checkbox__icon {
+        height: auto;
+        line-height: inherit;
+      }
+    }
+  }
+  .delete-btn {
+    width: px2vw(260);
+    font-size: px2vw(34);
+    height: 100%;
+    background: #ff4040;
+  }
+  .icon-wrap {
+    margin-left: 0;
+  }
+}
+</style>

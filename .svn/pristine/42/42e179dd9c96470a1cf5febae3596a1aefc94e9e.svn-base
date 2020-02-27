@@ -1,0 +1,219 @@
+<template>
+  <div class="outer fund-buy">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div class="main">
+      <header class="fund-info">
+        <h2>{{data.productName}} <span class="iconfont">&#xe649;</span></h2>
+        <div class="num">{{data.productNo}}</div>
+      </header>
+      <section class="section">
+        <payer-card :label="`付款卡`" @select="selectPayerCard" :redeemShow="true" :needBalance="false" :redeem="data.UsePortAMT">
+        </payer-card>
+      </section>
+
+      <section class="field-section">
+        <header class='field-header'>
+          <span class="title">赎回份额</span>
+        </header>
+        <transAmt v-model="transAmt" :balance="data.FinanProPortAMT" wrongText="超出可赎回份额" :showUpper="false"  :placeholder="`最少赎回${data.perMinAMT}份`"  @blur="amtBlur">
+          <div slot="right" class="redeem-all" @click="redeemAll">全部赎回</div>
+          <div class="info">
+            将按照08月22日(星期四)的净值计算，预计08月26日到账，到账金额以基金公司确认为准
+          </div>
+        </transAmt>
+      </section>
+      <!-- <div class="filed_cell section">
+        <div class="label">推荐人</div>
+        <div class="filed">
+          <m-input v-model="refereeNo" :value="refereeNo" placeholder="请输入推荐人工号">
+          </m-input>
+        </div>
+      </div> -->
+
+
+      <!-- 选择安全工具弹窗 -->
+      <security :visible.sync="securityShow" :form='confirmForm' @confirm="handleConfirm"></security>
+      <overlay :visible.sync="loading"></overlay>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button class="marginLR40" :disabled="disabled" @click="next">确认</van-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import PayerCard from '@/components/Popup/PayerCard';
+import mInput from "@/components/Input/bankCardNum.vue";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import Security from '../components/security';
+import Overlay from '../components/overlay';
+import TransAmt from "@/components/Input/transAmt.vue"
+export default {
+
+  components: {
+    Myheader: Header,
+    PayerCard,
+    mInput,
+    Security,
+    Overlay,
+    TransAmt,
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      refereeNo: '',
+      upperMoney: null,
+      transAmt: null,
+      params: {
+
+      },
+      data:{
+
+      },
+      payerCard: {
+        bankName: '',
+        acctName: "",
+        vouId: '',
+        balance: ''
+      },
+      securityShow: false,
+      confirmForm: {
+        bankCard: '',
+        transAmt: 0,
+        productName: '',
+        bankName: '焦作中旅银行'
+      },
+      loading: false
+    };
+  },
+  computed: {
+    ...mapState('common', ['userInfo']),
+    ...mapState('fund', ['selectPosition']),
+    disabled() {
+      let disabled = true;
+      if (!this.transAmt) {
+        disabled = true;
+      } else {
+        disabled = false;
+      }
+      return disabled
+    },
+  },
+  created() {
+    this.data = this.selectPosition;
+    console.log( this.data)
+
+  },
+  methods: {
+    ...mapMutations('fund', ['SELECTPOSITION']),
+    //选择付款卡
+    selectPayerCard(item) {
+      console.log('选择的付款卡', item)
+      this.payerCard = { ...item };
+    },
+    amtBlur() {
+      if (this.transAmt < 0.1) {
+        this.transAmt = 0.1;
+      }
+    },
+    redeemAll(){
+      this.transAmt = this.data.FinanProPortAMT;
+    },
+    next() {
+      this.params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        BankAcct: this.payerCard.vouId,
+        ProductNo: this.data.productNo,
+        PerMinAMT:this.data.perMinAMT,
+        LargRedFlag: "1",
+        CustomerIdentifyType: '1',
+        CustomerIdentify: this.userInfo.Cif.cifNo,//Cif
+        TrsAcNo: this.payerCard.vouId,
+        RedeemFunds: this.transAmt
+      }
+      this.confirmForm = {
+        bankCard: this.payerCard.vouId,
+        transAmt: this.transAmt,
+        productName: this.data.productName,
+        bankName: this.payerCard.bankName
+      }
+      console.log(this.params, "参数")
+      // this.securityShow = true;
+      this.handleConfirm();
+    },
+    // 确认窗点击下一步触发， 调用后台参数校验
+    handleConfirm() {
+      this.securityShow = false;
+      this.checkConfirm();
+    },
+    checkConfirm() {
+      this.request("FundRedeemConfirm", this.params).then(res => {
+        console.log(res, "confirm")
+        this.params._tokenName = res._tokenName;
+        this.passwordCheck();
+      }).catch(err => {
+
+      })
+    },
+    // confirm接口后调用密码组件
+    passwordCheck() {
+      if (process.env.NODE_ENV == "development") {//随时删除
+        this.params.Password = 'MDAwMDAxNDABAgAAAWgAAACkAABjJ7se4jHpWVWyF97Z57ZKF+k3PC8DJs8wZAGNvR/Wha/4L/cVDMdiWS3Z1hU+Ctx9P08z/QjlCo/9MWfNZfhmucVIrPDLhBAuYobdsK+cuc5sgSz08oHraAKRvpf3UzNrJBwqEh8mb/b/Kr5z9GCH7omIiX97+abATsZAiWKxgzAwMDAwMjIzczX1rZcuLPzEnLYa9B0zGcF9sYpYwhAZdqN49WvCLrZA9p6VG/L6vn6sPHRtjnDJvRIrFUARFPCnIJ9M0Sw4kvLRK4g/o4WkYF9FpKqzrz+rNPN3UD3QSxNiP0VPDSfGD28VHHx7YhKOxFcxw6AQAa9X065dAJZ8NMS+x+QrlWlZVxgVUtfh87mxieP60EPHWh/kWPswnMjBeKZLpj+h23zBsqTCMu8vL22iB9YIDDNmEHiavPyHFG+chYdAtkG9EulXh7dzWk1PKoZPYBDWYv7BhbAN/d4WSFSYh3Caow==';//本地测试无法调用密码组件 写死
+        this.submit();
+      } else {
+        window.NativeCall.SecureKeyboard(param => {
+          this.params.Password = param;
+          // this.params.Password = '111111';
+          this.submit();
+        });
+      }
+    },
+    submit() {
+      this.loading = true;
+      this.request("FundRedeem", this.params).then(res => {
+        // this.loading = false;
+        let data = { ...this.data };
+        data.transAmt = this.transAmt;
+        this.SELECTPOSITION(data);
+        this.$router.replace({ name: 'redeemResult' })
+      }).catch(err => {
+        this.loading = false;
+      })
+    },
+  },
+};
+</script>
+<style lang="scss" scoped>
+.footer-box .btn-box button {
+  margin-top: px2vw(100);
+  background: linear-gradient(
+    136deg,
+    rgba(224, 207, 174, 1) 0%,
+    rgba(199, 165, 127, 1) 100%
+  );
+}
+.transfer-amount{
+  .info {
+    color: #7d7d7d;
+    font-size: px2vw(24);
+    padding: px2vw(20) 0;
+    span:last-child {
+      margin-left: px2vw(200);
+    }
+  }
+}
+.redeem-all{
+  font-size:px2vw(26);
+  font-family: $font-family;
+  color:#3E8FFF;
+}
+</style>

@@ -1,0 +1,513 @@
+<template>
+  <div class="outer addCard">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="group">
+      <van-cell-group>
+        <van-field label="姓名" v-model="form.name" disabled :class="{'active':form.name}"></van-field>
+      </van-cell-group>
+      <div class="line"></div>
+      <van-cell-group class="bank">
+        <md-input-item
+          title="卡号"
+          type="bankCard"
+          @blur="check(1)"
+          @change="bankAccountChange"
+          maxlength="19"
+          placeholder="请输入或扫描本人银行卡号"
+          v-model="form.payerBankAccount"
+        ></md-input-item>
+        <span class="iconfont iconicon_saomiao-1" @click="saomiao"></span>
+      </van-cell-group>
+      <div class="line" v-if="saomiaoSuccess"></div>
+      <van-cell-group v-show="saomiaoSuccess">
+        <van-field label="开户行" v-model="form.payerBank"></van-field>
+      </van-cell-group>
+      <div class="line"></div>
+      <van-cell-group>
+        <van-field
+          label="预留手机号"
+          :class="{'active':form.phone}"
+          @change="phoneChange"
+          v-model="form.phone"
+        >
+          <!-- <template slot="input">
+            <input :value="form.phone | phoneNumber" />
+          </template>-->
+        </van-field>
+      </van-cell-group>
+      <div class="line"></div>
+      <van-cell-group class="msg">
+        <van-field v-model="form.msg" type="number" @input="check" maxlength="6" label="短信验证码">
+          <van-button
+            slot="button"
+            v-show="count_down"
+            size="small"
+            type="primary"
+            class
+            @click="startCountdown"
+          >{{verCode}}</van-button>
+          <van-button
+            slot="button"
+            v-show="!count_down"
+            size="small"
+            type="primary"
+            class="active"
+            @click="startCountdown"
+          >{{time_60}}秒后重新获取</van-button>
+        </van-field>
+      </van-cell-group>
+      <div class="agree">
+        <div class="check" @click="agree">
+          <span class="iconfont iconcheck-" v-if="isAgree"></span>
+        </div>
+        <p>
+          本人已阅读并同意
+          <span class="agreement" @click="agreement">《协议》</span>
+        </p>
+      </div>
+    </div>
+    <Mybutton :text="'确定'" :disabled="disabled" @next="next"></Mybutton>
+    <div class="bottom">
+      <p @click="toBankList">查看银行卡支持列表</p>
+    </div>
+    <Mydialog
+      :show="dialog.show"
+      :confirmButtonText="dialog.confirmButtonText"
+      :title="dialog.title"
+      :showCancel="dialog.showCancel"
+      :isClose="dialog.isClose"
+      @con="con"
+    >
+      <template slot="content">
+        <Scroller>
+          <div v-for="(item,index) in bankList" :key="index" class="item">{{item.bankName}}</div>
+        </Scroller>
+      </template>
+    </Mydialog>
+    <agreement :agreementShow.sync="agreementShow"></agreement>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Dialog from "@/components/Dialog/Dialog";
+import button from "../components/button";
+import { Toast } from "vant";
+import Scroller from "@/components/Scroller";
+import { InputItem } from "mand-mobile";
+const icon = require("@/assets/myAccount/addBankCard/ico_right@3x.png");
+import agreement from "../components/agreement";
+export default {
+  components: {
+    Myheader: Header,
+    Mybutton: button,
+    Mydialog: Dialog,
+    Scroller,
+    [Toast.name]: Toast,
+    [InputItem.name]: InputItem,
+    agreement
+  },
+  data() {
+    return {
+      headerParams: {},
+      form: {},
+      dialog: {
+        show: false,
+        confirmButtonText: "我知道了",
+        title: "支持银行卡列表",
+        showCancel: false,
+        isClose: false
+      },
+      bankInfo: null,
+      time_60: 60,
+      count_down: true,
+      verCode: "发送验证码",
+      isAgree: false,
+      disabled: true,
+      saomiaoSuccess: false,
+      bankList: [],
+      smsData: null,
+      agreementShow: false
+    };
+  },
+  created() {
+    this.form = {
+      name: this.$store.state.userInfo.Name,
+      phone: this.$store.state.userInfo.MobilePhone,
+      bankAccount: "",
+      msg: ""
+    };
+    this.getBankList();
+  },
+  computed: {
+    electronicAccounts() {
+      let value = this.form.bankAccount;
+      return value.replace(/(.{4})/g, "$1 ");
+    }
+  },
+  methods: {
+    startCountdown() {
+      if (this.count_down) {
+        this.count_down = false;
+        var timer = window.setInterval(() => {
+          this.time_60 -= 1;
+          if (this.time_60 <= 0) {
+            this.time_60 = 60;
+            this.count_down = true;
+            window.clearInterval(timer);
+          }
+        }, 1000);
+      }
+      let params = {
+        BankId: "9999",
+        BranchId: "1999",
+        ChnlId: "62",
+        SmsTransType: "1",
+        PhoneNbr: this.form.phone,
+        MobilePhone: this.form.phone
+      };
+      this.request("SendSmsOtp", params).then(res => {
+        this.smsData = res;
+      });
+    },
+    checkBankCardNumber(param) {
+      const pattern = /^([1-9]{1})(\d{14,18})$/;
+      return pattern.test(param);
+    },
+    phoneChange() {
+      console.log(this.form);
+    },
+    agree() {
+      //改变确认协议状态
+      this.isAgree = !this.isAgree;
+      this.check();
+    },
+    agreement() {
+      this.agreementShow = true;
+    },
+    bankAccountChange() {
+      //如果已经扫描了改变后需要重新请求数据
+    },
+    check(val) {
+      if (val == 1) {
+        //银行卡输入后回显银行
+        this.ocr(this.form.payerBankAccount).then(res => {
+          console.log(res);
+          this.bankInfo = res;
+          this.form.payerBank = res.PayeeBankName
+            ? res.PayeeBankName
+            : res.Banks[0].bankaliasname;
+          this.form.payerName = this.$store.state.userInfo.Name;
+          let payerList = this.$store.state.fundCollection.payerList;
+          let total = payerList.length;
+          let count = 0;
+          payerList.map(item => {
+            if (item.PayerAccount != this.form.payerBankAccount) {
+              count++;
+            }
+          });
+          console.log(count, payerList);
+          if (count === total) {
+            this.saomiaoSuccess = true;
+          } else {
+            this.$toast("该银行卡已添加");
+          }
+          // console.log(this.form.payerBank);
+        });
+      }
+      if (!this.checkBankCardNumber(this.form.payerBankAccount) && val == 1) {
+        this.$toast("请输入正确的银行卡");
+      }
+      if (this.form.msg.length != 6 && val == 2) {
+        this.$toast("请正确的验证码");
+      }
+      if (
+        this.checkBankCardNumber(this.form.payerBankAccount) &&
+        this.form.msg.length == 6 &&
+        this.isAgree
+      ) {
+        // if (!this.isAgree) {
+        //   this.$toast("请勾选");
+        // }
+        this.disabled = false;
+        // return true;
+      } else {
+        this.disabled = true;
+      }
+    },
+    toBankList() {
+      //弹出银行支持列表
+      this.dialog.show = true;
+    },
+    con() {
+      //关闭dialog弹框
+      this.dialog.show = false;
+    },
+    saomiao() {
+      //调用银行卡扫描
+      if (!this.saomiaoSuccess) {
+        //防抖
+        this.ocr(this.form.payerBankAccount).then(res => {
+          // console.log(res);
+          this.bankInfo = res;
+          this.form.payerBank = res.PayeeBankName;
+          this.form.payerName = this.$store.state.userInfo.Name;
+          this.saomiaoSuccess = true;
+          // console.log(this.form.payerBank);
+        });
+      }
+      window.NativeCall.ScanOcrBankCard(params => {
+        let res = JSON.parse(params);
+        this.form.payerBankAccount = res.CardNum;
+        if (!this.saomiaoSuccess) {
+          //防抖
+          this.ocr(this.form.payerBankAccount).then(res => {
+            // console.log(res);
+            this.bankInfo = res;
+            this.form.payerBank = res.PayeeBankName;
+            this.form.payerName = this.$store.state.userInfo.Name;
+            this.saomiaoSuccess = true;
+            console.log(this.form.payerBank);
+          });
+        }
+      });
+    },
+    ocr(bankAccount) {
+      //调取ocr接口后发起卡信息接口
+      let params = {
+        BranchId: "2336",
+        ChnlId: "62",
+        AcctNbr: bankAccount
+      };
+      return this.request("BankBinQuery", params, true);
+    },
+    next() {
+      this.crossBankCollectionSign();
+    },
+    crossBankCollectionSign() {
+      let _this = this;
+      let params = {
+        ChnlId: "62",
+        BankId: "9999",
+        IdType: "01",
+        LoginType: "R",
+        // CustomerNo: "10863553", //测试
+        CustomerNo: this.$store.state.userInfo.CifNo,
+        BranchId: "7010",
+        PayerAcNo: this.form.payerBankAccount,
+        PayeeAcNo: this.$store.state.userInfo.AcList[0].no, //收款卡
+        PayeeAcName: this.$store.state.userInfo.Name,
+        PayerAcName: this.form.payerName, //付款人姓名
+        // IdType: this.$store.state.userInfo.Identity.type,
+        IdNo: this.$store.state.userInfo.Identity.no,
+        PayerMobilePhone: this.form.phone,
+        SmsCode: this.form.msg,
+        // UserSmsId: this.smsData.UserSmsId,
+        SmsNbr: this.smsData.SmsNbr,
+        ApprTyp: "1"
+      };
+      this.request("CrossBankCollectionSign", params)
+        .then(res => {
+          this.$toast({
+            message: "添加成功",
+            icon: icon
+          });
+          this.getList();
+        })
+        .catch(err => {
+          this.$toast(err._RejMessage);
+        });
+    },
+    getBankList() {
+      let params = {
+        BranchId: "1666303020",
+        ChnlId: "62"
+      };
+      this.request("BankListQry", params, true).then(res => {
+        this.bankList = res.BankList;
+      });
+    },
+    getList() {
+      let params = {
+        BranchId: "7010",
+        ChnlId: "62",
+        LoginType: "R",
+        BankId: "9999",
+        CustomerNo: this.$store.state.userInfo.CifNo,
+        ChildBatchNum: "1",
+        LeftChildNum: "5",
+        PayeeAcNo: this.$store.state.fundCollection.payeer.vouId
+      };
+      this.request("CrossBankGetheringQry", params).then(res => {
+        // console.log(res)
+        let signList = [];
+        res.AddInfo.map((item, index) => {
+          this.signList.push({
+            ...item,
+            BankId: res.PayerAcList[index].BankId
+          });
+        });
+        this.$store.state.fundCollection.payerList = signList;
+        this.$toast.clear();
+        this.$router.push({ name: "startGathering" });
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+body {
+  background-color: #f5f6f8;
+}
+.btn {
+  /deep/ .van-button {
+    background: linear-gradient(#6babff, #6c8af9);
+  }
+}
+.addCard {
+  position: relative;
+  height: 100vh;
+  .van-hairline--top-bottom::after {
+    border-width: 0;
+  }
+  .van-cell__title {
+    color: #262626;
+    flex: none;
+    width: px2vw(150);
+    font-size: px2vw(30);
+  }
+  .van-cell__value {
+    font-size: px2vw(30);
+    margin-left: px2vw(40);
+  }
+  .msg {
+    .van-cell {
+      align-items: center;
+    }
+    .van-button--primary {
+      font-size: px2vw(28);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      background-color: transparent;
+      border-color: transparent;
+      color: #3e8fff;
+      padding: 0;
+    }
+    .active {
+      color: rgba(168, 168, 168, 1);
+    }
+  }
+  .agree {
+    font-size: px2vw(24);
+    font-weight: 400;
+    color: #a8a8a8;
+    height: px2vw(32);
+    line-height: px2vw(32);
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0 px2vw(40);
+    box-sizing: border-box;
+    margin-top: px2vw(30);
+    .check {
+      width: px2vw(32);
+      height: px2vw(32);
+      border-radius: px2vw(6);
+      background: url("~@/assets/fundCollection/icon_gouxuan_nor@2x.png")
+        no-repeat;
+      background-size: 100% 100%;
+      margin-right: px2vw(10);
+      .iconfont {
+        color: #fff;
+        background-color: #3e8fff;
+      }
+    }
+    p {
+      height: 100%;
+      .agreement {
+        color: #008bff;
+      }
+    }
+  }
+  .iconfont {
+    color: #262626;
+    font-size: px2vw(30);
+    font-weight: 400;
+  }
+  .bottom {
+    margin-top: px2vw(351);
+    font-size: px2vw(30);
+    font-weight: 400;
+    color: #3e8fff;
+    line-height: px2vw(30);
+    text-align: center;
+  }
+}
+.scrollerBox {
+  height: px2vw(600);
+  margin-top: px2vw(35);
+  margin-bottom: px2vw(59);
+}
+.item {
+  height: px2vw(87);
+  padding: px2vw(10);
+  position: relative;
+  line-height: px2vw(87);
+  font-size: px2vw(26);
+  font-weight: 400;
+  color: #262626;
+}
+.item:not(:last-child)::after {
+  content: " ";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: px2vw(1);
+  background-color: #d9d9dc;
+  z-index: 100;
+}
+.active {
+  /deep/ .van-field__control:disabled {
+    color: #262626;
+    font-size: px2vw(30);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+  }
+}
+/deep/ .md-field-item-content {
+  padding-left: px2vw(40);
+}
+/deep/ .md-field-item.is-solid .md-field-item-title {
+  // width: px2vw(150);
+  font-size: px2vw(30);
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  margin-right: 0;
+}
+/deep/ .md-field-item-content:before {
+  content: none;
+}
+/deep/ .md-field-item {
+  flex: 1;
+}
+.bank {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  .iconfont {
+    padding-right: px2vw(40);
+  }
+}
+/deep/ .md-input-item-input,
+/deep/ .van-field__control {
+  font-size: px2vw(30);
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+}
+</style>

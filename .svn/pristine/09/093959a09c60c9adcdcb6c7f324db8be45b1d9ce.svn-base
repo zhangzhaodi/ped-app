@@ -1,0 +1,977 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <Scroller>
+      <div class="content-box">
+        <div class="bank-card">
+          <p>本行银行卡</p>
+        </div>
+        <div
+          class="bank-info"
+          :class="{
+            electronicCard: form.acctTypCd == '1',
+            electronicCardOne:
+              form.acctTypCd == '3' ||
+              form.acctTypCd == '4' ||
+              form.acctTypCd == '5',
+            goldCard: form.cardLevel == 'goldCard',
+            platinumCard: form.cardLevel == 'platinumCard',
+            diamondCard: form.cardLevel == 'diamondCard',
+            reportForLoss: form.cardState == '1'
+          }"
+        >
+          <div v-if="form.cardState == 1" class="loss">该卡已挂失冻结</div>
+          <div v-else>
+            <div class="info-top">
+              <div class="img-out">
+                <div class="info-img">
+                  <img
+                    src="@/assets/myAccount/allCard/img_yinhangkalogo@2x.png"
+                    alt
+                  />
+                </div>
+                <p>{{ form.contTypCd == "2" ? "借记卡" : "电子账户" }}</p>
+              </div>
+              <div class="eye">
+                <i
+                  @click="hideCardNum = 1"
+                  v-show="hideCardNum == 0"
+                  class="iconfont"
+                  >&#xe61e;</i
+                >
+                <i
+                  @click="hideCardNum = 0"
+                  v-show="hideCardNum == 1"
+                  class="iconfont"
+                  >&#xe64c;</i
+                >
+              </div>
+            </div>
+            <div class="info-middle">
+              <p v-if="hideCardNum == '1'">
+                <span>{{ form.vouId.substr(0, 4) }}</span>
+                <span>****</span>
+                <span>****</span>
+                <span>***</span>
+                <span>{{ form.vouId.substr(15, 4) }}</span>
+              </p>
+              <p v-else>
+                <span>{{ form.vouId.substr(0, 4) }}</span>
+                <span>{{ form.vouId.substr(4, 4) }}</span>
+                <span>{{ form.vouId.substr(8, 4) }}</span>
+                <span>{{ form.vouId.substr(12, 3) }}</span>
+                <span>{{ form.vouId.substr(15, 4) }}</span>
+              </p>
+            </div>
+            <div class="info-bottom">
+              <div>
+                <p>账户余额(人民币)</p>
+                <span v-if="form.balance - 0 >= 0">{{
+                  form.balance | Money
+                }}</span>
+                <span v-else>{{ form.balance }}</span>
+              </div>
+              <div>
+                <p>开户网点</p>
+                <span class="bankName">{{ form.bankName }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul>
+          <li
+            @click="TwoTypeBoundAcctQry(1)"
+            v-if="
+              form.acctTypCd == '4' ||
+                form.acctTypCd == '3' ||
+                form.acctTypCd == '1' ||
+                form.acctTypCd == '5'
+            "
+          >
+            <img src="@/assets/myAccount/myAccount/icon_chongzhi@2x.png" alt />
+            <p>充值</p>
+          </li>
+          <li @click="gotopackage1" v-else>
+            <img
+              src="@/assets/myAccount/myAccount/icon_zhuanzhang@2x.png"
+              alt
+            />
+            <p>转账汇款</p>
+          </li>
+          <li
+            @click="TwoTypeBoundAcctQry(2)"
+            v-if="
+              form.acctTypCd == '4' ||
+                form.acctTypCd == '3' ||
+                form.acctTypCd == '1' ||
+                form.acctTypCd == '5'
+            "
+          >
+            <img src="@/assets/myAccount/myAccount/icon_tixian@2x.png" alt />
+            <p>提现</p>
+          </li>
+          <li @click="gotopackage" v-else>
+            <img
+              src="@/assets/myAccount/myAccount/icon_touzilicai@2x.png"
+              alt
+            />
+            <p>投资理财</p>
+          </li>
+        </ul>
+        <div
+          v-if="form.acctTypCd == '1' && flag == '0'"
+          class="cell-remark"
+          @click="AcctUpgrade"
+        >
+          <div class="left">升级到I类户</div>
+          <div class="right">
+            <p>I类户享有更多转账、支付权益</p>
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <div
+          v-if="form.acctTypCd == '3'"
+          class="cell-remark"
+          @click="entityCardApply"
+        >
+          <div class="left">申请实体卡</div>
+          <div class="right">
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <div class="cell-remark" @click="goRemarkName">
+          <div class="left">备注名</div>
+          <div class="right">
+            <p v-if="form.aliasName" class="remark-name">
+              {{ form.aliasName }}
+            </p>
+            <p v-else>未设置</p>
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <div class="cell-remark" @click="findRemoveLimited">
+          <div class="left">解除受限</div>
+          <div class="right">
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <div
+          v-if="form.contTypCd == '2' && form.cardState == '1'"
+          class="cell-remark"
+          @click="cancelLoss"
+        >
+          <div class="left">解除挂失</div>
+          <div class="right">
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <div
+          @click="viewBindingCard"
+          v-show="
+            form.acctTypCd == '1' ||
+              form.acctTypCd == '3' ||
+              form.acctTypCd == '4' ||
+              form.acctTypCd == '5'
+          "
+          class="cell-remark"
+        >
+          <div class="left">查看绑定卡</div>
+          <div class="right">
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <div
+          class="cell-remark"
+          @click="reportForLoss"
+          v-if="form.contTypCd == '2' && form.cardState == '0'"
+        >
+          <div class="left">挂失冻结</div>
+          <div class="right">
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <div class="cell-remark" @click="unbound">
+          <div class="left">减挂</div>
+          <div class="right">
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+      </div>
+      <div class="record">
+        <div class="record-title">
+          <div class="left">交易记录</div>
+          <div class="right" @click="dealRecord">
+            更多
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <div class="record-month">
+          <div class="top">
+            <p>
+              <span>{{ month }}月/</span>{{ year }}年
+            </p>
+          </div>
+          <div class="bottom">
+            <div class="bottom-box">
+              <p>支出</p>
+              <span>￥{{ totalOutAmt | Money | outAmt }}</span>
+            </div>
+            <div class="bottom-box">
+              <p>收入</p>
+              <span>￥{{ totalInAmt | Money }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="record-day">{{ month1 }}月{{ day }}日 {{ weekday }}</div>
+        <div v-if="records.length == 0" class="empty">
+          <div class="img-box">
+            <img
+              src="@/assets/myAccount/removeLimited/img_kongzhuangtai@2x.png"
+              alt
+            />
+            <p>暂无交易记录</p>
+          </div>
+        </div>
+        <div
+          v-else
+          @click="billDetails(item)"
+          v-for="(item, index) in records"
+          :key="index"
+          class="record-detail"
+        >
+          <div class="detail-left">
+            <p>{{ item.Dscrtx }}</p>
+            <span>{{ item.TransDate || item.TransTime | mouthDay }} </span>
+          </div>
+          <div class="detail-right">
+            <div
+              v-show="item.InAndOut == '收入' && item.TransAmt - 0 >= 0"
+              class="detail-income"
+            >
+              +{{ item.TransAmt | Money }}
+            </div>
+            <div
+              v-show="item.InAndOut == '收入' && item.TransAmt - 0 < 0"
+              class="detail-income"
+            >
+              {{ item.TransAmt | Money }}
+            </div>
+            <div
+              v-show="item.InAndOut == '支出' && item.TransAmt - 0 >= 0"
+              class="detail-expend"
+            >
+              -{{ item.TransAmt | Money }}
+            </div>
+            <div
+              v-show="item.InAndOut == '支出' && item.TransAmt - 0 < 0"
+              class="detail-income"
+            >
+              {{ item.TransAmt | Money }}
+            </div>
+            <div class="balance">余额:{{ item.TransBanlce | Money }}</div>
+          </div>
+        </div>
+      </div>
+    </Scroller>
+    <MyDialog
+      @cancel="cancel"
+      :show="alertShow"
+      :isClose="false"
+      @con="confirm"
+      confirmButtonText="确定"
+      cancelButtonText="取消"
+    >
+      <p slot="content" class="dialog-content">
+        请添加绑定卡
+      </p>
+    </MyDialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { mapState, mapMutations } from "vuex";
+import Scroller from "@/components/Scroller.vue";
+import Dialog from "@/components/Dialog/Dialog.vue";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    MyDialog: Dialog
+  },
+  data() {
+    return {
+      //交易记录
+      income: "3000",
+      expend: "30000",
+      //取到的数据
+      form: null,
+      //传递来的数组索引
+      cardIndex: 0,
+      remarkName: "",
+      tradingRecord: [
+        {
+          type: "跨行转账",
+          balance: "12555",
+          income: "1000",
+          expend: "1000"
+        },
+        {
+          type: "跨行转账",
+          balance: "12555",
+          expend: "1000"
+        },
+        {
+          type: "跨行转账",
+          balance: "12555",
+          income: "1000",
+          expend: "1000"
+        },
+        {
+          type: "跨行转账",
+          balance: "12555",
+          expend: "1000"
+        },
+        {
+          type: "跨行转账",
+          balance: "12555",
+          income: "1000",
+          expend: "1000"
+        }
+      ],
+      hideCardNum: "", //账号保护 1 保护 0 不保护
+      totalInAmt: "", //收入
+      totalOutAmt: "", //支出
+      year: "",
+      month: "",
+      month1: "",
+      day: "",
+      weekday: "",
+      initTime: "",
+      finishTime: "",
+      records: [],
+      //是否二类户升级
+      // showTwoTypeUpgrade: "",
+      password: "", //密码
+      flag: "",
+      alertShow: false
+    };
+  },
+  computed: {
+    ...mapState("myAccount", {
+      cardLists: state => state.cardLists
+    })
+  },
+  created() {
+    this.flag = this.$route.query.flag;
+    this.cardIndex = this.$route.query.cardIndex - 0;
+    console.log(this.cardLists, this.cardIndex);
+    this.form = this.cardLists[this.cardIndex];
+    console.log(this.form);
+    this.updataCardNum(this.form.vouId);
+    window.NativeCall.hideCardNum(value => {
+      this.hideCardNum = value;
+    });
+    console.log(this.form);
+    let myDate = new Date();
+    let myddy = myDate.getDay(); //获取存储当前日期
+    let weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+    this.weekday = weekday[myddy];
+    let day = myDate.getDate();
+    if (day < 10) {
+      day = "0" + day;
+    }
+    this.day = day;
+    let month = myDate.getMonth() + 1;
+    this.month1 = month;
+    this.year = myDate.getFullYear();
+    if (month < 10) {
+      month = "0" + month;
+    }
+    this.month = month;
+    this.initTime = this.year + `${this.month}` + this.day;
+    this.finishTime = this.initTime;
+    this.CustInOutDetailQry();
+  },
+  methods: {
+    ...mapMutations("myAccount", ["updataCardNum"]),
+    //账号保护
+    changeCardNum() {
+      this.showProtect = !this.showProtect;
+    },
+    //去充值
+    goRecharge() {
+      this.$router.push({
+        name: "recharge",
+        query: {
+          cardNum: this.form.vouId,
+          balance: this.form.balance
+        }
+      });
+    },
+    //去提现
+    withdrawDeposit() {
+      this.$router.push({
+        name: "withdrawDeposit",
+        query: {
+          cardNum: this.form.vouId,
+          balance: this.form.balance
+        }
+      });
+    },
+    //查看绑定卡
+    TwoTypeBoundAcctQry(value) {
+      this.request("TwoTypeBoundAcctQry", {
+        BankId: "9999",
+        BranchId: "0101",
+        ChnlId: "39",
+        CardNo: this.form.vouId
+      })
+        .then(res => {
+          console.log(res);
+          if (res.List.length == 0) {
+            this.alertShow = true;
+          } else {
+            if (value == 1) {
+              this.goRecharge();
+            } else {
+              this.withdrawDeposit();
+            }
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //Dialog的取消
+    cancel() {
+      this.alertShow = false;
+    },
+    //Dialog的确定
+    confirm() {
+      this.viewBindingCard();
+    },
+    //跳到转账
+    gotopackage1() {
+      let params = {
+        package: "transferAccounts",
+        router: "",
+        routerDic: ""
+      };
+      window.NativeCall.goToPackage(params);
+    },
+    //跳到理财
+    gotopackage() {
+      let params = {
+        package: "manageMoney",
+        router: "",
+        routerDic: ""
+      };
+      window.NativeCall.goToPackage(params);
+    },
+    //验证密码
+    PayPasswordVal() {
+      this.request("PayPasswordVal", {
+        BranchId: "1699",
+        ChnlId: "39",
+        PayPwd: this.password,
+        TrsAcNo: this.form.vouId
+      })
+        .then(res => {
+          console.log(res);
+          this.$router.push({
+            name: "accountUpgrade"
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //升级二类户到一类户
+    AcctUpgrade() {
+      window.NativeCall.SecureKeyboard(param => {
+        this.password = param;
+        this.PayPasswordVal();
+      });
+    },
+    //实体卡申请
+    entityCardApply() {
+      this.$router.push({
+        name: "entityCardApply",
+        query: {
+          cardNum: this.form.vouId
+        }
+      });
+    },
+    //设置备注名
+    goRemarkName() {
+      this.$router.push({
+        name: "remarkName",
+        query: {
+          cardNum: this.form.vouId,
+          cardIndex: this.cardIndex,
+          remarkName: this.form.aliasName,
+          userAcctId: this.form.userAcctId,
+          userId: this.form.userId
+        }
+      });
+    },
+    //挂失冻结
+    cancelLoss() {
+      this.$router.push({
+        name: "cancelLoss",
+        query: { cardNum: this.form.vouId }
+      });
+    },
+    //解除挂失
+    reportForLoss() {
+      this.$router.push({
+        name: "reportForLoss",
+        query: { cardNum: this.form.vouId }
+      });
+    },
+    //查看绑定卡
+    viewBindingCard() {
+      this.$router.push({
+        name: "viewBindingCard",
+        query: { cardNum: this.form.vouId, acctName: this.form.acctName }
+      });
+    },
+    //解绑
+    unbound() {
+      this.$router.push({
+        name: "unbound",
+        query: {
+          cardNum: this.form.vouId,
+          type: "1", //减挂
+          userAcctId: this.form.userAcctId,
+          userId: this.form.userId
+        }
+      });
+    },
+    //解除受限
+    findRemoveLimited() {
+      this.$router.push({
+        name: "removeLimited",
+        query: { cardNum: this.form.vouId }
+      });
+    },
+    //交易详情
+    dealRecord() {
+      this.$router.push({
+        name: "dealRecord",
+        query: { cardNum: this.form.vouId }
+      });
+    },
+    //交易明细查询
+    CustInOutDetailQry() {
+      this.request("CustInOutDetailQry", {
+        CstNo: this.ecifContId,
+        AcctNo: this.form.vouId,
+        StartDate: this.initTime,
+        EndDate: this.finishTime,
+        ChnlId: "62",
+        BranchId: "0110",
+        TimeSign: "4"
+      })
+        .then(res => {
+          console.log(res);
+          this.records = res.List;
+          // let allRecords = res.List;
+          // if (allRecords.length >= 10) {
+          //   this.record = allRecords.slice(0, 10);
+          // } else {
+          //   this.record = allRecords;
+          // }
+          this.totalInAmt = res.totalInAmt;
+          this.totalOutAmt = res.totalOutAmt;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //账单明细
+    billDetails(params) {
+      this.$router.push({
+        name: "billDetails",
+        query: {
+          params: JSON.stringify(params),
+          cardNum: this.form.vouId
+        }
+      });
+    }
+  },
+  filters: {
+    outAmt: function(value) {
+      if (!value || value == 0) {
+        return "0.00";
+      }
+      value = value.toString();
+      return value.substring(1, value.length);
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.scrollerBox {
+  background: rgba(245, 246, 248, 1);
+}
+.content-box {
+  background: #fff;
+  padding: 0 px2vw(40);
+  .bank-card {
+    padding: px2vw(30) 0 px2vw(20);
+    p {
+      font-size: px2vw(28);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(28);
+    }
+  }
+  .bank-info {
+    height: px2vw(286);
+    background: url("~@/assets/myAccount/allCard/img_yinhnagka@2x.png")
+      no-repeat;
+    background-size: px2vw(670);
+    padding: px2vw(30) 0 0 px2vw(40);
+    .loss {
+      padding-top: px2vw(117);
+      padding-left: px2vw(197);
+      font-size: px2vw(28);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      margin: auto;
+    }
+    .info-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-right: px2vw(60);
+      .img-out {
+        display: flex;
+        align-items: center;
+        .info-img {
+          width: px2vw(200);
+          margin-right: px2vw(20);
+          img {
+            width: 100%;
+          }
+        }
+        p {
+          font-size: px2vw(22);
+          font-family: PingFangSC;
+          font-weight: 300;
+          color: rgba(255, 255, 255, 1);
+        }
+      }
+      .eye {
+        width: px2vw(30);
+        text-align: center;
+        .iconfont {
+          font-size: px2vw(20);
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+    }
+    .info-middle {
+      margin-top: px2vw(30);
+      padding-right: px2vw(40);
+      font-size: px2vw(40);
+      font-family: PingFangSC;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 1);
+      p {
+        display: flex;
+        justify-content: space-between;
+      }
+    }
+    .info-bottom {
+      display: flex;
+      justify-content: space-between;
+      margin-top: px2vw(30);
+      padding-right: px2vw(60);
+      p {
+        font-size: px2vw(24);
+        font-family: PingFangSC;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 1);
+        margin-bottom: px2vw(8);
+      }
+      span {
+        font-size: px2vw(34);
+        font-family: PingFangSC;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 1);
+        line-height: px2vw(34);
+      }
+      .bankName {
+        font-size: px2vw(26);
+      }
+    }
+  }
+  .goldCard {
+    background: url("~@/assets/myAccount/allCard/img_yinhangka @2x.png")
+      no-repeat;
+    background-size: px2vw(670);
+  }
+  .platinumCard {
+    background: url("~@/assets/myAccount/allCard/img_bg_yinhangka@2x.png")
+      no-repeat;
+    background-size: px2vw(670);
+  }
+  .diamondCard {
+    background: url("~@/assets/myAccount/allCard/img-yinhangka@2x.png")
+      no-repeat;
+    background-size: px2vw(670);
+  }
+  .electronicCard {
+    background: url("~@/assets/myAccount/allCard/img_yinhangkaIIlei@2x.png")
+      no-repeat;
+    background-size: px2vw(670);
+  }
+  .electronicCardOne {
+    background: url("~@/assets/myAccount/allCard/img_yinhangkaIlei@2x.png")
+      no-repeat;
+    background-size: px2vw(670);
+  }
+  .reportForLoss {
+    background: url("~@/assets/myAccount/allCard/img_yinhangkadongjie@2x.png")
+      no-repeat;
+    background-size: px2vw(670);
+  }
+  ul {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: px2vw(20);
+    li {
+      width: px2vw(325);
+      height: px2vw(100);
+      background: rgba(255, 255, 255, 1);
+      border-radius: px2vw(8);
+      box-shadow: 0px 10px 40px 0px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(245, 245, 245, 1);
+      display: flex;
+      justify-content: center;
+      img {
+        padding-top: px2vw(26);
+        width: px2vw(48);
+        height: px2vw(48);
+        margin-right: px2vw(20);
+      }
+      p {
+        font-size: px2vw(28);
+        font-family: PingFangSC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+    }
+  }
+  .cell-remark {
+    display: flex;
+    align-items: center;
+    line-height: px2vw(110);
+    border-bottom: 1px solid #eeeeee;
+    justify-content: space-between;
+    .left {
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    .right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 300;
+      color: rgba(168, 168, 168, 1);
+      overflow: hidden;
+      margin-left: px2vw(60);
+      .remark-name {
+        color: rgba(38, 38, 38, 1);
+        font-weight: 400;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        // white-space: nowrap;
+      }
+      span {
+        font-size: px2vw(22);
+        margin-left: px2vw(20);
+        line-height: px2vw(110);
+      }
+    }
+  }
+  .cell-remark:last-child {
+    border-bottom: 0;
+  }
+}
+.record {
+  background: #fff;
+  padding: 0 px2vw(40);
+  margin-top: px2vw(20);
+  .record-title {
+    display: flex;
+    align-items: center;
+    line-height: px2vw(110);
+    .left {
+      flex: 1;
+      font-size: px2vw(32);
+      font-family: PingFangSC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+    }
+    .right {
+      display: flex;
+      font-size: px2vw(26);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(153, 156, 160, 1);
+      justify-content: space-between;
+      align-items: center;
+      p {
+        line-height: px2vw(110);
+      }
+      span {
+        font-size: px2vw(20);
+        margin-left: px2vw(10);
+        line-height: px2vw(110);
+      }
+    }
+  }
+  .record-month {
+    height: px2vw(212);
+    background: url("~@/assets/myAccount/img_jiaoyijilubg@2x.png") no-repeat;
+    background-size: px2vw(670);
+    display: flex;
+    flex-direction: column;
+    .top {
+      padding: px2vw(30);
+      p {
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 1);
+        line-height: px2vw(44);
+        span {
+          font-size: px2vw(36);
+        }
+      }
+    }
+    .bottom {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      padding: 0 px2vw(30) px2vw(4);
+      .bottom-box {
+        flex: 1;
+        p {
+          font-size: px2vw(24);
+          font-family: PingFangSC;
+          font-weight: 400;
+          color: rgba(255, 255, 255, 1);
+          margin-bottom: px2vw(14);
+        }
+        span {
+          font-size: px2vw(36);
+          font-family: PingFangSC;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 1);
+        }
+      }
+    }
+  }
+  .record-day {
+    padding-top: px2vw(30);
+    padding-bottom: px2vw(20);
+    font-size: px2vw(28);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(125, 125, 125, 1);
+  }
+  .record-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: px2vw(130);
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    .detail-left {
+      padding-top: px2vw(24);
+      padding-bottom: px2vw(26);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      p {
+        font-size: px2vw(30);
+        font-family: PingFangSC;
+        font-weight: 400;
+        color: rgba(51, 51, 51, 1);
+        line-height: normal;
+      }
+      span {
+        font-size: px2vw(22);
+        font-family: PingFangSC;
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+        line-height: normal;
+      }
+    }
+    .detail-right {
+      padding-top: px2vw(24);
+      padding-bottom: px2vw(26);
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      .detail-income {
+        font-size: px2vw(30);
+        font-family: PingFangSC-Regular, PingFangSC;
+        font-weight: 400;
+        color: rgba(249, 97, 89, 1);
+        line-height: normal;
+      }
+      .detail-expend {
+        font-size: px2vw(30);
+        font-family: PingFangSC-Regular, PingFangSC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        line-height: normal;
+      }
+      .balance {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Light, PingFang SC;
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+        line-height: normal;
+      }
+    }
+  }
+  .empty {
+    .img-box {
+      width: px2vw(300);
+      margin: px2vw(86) auto 0;
+      padding-bottom: px2vw(40);
+      img {
+        width: 100%;
+      }
+      p {
+        font-size: px2vw(28);
+        font-family: PingFangSC-Regular, PingFangSC;
+        font-weight: 400;
+        color: rgba(168, 168, 168, 1);
+        line-height: px2vw(40);
+        text-align: center;
+        margin-top: px2vw(26);
+      }
+    }
+  }
+}
+</style>

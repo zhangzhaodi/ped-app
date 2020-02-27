@@ -1,0 +1,139 @@
+<template>
+  <div class="list-wrapper"
+       v-if="show">
+    <NavTop title="缴费名录"
+            @back="back" />
+    <ul class="list-content">
+      <li class="list-item"
+          v-for="(item,index) in list"
+          @click="selectList(item)"
+          :key="index">
+        <div class="item">
+          <p class="name">{{item.paymentName}}</p>
+          <p class="no">户号：{{item.paymentNo}}</p>
+        </div>
+        <img class="edit"
+             src="@/assets/payImages/icon_bianji.png">
+        <img class="right"
+             src="@/assets/payImages/icon_gengduo.png">
+      </li>
+    </ul>
+    <div class="add"
+         @click="$router.push({path:`/newPayType/${payType}`})">
+      <p class="name">新建名录</p>
+      <p class="no">将当前户号存为新名录</p>
+    </div>
+  </div>
+</template>
+
+<script>
+import NavTop from './NavTop'
+import Cell from './Cell'
+export default {
+  data () {
+    return {
+      list: []
+    }
+  },
+  components: {
+    NavTop
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    payType: {
+      type: String,
+      default: ''
+    }
+  },
+  mounted () {
+    this.initList()
+  },
+  methods: {
+    back () {
+      this.$emit('update:show', false)
+    },
+    selectList (item) {
+      console.log(item)
+      this.$emit('selectBack', item)
+      this.$emit('update:show', false)
+    },
+    initList () {
+      this.request("PaymentRegister", {
+        OperationType: 3, // 操作类型  1新增2修改3查询4删除
+        Type: this.payType, // 1水费，2电费，3燃气费，4电话费操作类型为新增，修改和查询下必输
+        BankId: "9999",
+        BranchId: "1001",
+        ChnlId: "62",
+      }).then(response => {
+        this.list = response.ListPaymentReg
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.list-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-color: #f5f6f8;
+  z-index: 10001;
+  font-weight: 400;
+  .list-content {
+    margin-bottom: px2vw(20);
+    padding: 0 px2vw(40);
+    background-color: #ffffff;
+    .list-item {
+      display: flex;
+      align-items: center;
+      border-bottom: px2vw(1) solid #eff0f1;
+      .item {
+        flex: 1;
+        padding: px2vw(25) 0;
+        .name {
+          margin-bottom: px2vw(10);
+          font-size: px2vw(30);
+          color: #262626;
+        }
+        .no {
+          font-size: px2vw(24);
+          color: #7d7d7d;
+        }
+      }
+      .edit {
+        margin-right: px2vw(10);
+        padding: px2vw(8);
+        width: px2vw(34);
+        height: px2vw(34);
+      }
+      .right {
+        padding: px2vw(14) px2vw(19);
+        width: px2vw(12);
+        height: px2vw(22);
+      }
+    }
+  }
+  .add {
+    margin-bottom: px2vw(20);
+    padding: px2vw(25) px2vw(40);
+    background-color: #ffffff;
+    .name {
+      margin-bottom: px2vw(10);
+      font-size: px2vw(30);
+      color: #262626;
+    }
+    .no {
+      font-size: px2vw(24);
+      color: #7d7d7d;
+    }
+  }
+}
+</style>

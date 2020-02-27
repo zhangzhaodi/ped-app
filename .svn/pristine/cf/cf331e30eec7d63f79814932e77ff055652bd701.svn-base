@@ -1,0 +1,430 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <!-- <div class="hint" v-if="isreset">
+        <span class="iconfont">&#xe62e;</span>
+        <p>请输入中旅银行账户</p>
+      </div>-->
+      <div class="outer-box" :class="{ reset: isreset }" v-if="this.index == 1">
+        <mInput
+          v-model="userName"
+          @input="verify"
+          title="姓名"
+          placeholder="请输入姓名"
+          maxlength="19"
+        ></mInput>
+        <mInput
+          v-model="bankCardNum"
+          @input="verify"
+          title="卡号"
+          type="bankCard"
+          placeholder="请输入或扫描本人银行卡号"
+          maxlength="19"
+        >
+          <img
+            @click="ScanOcrBankCard"
+            slot="right"
+            src="@/assets/myAccount/addBankCard/icon_saomiao@2x.png"
+            alt
+          />
+        </mInput>
+        <mInput
+          v-model="idCard"
+          @input="verify"
+          title="身份证号"
+          type="text"
+          placeholder="请输入或扫描本人身份证号"
+          maxlength="18"
+        >
+          <img
+            @click="ScanOcrIDCard"
+            slot="right"
+            src="@/assets/myAccount/addBankCard/icon_saomiao@2x.png"
+            alt
+          />
+        </mInput>
+        <mInput
+          v-model="phoneNumber"
+          @input="verify"
+          title="预留手机号"
+          type="phone"
+          placeholder="请填写预留手机号码"
+          maxlength="11"
+        ></mInput>
+        <mInput
+          v-model="verifyCode"
+          @input="verify"
+          title="短信验证码"
+          type="digit"
+          placeholder="请输入短信验证码"
+          maxlength="6"
+        >
+          <template slot="right">
+            <span class="verify" @click="sendHandle" v-if="showTime"
+              >发送验证码</span
+            >
+            <van-count-down
+              @finish="finish"
+              v-else
+              :time="time"
+              format="sss后重发"
+            />
+          </template>
+        </mInput>
+      </div>
+      <div class="outer-box-two" v-else>
+        <div class="cell-remark">
+          <div class="left">姓名</div>
+          <div class="right">
+            <p class="remark-name">{{ showName }}</p>
+          </div>
+        </div>
+        <mInput
+          v-model="bankCardNum"
+          @input="verify"
+          title="卡号"
+          type="bankCard"
+          placeholder="请输入或扫描本人银行卡号"
+          maxlength="19"
+        >
+          <img
+            @click="ScanOcrBankCard"
+            slot="right"
+            src="@/assets/myAccount/addBankCard/icon_saomiao@2x.png"
+            alt
+          />
+        </mInput>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">下一步</van-button>
+        </div>
+      </div>
+    </div>
+    <Mydialog :isShow="show" :showCancel="showCancel"></Mydialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import Mydialog from "@/components/Dialog/Dialog.vue";
+import { CountDown, Toast } from "vant";
+import { mapState, mapMutations } from "vuex";
+
+export default {
+  components: {
+    Myheader: Header,
+    mInput,
+    Mydialog,
+    [CountDown.name]: CountDown,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      //是否出现提示信息
+      userName: "",
+      isreset: false,
+      show: false,
+      showCancel: false,
+      //禁用下一步按钮
+      forbidden: true,
+      //银行卡号
+      bankCardNum: "",
+      //身份证号
+      idCard: "",
+      //手机号码
+      phoneNumber: "",
+      //验证码
+      verifyCode: "",
+      userSmsId: "",
+      smsNbr: "",
+      //客户机构号
+      // cifNo: "",
+      // bankNum: "",
+      index: null,
+      showTime: true,
+      time: 60 * 1000
+      // ecifContId: ""
+    };
+  },
+  computed: {
+    ...mapState("myAccount", {
+      showName: state =>
+        state.loginInfo.Name || state.loginInfo.AcList[0].acName,
+      ecifContId: state => state.loginInfo.EcifContId || state.loginInfo.CifNo
+    })
+  },
+  created() {
+    this.index = this.$route.query.index;
+    console.log(this.index, this.ecifContId);
+  },
+  methods: {
+    ...mapMutations("myAccount", ["updataCifNo"]),
+    //是否禁用下一步按钮
+    verify() {
+      if (this.index == 1) {
+        if (
+          this.bankCardNum.length > 0 &&
+          this.userName.length > 0 &&
+          this.idCard.length > 0 &&
+          this.phoneNumber.length > 0 &&
+          this.verifyCode.length == 6
+        ) {
+          this.forbidden = false;
+        } else {
+          this.forbidden = true;
+        }
+      } else {
+        if (this.bankCardNum.length > 0) {
+          this.forbidden = false;
+        } else {
+          this.forbidden = true;
+        }
+      }
+    },
+    next() {
+      this.show = true;
+      if (this.index == 1) {
+        this.cardAcctAddZLConfirm();
+      } else {
+        this.addAccount();
+      }
+    },
+    //首次加挂
+    cardAcctAddZLConfirm() {
+      this.request("CardAcctAddZLConfirm", {
+        AcctName: this.userName,
+        VouId: this.bankCardNum,
+        IdNum: this.idCard,
+        PhoneNbr: this.phoneNumber, //手机号
+        MobilePhone: this.phoneNumber, //手机号
+        Phone: this.phoneNumber, //手机号
+        OTPPassword: this.verifyCode, //6位验证码
+        SmsNbr: this.smsNbr,
+        ApprTyp: "1",
+        ChnlId: "62",
+        BranchId: "0110"
+      })
+        .then(res => {
+          console.log(res.CifNo, res.bankNum);
+          this.updataCifNo(res.CifNo);
+          this.$router.push({
+            name: "enterPassword",
+            query: {
+              cardNum: this.bankCardNum,
+              userName: this.userName,
+              cifNo: res.CifNo,
+              BankNbr: res.BankNbr,
+              BankName: res.BankName,
+              ContTypCd: res.ContTypCd,
+              AcctTypCd: res.AcctTypCd,
+              index: "1"
+            }
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //二次加挂
+    addAccount() {
+      this.request("addAccount", {
+        ChnlId: "62",
+        BranchId: "0110",
+        AcctName: this.showName,
+        VouId: this.bankCardNum,
+        CifNo: this.ecifContId
+      })
+        .then(res => {
+          // this.bankNum = res.BankNum;
+          this.$router.push({
+            name: "enterPassword",
+            query: {
+              cardNum: this.bankCardNum,
+              userName: this.showName,
+              BankNbr: res.BankNbr,
+              BankName: res.BankName,
+              ContTypCd: res.ContTypCd,
+              AcctTypCd: res.AcctTypCd
+            }
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //发送验证码
+    sendHandle() {
+      if (this.phoneNumber.length == "11") {
+        this.showTime = false;
+        this.request("SendSmsOtp", {
+          BankId: "9999",
+          BranchId: "1999",
+          ChnlId: "62",
+          SmsTransType: "1",
+          MobilePhone: this.phoneNumber,
+          PhoneNbr: this.phoneNumber
+        })
+          .then(res => {
+            console.log(res.UserSmsId, res.SmsNbr);
+            this.smsNbr = res.SmsNbr;
+            Toast("短信验证码发送成功");
+          })
+          .catch(error => {
+            console.log(error);
+          });
+      } else {
+        Toast("请输入11位手机号");
+      }
+    },
+    finish() {
+      this.showTime = true;
+    },
+    //扫描银行卡
+    ScanOcrBankCard() {
+      window.NativeCall.ScanOcrBankCard(params => {
+        // alert(params);
+        let res = JSON.parse(params);
+        this.bankCardNum = res.CardNum;
+        this.verify();
+      });
+    },
+    //扫描身份证号码
+    ScanOcrIDCard() {
+      window.NativeCall.ScanOcrIDCard("100", params => {
+        let res = JSON.parse(params);
+        this.idCard = res.Cardno;
+        this.verify();
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.hint {
+  padding: 0 px2vw(40);
+  height: px2vw(68);
+  display: flex;
+  align-items: center;
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(255, 110, 57, 1);
+  span {
+    margin-right: px2vw(12);
+    font-size: px2vw(24);
+  }
+}
+.outer-box {
+  margin-top: px2vw(20);
+  padding: 0 px2vw(40);
+  background: #fff;
+  .sel-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: px2vw(110);
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    font-size: px2vw(30);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    .left {
+      width: px2vw(100);
+    }
+    .right {
+      flex: 1;
+    }
+  }
+  /deep/ .mand-input {
+    .md-field-item-right {
+      img {
+        width: px2vw(32);
+      }
+    }
+    .md-field-item-title {
+      width: px2vw(190);
+    }
+    .verify {
+      font-size: px2vw(28);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(62, 143, 255, 1);
+    }
+    .van-count-down {
+      color: rgba(168, 168, 168, 1);
+    }
+  }
+}
+.outer-box-two {
+  margin-top: px2vw(20);
+  padding: 0 px2vw(40);
+  background: #fff;
+  .cell-remark {
+    display: flex;
+    align-items: center;
+    line-height: px2vw(110);
+    border-bottom: 1px solid #eeeeee;
+    .left {
+      width: px2vw(100);
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    .right {
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 300;
+      color: rgba(168, 168, 168, 1);
+      .remark-name {
+        color: rgba(38, 38, 38, 1);
+        font-weight: 400;
+      }
+    }
+  }
+  .sel-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: px2vw(110);
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    font-size: px2vw(30);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    .left {
+      width: px2vw(100);
+    }
+    .right {
+      flex: 1;
+    }
+  }
+  /deep/ .mand-input {
+    .md-field-item-right {
+      img {
+        width: px2vw(32);
+      }
+    }
+    .md-field-item-title {
+      width: px2vw(100);
+    }
+    .verify {
+      font-size: px2vw(28);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(62, 143, 255, 1);
+    }
+    .van-count-down {
+      color: rgba(168, 168, 168, 1);
+    }
+  }
+}
+.reset {
+  margin-top: 0;
+}
+.btn-box {
+  padding: 0 px2vw(40);
+}
+</style>

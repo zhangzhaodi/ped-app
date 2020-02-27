@@ -1,0 +1,56 @@
+<template>
+  <div class="cell-wrapper">
+    <div class="cell-tips"
+         @click="operation('detail')">
+      <p class="cell-title">{{item.paymentName}}</p>
+      <p class="cell-desc">{{item.paymentNo}}</p>
+    </div>
+    <img @click="operation('edit')"
+         src="@/assets/payImages/icon_bianji.png">
+    <img @click="operation('del')"
+         src="@/assets/payImages/icon_del.png">
+  </div>
+</template>
+<script>
+export default {
+  props: {
+    item: {
+      default: () => { },
+      type: Object
+    }
+  },
+  methods: {
+    operation (operateType) {
+      this.$emit('operation', { ...this.item, operateType })
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.cell-wrapper {
+  padding: 0 px2vw(40);
+  height: px2vw(120);
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid rgba(239, 240, 241, 1);
+  font-family: PingFangSC-Light, PingFang SC;
+  font-weight: 400;
+  .cell-tips {
+    flex: 1;
+    .cell-title {
+      margin-bottom: px2vw(16);
+      font-size: px2vw(30);
+    }
+    .cell-desc {
+      font-size: px2vw(24);
+      color: rgba(125, 125, 125, 1);
+    }
+  }
+  img {
+    padding: px2vw(10);
+    width: px2vw(34);
+    height: px2vw(34);
+  }
+}
+</style>

@@ -1,0 +1,99 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <div class="outer-box">
+        <mInput
+          v-model="remarkName"
+          maxlength="20"
+          title="备注名"
+          type="text"
+          placeholder="请输入备注名"
+        ></mInput>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button @click="next">更改</van-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import { mapState, mapMutations } from "vuex";
+import { Button } from "vant";
+export default {
+  components: {
+    mInput,
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      remarkName: "", //备注名
+      cardNum: "", //卡号
+      cardIndex: null, //卡序号
+      userId: "",
+      userAcctId: ""
+    };
+  },
+  computed: {},
+  created() {
+    this.remarkName = this.$route.query.remarkName;
+    if (this.remarkName == null) {
+      this.remarkName = "";
+    }
+    this.cardNum = this.$route.query.cardNum;
+    this.cardIndex = this.$route.query.cardIndex - 0;
+    this.userAcctId = this.$route.query.userAcctId;
+    this.userId = this.$route.query.userId;
+  },
+  methods: {
+    ...mapMutations("myAccount", ["updataCardInfo"]),
+    next() {
+      //更改备注名交易
+      this.addAccountUnbundling();
+    },
+    //更改备注名
+    addAccountUnbundling() {
+      console.log(this.userAcctId, this.userId);
+      this.request("addAccountUnbundling", {
+        BankId: "9999",
+        BranchId: "1699999999",
+        ChnlId: "39",
+        Defendtyp: "1",
+        UserAcctId: this.userAcctId,
+        VouId: this.cardNum,
+        UserId: this.userId,
+        AcctName: this.remarkName
+      })
+        .then(res => {
+          //更改选中卡的备注名
+          this.updataCardInfo({
+            index: this.cardIndex,
+            info: this.remarkName
+          });
+          this.$router.go(-1);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer-box {
+  margin-top: px2vw(20);
+  padding: 0 px2vw(40);
+  background: #fff;
+  /deep/ .md-field-item-title {
+    width: px2vw(130);
+  }
+}
+.btn-box {
+  padding: 0 px2vw(40);
+}
+</style>

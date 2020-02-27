@@ -1,0 +1,805 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="fund section">
+        <h2>
+          {{data.productName||''}}
+        </h2>
+        <div class="tags">
+          <van-tag class="tag-item" type="warning">{{data.riskGradeName}}</van-tag>
+          <van-tag class="tag-item" type="warning">{{getProcudtType(data.procudtAtrrib)}}</van-tag>
+          <van-tag class="tag-item" type="warning" v-if="data.prd_label">{{data.prd_label}}</van-tag>
+        </div>
+        <footer>
+          <div class="item">
+            <p class="top">日跌涨幅</p>
+            <p class="earnings">{{data.dayFloat || "0%"}}</p>
+          </div>
+          <div class="md-line"></div>
+          <div class="item">
+            <p class="top">最新净值（{{prodDate}}）</p>
+            <p class="net-value">{{data.prodValue}}</p>
+          </div>
+        </footer>
+      </div>
+      <!-- 业绩走势 -->
+      <div class="charts-box section">
+        <van-tabs v-model="active" class="charts-tabs" :border="false" line-width="16" line-height="2" title-inactive-color="#7d7d7d" title-active-color="#262626">
+          <van-tab title="业绩走势" class="charts-content"></van-tab>
+          <van-tab title="单位净值" class="charts-content"></van-tab>
+        </van-tabs>
+        <div class="">
+          <mycharts :chartData="chartData" :chartType="chartType" :interval="interval"></mycharts>
+        </div>
+      </div>
+      <!-- 历史收益 -->
+      <div class="history section" v-show="false">
+        <h2>历史业绩
+          <div class="more" @click="toDetailHistory">
+            更多 <span class="iconfont">&#xe649;</span>
+          </div>
+        </h2>
+        <ul class="performance">
+          <li class="list-item title">
+            <div>日期</div>
+            <div>本产品</div>
+            <div>沪深300</div>
+          </li>
+          <li v-for="(item,index) in historyEarnings" class="list-item" :key="index">
+            <div class="date">{{item.date}}</div>
+            <div :class="item.this > 0 ? 'earnings' : 'minus'"><span v-if='item.this > 0'>+</span>{{item.this}}%</div>
+            <div :class="item.other > 0 ? 'earnings' : 'minus'"><span v-if='item.this > 0'>+</span>{{item.other}}%</div>
+          </li>
+        </ul>
+      </div>
+      <!-- 交易规则 -->
+      <div class="rule section">
+        <h2>交易规则
+          <!-- <div class="more" @click="toTradingRule">买入，卖出规则及费率 <span class="iconfont">&#xe649;</span></div> -->
+        </h2>
+        <img src="@/assets/manageMoney/img_touziguize@2x.png" class="bar" />
+        <div class="shaft">
+          <!-- 时间轴 -->
+          <div class="left">
+            <p class="title">买入</p>
+            <p class="time">{{buyDate}} 15：00前</p>
+          </div>
+          <div class="center">
+            <p class="title">确认份额</p>
+            <p class="time">{{confirmDate}}</p>
+          </div>
+          <div class="right">
+            <p class="title">查看盈亏</p>
+            <p class="time">{{profitDate}}</p>
+          </div>
+        </div>
+      </div>
+      <!-- 产品信息 -->
+      <div class="productInfo section">
+        <h2>产品信息</h2>
+        <div class="item">
+          <div class="lable">基本类型</div>
+          <div class="content">{{getProcudtType(data.procudtAtrrib)}}</div>
+        </div>
+        <div class="item">
+          <div class="lable">风险等级</div>
+          <div class="content">{{data.riskGradeName}}</div>
+        </div>
+        <div class="item">
+          <div class="lable">分红方式</div>
+          <div class="content" v-if="data.defDivMode==0">红利转投</div>
+          <div class="content" v-if="data.defDivMode==1">现金分红</div>
+        </div>
+        <div class="item">
+          <div class="lable">产品发起人</div>
+          <div class="content">{{data.prodSponsorName}}</div>
+        </div>
+        <div class="item">
+          <div class="lable">产品托管人</div>
+          <div class="content">{{data.prodTrusteeName}}</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 同意购买 -->
+    <div class="buy">
+      <div class="counter" v-if="!checked" @click="addMyChoice">
+        <img src="@/assets/fund/icon_jiazixuan_normal@2x.png" class="bar" />
+        <p>加自选</p>
+      </div>
+      <div class="counter" v-else @click="deleteMyChoice">
+        <img src="@/assets/fund/icon_jiazixuan_press@2x.png" class="bar" />
+        <p>加自选</p>
+      </div>
+      <!-- <div class="counter">
+        <span class="iconfont iconicon_jisuanqi--"></span>
+        <p>算收益</p>
+      </div> -->
+      <div class="btn normal" @click="toFundPlan">定投</div>
+      <div class="btn" @click="tosSubscribe">申购</div>
+    </div>
+
+    <!-- 是否要去加挂卡 -->
+     <mydialog title="提示" :show="addCardDialog" :isClose="false" :confirmButtonText="`确认`" :cancelButtonText="`取消`" @cancel="addCardDialog = false" @con="confirm">
+      <p slot="content" class="dialog-content">
+        该账户尚无加挂本行银行卡，是否去加挂？
+      </p>
+    </mydialog>
+
+    <!-- 是否要去评估 -->
+    <mydialog title="提示" :show="riskDialog" :isClose="false" :confirmButtonText="`确认`" :cancelButtonText="`取消`" @cancel="riskDialog = false" @con="toRisk">
+      <p slot="content" class="dialog-content">
+        {{riskContent}}
+      </p>
+    </mydialog>
+
+    <!-- 是否要去签约 -->
+    <mydialog title="提示" :show="signDialog" :isClose="false" :confirmButtonText="`确认`" :cancelButtonText="`取消`" @cancel="signDialog = false" @con="toSign">
+      <p slot="content" class="dialog-content">
+        该账户尚未签约，是否去签约？
+      </p>
+    </mydialog>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import dayjs from 'dayjs';
+import { Tag } from 'vant';
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import Mycharts from "../components/testEcharts";
+// import Dialog from "../components/riskDialog.vue";
+import Dialog from "@/components/Dialog/Dialog.vue";
+export default {
+  components: {
+    Myheader: Header,
+    [Tag.name]: Tag,
+    Mycharts,
+    mydialog: Dialog
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      data: {
+        productNo: '',
+        productName: '',
+      },
+      check: false,
+      historyEarnings: [{
+        date: '近1周',
+        this: '4.6',
+        other: '4.2'
+      }, {
+        date: '近1月',
+        this: '-1.25',
+        other: '-4.45'
+      }, {
+        date: '近3月',
+        this: '5.63',
+        other: '4.23'
+      }],
+      active: "业绩走势",
+      chartData: [],
+      chartType: "", //prdValue产品净值yield年化收益率
+      interval: null,
+      checked: false,//
+      optionalinfoId: '',//删除自选所需的标记
+      addCardDialog: false,
+      riskDialog: false,
+      riskContent: '该账户尚未进行基金风险评估，是否去评估？',
+      signDialog: false,
+    };
+  },
+  computed: {
+    ...mapState('fund', ['selectFund','toRouterName']),
+    ...mapState('common', ['userInfo','payeeCards']),
+    prodDate() {
+      return dayjs().format("MM-DD")
+    },
+    buyDate() {
+      return dayjs().format("MM-DD")
+    },
+    confirmDate() {
+      let date = dayjs().add(1, 'd').format("MM-DD");
+      let week = dayjs().add(1, 'd').day();
+      let weekTxt = '';
+      switch (week) {
+        case 1:
+          weekTxt = '周一';
+          break
+        case 2:
+          weekTxt = '周二';
+          break
+        case 3:
+          weekTxt = '周三';
+          break
+        case 4:
+          weekTxt = '周四';
+          break
+        case 5:
+          weekTxt = '周五';
+          break
+        case 6:
+          weekTxt = '周六';
+          break
+        case 7:
+          weekTxt = '周日';
+          break
+        default:
+          weekTxt = ''
+      }
+      return `${date} (${weekTxt})`
+    },
+    profitDate() {
+      let date = dayjs().add(3, 'd').format("MM-DD");
+      let week = dayjs().add(3, 'd').day();
+      let weekTxt = '';
+      switch (week) {
+        case 1:
+          weekTxt = '周一';
+          break
+        case 2:
+          weekTxt = '周二';
+          break
+        case 3:
+          weekTxt = '周三';
+          break
+        case 4:
+          weekTxt = '周四';
+          break
+        case 5:
+          weekTxt = '周五';
+          break
+        case 6:
+          weekTxt = '周六';
+          break
+        case 7:
+          weekTxt = '周日';
+          break
+        default:
+          weekTxt = ''
+      }
+      return `${date} (${weekTxt})`
+    }
+  },
+  created() {
+    console.log(this.selectFund, "选择的基金")
+    this.checked = this.selectFund.checked || false;
+    this.initData()
+    this.getChartsData();
+    this.checkIsInMyChoice();
+  },
+  methods: {
+    ...mapMutations('fund', ['SELECTFUND',"TOROUTERNAME"]),
+    ...mapActions('common', ['getUserInfo','getPayeeCards']),
+    changeCheck() {
+      this.check = !this.check;
+    },
+    getProcudtType(type) {
+      let text = '';
+      switch (status) {
+        // 0普通型，1股票型，2债券型，3混合型，4货币型，9组合型
+        case "0":
+          text = '普通型';
+          break;
+        case "1":
+          text = '股票型';
+          break
+        case "2":
+          text = '债券型';
+          break
+        case "3":
+          text = '混合型';
+          break
+        case "4":
+          text = '货币型';
+          break
+        case "9":
+          text = '组合型';
+          break
+        default:
+          text = "普通型"
+      }
+      return text
+    },
+    initData() {
+      this.data = { ...this.selectFund }
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        PositionString: '1',
+        QueryRowsNum: '20',
+        QueryFields: 'prd_serial~serial_periods~prd_label',
+        ProductNo: this.selectFund.productNo || '',
+        // StartPageNum: '1',
+        // EndPageNum: '10'
+      }
+      this.request('FinancialProMsgQry', params, false, true).then(res => {
+        let { ProductInfo } = res;
+        if (ProductInfo.length > 0) {
+          this.data = { ...res.ProductInfo[0] };
+          this.SELECTFUND(this.data);
+          console.log("获取详情后的selectFund", this.selectFund)
+        }
+      })
+      // &ProductType=1&PositionString=1&QueryRowsNum=20&QueryFields=prd_serial~serial_periods~prd_label&ProductNo=1307-HBJZ-1025xwx
+    },
+    // 去申购
+    tosSubscribe() {
+      this.TOROUTERNAME("subscribe");
+      // this.$router.push({ name: 'signInfo'});
+      this.isLogin();
+     
+    },
+    // 去定投
+    toFundPlan() {
+      this.TOROUTERNAME("fundPlanAdd");
+      this.isLogin();
+      // let checked = this.fundByCheck();
+      // if (checked) {
+      //   this.$router.push({ name: "fundPlanAdd"});
+      // }
+    },
+    toTradingRule() {
+      this.$router.push({ name: 'tradingRules' })
+    },
+    toDetailHistory() {
+      this.$router.push({ name: 'detailHistory' })
+    },
+   
+    // 查询是否登录
+    async isLogin() {
+      console.log(this.userInfo)
+      await this.getUserInfo();
+      if (!this.userInfo.CifNo) {
+        if(process.env.NODE_ENV == "development") {
+          this.login();
+        } else if (process.env.NODE_ENV == "production") {
+          let params = {
+            ios: "DLoginVController",
+            ClassName: "com.example.zlv_master.activity.login.login.LoginActivity"
+          };
+          window.NativeCall.goToNativePage(params, async (res) => {
+            this.login();
+          });
+        }
+      }else{
+        this.hasCard();
+      }
+    },
+    // 查询是否绑卡
+    async hasCard() {
+      await this.getPayeeCards();
+      if (this.payeeCards.length > 0) {
+        this.fundByCheck();
+      } else {
+        this.addCardDialog = true;
+      }
+    },
+    // 是否加挂卡弹窗确认
+    confirm() {
+      this.addCardDialog = false;
+      let params = {
+          package: "addBankCard",
+          router: "",
+          routerDic: ""
+      };
+      window.NativeCall.goToPackage(params,(res)=>{
+        this.fundByCheck();
+      });
+    },
+    toRisk(){
+      this.$router.push({ name: 'riskIndex'});
+    },
+    toSign(){
+      this.$router.push({ name: 'signInfo'});
+    },
+    async fundByCheck() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: '62'
+      }
+      try {
+        let res = await this.request("FundBuyCheck", params, false, true)
+        if (res.success == 1) {
+          console.log("执行跳转",this.toRouterName)
+          this.$router.push({ name: this.toRouterName});
+        } else {
+          return false
+        }
+        console.log(res, "基金购买评估")
+      }
+      catch (err) {
+        // 抛错：5和3 的话没有评估，4评估已过期
+        let errCode = err._RejMessage;
+        if (errCode == 3) {
+          // this.$toast("您还未进行过风险评估")
+          this.riskContent = '该账户尚未进行基金风险评估，是否去评估？',
+          this.riskDialog = true;
+        } else if (errCode == 4) {
+          this.riskContent = "您的风险评估已过期,需要重新进行评估";
+          this.riskDialog = true;
+        } else if (errCode == 5) {
+          this.signDialog = true;
+        }
+      }
+    },
+    getChartsData() {
+      //行情查询
+      let begin = dayjs().startOf('month');
+      let end = dayjs().endOf('month');
+      let beginDate = dayjs(begin).format('YYYYMMDD');
+      let endDate = dayjs(end).format('YYYYMMDD');
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        PositionString: "1",
+        QueryRowsNum: "30",
+        ProductNo: this.selectFund.productNo,
+        StartDate: beginDate,
+        EndDate: endDate
+      };
+      this.request("FinaQuotationQry", { ...params }, false, true).then(res => {
+        console.log(res, "echarts")
+        let resData = res.CurCommisList;
+        let data = [];
+        if (resData.length > 0) {
+          //数据格式正确时取数据
+          resData.map(item => {
+            let time = '';
+            let value = '';
+            if (item.IssueDate && item.IssueDate != '0') {
+              time = dayjs(item.IssueDate).toDate();
+            } else {
+              time = dayjs().toDate();
+              console.log(dayjs().format('YYYY-MM-DD'))
+            }
+            value = item.Yield ? item.Yield : '0';
+            data.push([time, value])
+          })
+        }
+        this.chartData = data
+      }).catch(err => {
+        // let item = [0,0]
+        this.chartData = []
+      })
+    },
+    checkIsInMyChoice() {
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductInfo: this.data.productName,
+        // ProdValue: '',
+        // DayFloat: '',
+        StartPageNum: "1",
+        EndPageNum: "10",
+        UserId: this.userInfo.CifNo,
+      }
+      this.request('FundOwnChoice', params, true, true).then(res => {
+        console.log("基金列表", res)
+        if (res.List.length > 0) {
+          this.checked = true;
+          this.optionalinfoId = res.List[0].optionalinfoId;
+        } else {
+          this.checked = false;
+        }
+        let data = { ...this.selectFund };
+        data.checked = this.checked;
+        data.optionalinfoId = this.optionalinfoId;
+        this.SELECTFUND(data);
+      }).catch(err => {
+
+      })
+    },
+    deleteMyChoice() {
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        OptionalinfoId: this.optionalinfoId,
+        UserId: this.userInfo.CifNo,
+      }
+      this.request('MyOwnChoiceDelete', params).then(res => {
+        console.log(res, "删除自选成功")
+        this.checked = false;
+        let data = { ...this.selectFund };
+        data.checked = this.checked;
+        this.SELECTFUND(data);
+      })
+    },
+    addMyChoice() {
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductNo: this.selectFund.productNo,
+        ProductName: this.selectFund.productName,
+        ProdValue: this.selectFund.prodValue,
+        MonthFloat: this.selectFund.monthFloat,
+        DayFloat: this.selectFund.dayFloat,
+        UserOrg: "1",
+        UserId: this.userInfo.CifNo,
+      }
+      this.request('MyOwnChoiceAddConfirm', params).then(res => {
+        params._tokenName = res._tokenName;
+        this.request('MyOwnChoiceAdd', params).then(res => {
+          console.log(res, "加自选成功")
+          this.checked = true;
+          let data = { ...this.selectFund };
+          data.checked = this.checked;
+          this.SELECTFUND(data);
+        })
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.content {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: -1px;
+}
+.content::-webkit-scrollbar {
+  display: none; /*隐藏滚动条*/
+}
+.section {
+  margin-bottom: px2vw(20);
+  background: #fff;
+  h2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: px2vw(32);
+    color: #262626;
+    font-weight: 500;
+    .more {
+      color: #999ca0;
+      font-size: px2vw(26);
+      .iconfont {
+        font-size: px2vw(10);
+      }
+    }
+  }
+}
+.fund {
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  overflow: hidden;
+  margin-bottom: px2vw(20);
+  h2 {
+    width: 100%;
+    margin-top: px2vw(40);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: px2vw(36);
+    font-weight: 500;
+  }
+  .tags {
+    margin-top: px2vw(20);
+    .tag-item {
+      background: #e39e5c;
+      background: linear-gradient(
+        212deg,
+        rgba(255, 251, 246, 1) 0%,
+        rgba(255, 244, 233, 1) 100%
+      );
+      border-radius: px2vw(4);
+      font-size: px2vw(20);
+      color: #e39e5c;
+      padding: px2vw(4) px2vw(8);
+      margin-right: px2vw(20);
+    }
+  }
+
+  footer {
+    display: flex;
+    margin-bottom: px2vw(40);
+    margin-top: px2vw(60);
+    justify-content: center;
+    align-items: center;
+    .md-line {
+      width: 1px;
+      background: #dbdbdb;
+      height: px2vw(70);
+      margin: 0 px2vw(103);
+      margin-top: px2vw(7);
+    }
+    .item {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      .top {
+        font-size: px2vw(24);
+        color: #262626;
+        margin-bottom: px2vw(10);
+      }
+      .earnings {
+        color: #f96159;
+        font-size: px2vw(36);
+        span {
+          font-size: px2vw(30);
+        }
+      }
+      .net-value {
+        font-size: px2vw(36);
+      }
+    }
+  }
+}
+.rule {
+  padding: px2vw(40) px2vw(38) px2vw(50) px2vw(38);
+  img {
+    width: 100%;
+    height: px2vw(22);
+    margin-top: px2vw(57);
+  }
+  .shaft {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(18);
+    .title {
+      font-size: px2vw(28);
+      font-weight: 400;
+      color: #262626;
+    }
+    .time {
+      margin-top: px2vw(11);
+      font-size: px2vw(22);
+      font-weight: 400;
+      color: #7d7d7d;
+    }
+    .left {
+      .title {
+        text-align: left;
+      }
+    }
+    .center {
+      .title {
+        text-align: center;
+      }
+    }
+    .right {
+      .title {
+        text-align: right;
+      }
+    }
+  }
+}
+.productInfo {
+  padding: px2vw(40) px2vw(40) px2vw(52) px2vw(40);
+  box-sizing: border-box;
+  .item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(40);
+    .lable {
+      width: px2vw(140);
+      font-size: px2vw(28);
+      font-weight: 300;
+      color: #7d7d7d;
+      margin-right: px2vw(68);
+    }
+    .content {
+      font-size: px2vw(28);
+      font-weight: 400;
+      color: #000000;
+      text-align: left;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+}
+.history {
+  padding: px2vw(40) px2vw(40) px2vw(20) px2vw(40);
+  h2 {
+    margin-bottom: px2vw(19);
+  }
+  .performance {
+    display: flex;
+    flex-direction: column;
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      height: px2vw(110);
+      align-items: center;
+      font-size: px2vw(30);
+      color: #262626;
+      border-bottom: 1px solid #ebeef0;
+      &:last-child {
+        border-bottom: none;
+      }
+      &.title {
+        color: #7d7d7d;
+      }
+      div {
+        display: flex;
+        width: px2vw(140);
+        &:last-child {
+          width: px2vw(115);
+        }
+        &.earnings {
+          color: #f96159;
+        }
+        &.minus {
+          color: #27cd6e;
+        }
+      }
+    }
+  }
+}
+
+.buy {
+  width: 100%;
+  height: px2vw(120);
+  display: flex;
+  flex-direction: row;
+  box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.1);
+  .counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: px2vw(140);
+    background: #fff;
+    font-size: 0;
+    border-right: px2vw(1) solid rgba(211, 215, 226, 0.5);
+    img {
+      width: px2vw(40);
+    }
+    .iconfont {
+      font-size: px2vw(40);
+      color: #7d7d7d;
+    }
+    p {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #262626;
+      margin-top: px2vw(12);
+    }
+  }
+  .btn {
+    flex: 1;
+    font-size: px2vw(34);
+    height: px2vw(120);
+    font-weight: 400;
+    color: #ffffff;
+    text-align: center;
+    line-height: px2vw(120);
+    background: linear-gradient(#ffdfc7, #d69f81);
+    &.normal {
+      background: #fff;
+      color: #da9a78;
+    }
+  }
+}
+
+.charts-box {
+  padding: 0 px2vw(40);
+  /deep/ .charts-tabs {
+    .van-tab {
+      display: block;
+      flex: none;
+      font-size: px2vw(26);
+      padding: 0 px2vw(17);
+      &.van-tab--active {
+        font-size: px2vw(30);
+      }
+    }
+    .van-tabs__line {
+      background: #262626;
+      // height:px2vw(4);
+      // width:px2vw(32);
+      bottom: 20px;
+    }
+  }
+}
+</style>

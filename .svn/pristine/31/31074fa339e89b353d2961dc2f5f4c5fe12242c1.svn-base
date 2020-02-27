@@ -1,0 +1,139 @@
+<template>
+  <!-- <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader> -->
+  <van-popup :overlay-style="{background:'#fff',opacity: 0}" v-model="visible" :style="{ 'margin-top': '5%', height: '95%',width: '100%' }"  position="right" >
+    <div class="profession-select outer">
+      <search style="search"></search>
+      <Scroller>
+        <div>
+          <van-cell
+            v-for="(item,index) in professionList"
+            :key="index"
+            :title="item.name"
+            is-link
+            @click="selectItem(item)"
+          />
+        </div>
+      </Scroller>
+    </div>
+  </van-popup>
+</template>
+<script>
+import { Cell, Toast, Popup, TreeSelect } from "vant";
+import Scroller from "@/components/Scroller.vue";
+import Search from "./Search";
+export default {
+  components: {
+    [Cell.name]: Cell,
+    [Toast.name]: Toast,
+    [Popup.name]: Popup,
+    [TreeSelect.name]: TreeSelect,
+    Search,
+    Scroller
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+  },
+  data() {
+    return {
+      showOverlay: false,
+      treeShow: false,
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      },
+      visible: this.show,
+      professionList: [
+        {
+          name: "销售|客服|市场",
+        },
+        {
+          name: "财务|人力资源|行政",
+        },
+        {
+          name: "项目|质量|高级管理",
+        },
+        {
+          name: "IT|互联网|通信",
+        },
+        {
+          name: "房产|建筑|物业管理",
+        },
+        {
+          name: "金融",
+        },
+        {
+          name: "采购|贸易|交通|物流",
+        },
+        {
+          name: "生产|制造",
+        },
+        {
+          name: "采购|贸易|交通|物流",
+        },
+        {
+          name: "生产|制造",
+        }, {
+          name: "采购|贸易|交通|物流",
+        },
+        {
+          name: "生产|制造",
+        }, {
+          name: "采购|贸易|交通|物流",
+        },
+        {
+          name: "生产|制造",
+        },
+        {
+          name: "传媒|印刷|艺术|设计",
+        }
+      ]
+    };
+  },
+  created() {
+  },
+  methods: {
+    selectItem(item) {
+      this.visible = false;
+      this.$emit('select',item)
+    },
+  },
+  watch:{
+    //监听父组件变化，并赋值
+    show:{
+      handler(val){
+        this.visible = this.show;
+      }
+    },
+    visible:{
+      handler(val){
+        this.$emit('update:show', val)
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss">
+.profession-select {
+  .search{
+    height: 100px;
+  }
+  .van-cell__title {
+    padding:0 px2vw(40) 0;
+    height:px2vw(30);
+    font-size:px2vw(30);
+    font-family:PingFangSC-Regular,PingFang SC;
+    font-weight:400;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(30);
+    letter-spacing:px2vw(1);
+  }
+  .van-icon-arrow:before{
+    padding-right:px2vw(40);
+  }
+}
+
+</style>

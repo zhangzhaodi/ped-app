@@ -1,0 +1,392 @@
+<template>
+  <div class="resultPage">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="content" v-show="success==1">
+      <!-- 转账成功 -->
+      <div class="top">
+        <img class="img1" src="@/assets/transferAccounts/icon_jieguoye_chenggong@2x.png" alt="">
+        <p class="msg">{{yuyue ? "预约转账添加成功" : "转账成功"}}</p>
+        <p class="info" v-if="!yuyue">预计{{getArriveTime(payee.ArriveTime)}}到账，实际时间以入账银行为准</p>
+        
+      </div>
+
+      <div class="line"></div>
+      <div class="detail">
+        <div class="payer">
+          <p class="left">
+            <span class="label">收款人</span>
+            {{payee.name}}&nbsp;&nbsp;|&nbsp;&nbsp; {{ payee.bankCard | hideCard }}
+          </p>
+          </p>
+        </div>
+        <div class="payer">
+          <p class="left">
+            <span class="label">转账金额</span>
+            ￥{{payee.transAmt | Money}}
+          </p>
+          <p class="right" v-if="!yuyue" @click="goDetail">查看交易明细</p>
+        </div>
+        <div class="payer" v-if="yuyue">
+          <p class="left">
+            {{dateText(payee)}}为您推送预约转账提醒
+          </p>
+          <!-- <p class="right"@click="toRemind">查看提醒</p> 金融日历暂不上线 暂不开发此点击功能-->
+        </div>
+      </div>
+      <!-- 勾选是否默认添加收款人 -->
+      <div class="terms">
+        <van-checkbox v-model="checked">
+          将收款人保存到收款人记录登记簿
+          <img slot="icon" slot-scope="props" :src="props.checked ? icon.active : icon.inactive">
+        </van-checkbox>
+      </div>
+      <div class="btn">
+        <van-button type="default" class="gohome" @click="again">再转一笔</van-button>
+        <van-button type="default" class="again" @click="gohome">完成</van-button>
+      </div>
+    </div>
+
+    <div class="content" v-show="success == 0">
+      <!-- 转账失败 -->
+      <div class="top">
+        <img class="img1" src="@/assets/transferAccounts/icon_jieguoye_shibai@2x.png" alt="">
+        <p class="msg">{{yuyue ? "预约转账添加失败" : "转账失败"}}</p>
+        <p class="info">{{res._RejMessage}}</p>
+      </div>
+
+      <div class="line"></div>
+      <div class="detail">
+        <div class="payer">
+          <p class="left">
+            <span class="wrong-code">错误码： &nbsp;&nbsp; {{res._RejCode}}</span>
+          </p>
+          <!-- <p class="right">在线客服</p> -->
+        </div>
+        <div class="payer" v-if="!yuyue">
+          <p class="left">
+            汇款将在1个工作日内原路返还
+          </p>
+        </div>
+      </div>
+
+      <div class="btn">
+        <van-button type="default" class="gohome" @click="gohome">返回首页</van-button>
+        <van-button type="default" class="again" @click="again">再试一次</van-button>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+export default {
+  components: {
+    Myheader: Header
+  },
+  props: {
+    data: {
+      require: true,
+    }
+  },
+  created() {
+    this.success = this.$route.query.success;
+    if(this.$route.params.payee){
+      this.payee = this.$route.params.payee;
+    }
+    // this.payee = {
+    //   AppointmentType: "Period",
+    //   ApprTyp: 1,
+    //   //branchId: "1666303020",
+    //   CheckAccPassw: "0",
+    //   ChnlId: "62",
+    //   CreateDate: "2019-11-15",
+    //   EndDate: "2019-11-24",
+    //   ExtTransTypCd: "1146",
+    //   IBPSFlag: 1,
+    //   IsFGBiz: "2",
+    //   Password1: "111111",
+    //   PayeeAcctName: "交行客户",
+    //   PayeeAcctNbr: "6222600620011434192",
+    //   PayeeBankName: "交通银行",
+    //   PayeeBankNbr: "301290000007",
+    //   PayeeOpenAcctBankCode: "301290000007",
+    //   PayerAcctName: "王凯",
+    //   PayerAcctNbr: "6223380011033530410",
+    //   PeriodTyp: 2,
+    //   PeriodVal: "5",
+    //   OTPPassword: "831990",
+    //   SmsNbr: "6801346237",
+    //   TransAmt: "21",
+    //   TransMode: "2",
+    //   TransUsage: "周五",
+    //   TrsAcNo: "6223380011033530410",
+    //   _tokenName: "87xclK",
+    // }
+    console.log(this.$route.query.success, this.payee);
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      payee: {},
+      res: this.$route.params.res || {},
+      yuyue: this.$route.query.yuyue || 0,
+      success: this.$route.query.success || 1,
+      isPhoneTransfer: this.$route.query.isPhoneTransfer || false,
+      icon: {
+        active: require("@/assets/checked.png"),
+        inactive: require("@/assets/unchecked.png"),
+      },
+      checked: true,
+    };
+  },
+  filters: {
+    hideCard(value) {
+      if (!value) {
+        return ''
+      }
+      if (typeof value !== 'string') {
+        value = String(value)
+      }
+      return value.substr(0, 4) + ' ****** ' + value.substr(value.length - 4)
+    },
+  },
+  methods: {
+    gohome() {
+      this.addPayee();
+      this.$router.replace({ name: 'remittance' })
+    },
+    beforeRouteLeave(to, from, next) {
+      if(to.name == 'orderAdd'){
+        from.meta.keepAlive = false
+      }
+      next();
+    },
+    again() {
+      this.addPayee();
+      if(this.isPhoneTransfer){
+        this.$router.replace({ name: 'phoneTransfer' })
+      }else if(this.yuyue){
+        this.$router.replace({ name: 'orderAdd' })
+      }else{
+        this.$router.replace({ name: 'cardTransfer' })
+      }
+    },
+    getArriveTime(data){
+      if(data == "F"){
+        return '实时'
+      }else if(data == "H"){
+        return '两小时内'
+      }else if(data=="T"){
+        return "下个工作日"
+      }else if(data=="D"){
+        return "次日"
+      }
+    },
+    addPayee() {
+      // PayeeRosterEntry
+      if (this.checked && this.success == 1) {
+        let params = {
+          //branchId: '2336',
+          ChnlId: '62',
+          InsertFlag: 'N',
+          PayeeAcctNbr: this.payee.bankCard,
+          PayeeName: this.payee.name,
+          Reconciliation: this.payee.reconciliation || 0,
+          BankNbr: this.payee.bankNbr,//收款行行号
+          BankName: this.payee.bankName,
+          PayeeProvinceCd: this.payee.payeeProvinceCd,//收款行省码
+          PayeeCityCd: this.payee.payeeCityCd,//收款行省码
+          PayeePhoneNbr: this.payee.phone,
+          // IBPSFlag: this.form.IBPSFlag,
+          DotNbr: this.payee.dotNbr,//网点号  行内和超网非必传
+          DotName: this.payee.dotName,//网点号  行内和超网非必传
+        }
+        this.request('PayeeRosterEntry',
+          params
+        ).then((res) => {
+          //添加成功
+          
+        }).catch((error) => {
+          console.log(error)
+        })
+      }
+    },
+    dateText(item) {
+      //00定时转账；01:周期转账；
+      let text = '';
+      if (this.payee.AppointmentType == "Period" && this.payee.PeriodTyp == 2) {
+        let value = Number(this.payee.PeriodVal)
+        switch (value) {
+          case 1:
+            text = '每周一';
+            break;
+          case 2:
+            text = '每周二';
+            break;
+          case 3:
+            text = '每周三';
+            break;
+          case 4:
+            text = '每周四';
+            break;
+          case 5:
+            text = '每周五';
+            break;
+          case 6:
+            text = '每周六';
+            break;
+          case 7:
+            text = '每周日';
+            break;
+          default:
+            text = "没有匹配的值"
+        }
+        return text
+      } else if (this.payee.AppointmentType == "Period" && this.payee.PeriodTyp == 3) {
+        if(this.payee.PeriodVal == 32){
+          return `每月最后一天`
+        }
+        return `每月${this.payee.PeriodVal}日`
+      } else if (this.payee.AppointmentType == "Once") {
+        return this.payee.CreateDate
+      }
+    },
+    goDetail() {
+      this.addPayee();
+      this.res.payeeBankName = this.payee.bankName;
+      this.$router.replace({ name: 'recordDetail' ,params:{res: this.res} })
+    },
+    toRemind(){
+      let params = {
+        ios: 'DcalendarController',
+        ClassName:"com.example.zlv_master.activity.calendar.CalendarActivity"//跳转安卓原生金融日历
+      }
+      window.NativeCall.goToNativePage(params, res => {
+        //跳转至原生页面
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.resultPage {
+  background: #fff;
+  .terms {
+    padding: 0 px2vw(40);
+    margin-top: px2vw(120);
+    /deep/ .van-checkbox__label {
+      color: #7d7d7d;
+    }
+  }
+}
+.content {
+  font-family: PingFangSC;
+  .top {
+    height: px2vw(348);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    .img {
+      height: px2vw(110);
+      width: px2vw(110);
+      background: linear-gradient(#f96159, #ff4040);
+      border-radius: 50%;
+      color: #fff;
+      line-height: px2vw(110);
+      text-align: center;
+      margin: 0 auto;
+    }
+    .img1 {
+      width: px2vw(110);
+    }
+    .msg {
+      font-size: px2vw(40);
+      font-weight: 400;
+      color: #262626;
+      text-align: center;
+      line-height: px2vw(40);
+      margin-top: px2vw(40);
+    }
+    .info {
+      height: px2vw(28);
+      text-align: center;
+      font-size: px2vw(28);
+      margin-top: px2vw(20);
+      font-family: PingFangSC-Light, PingFangSC;
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+      line-height: px2vw(28);
+    }
+  }
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        flex: none;
+        color:#262626;
+        font-size:px2vw(28);
+        font-family:$font-family;
+        font-weight:400;
+        .label {
+          display: inline-block;
+          color: #7d7d7d;
+          width: px2vw(152);
+          font-weight:300;
+        }
+        .wrong-code {
+          display: inline-block;
+          color: #7d7d7d;
+          font-size: px2vw(24);
+        }
+      }
+      .center {
+        flex: 1;
+        color: #000;
+      }
+      .right {
+        color: #008bff;
+        flex: none;
+      }
+    }
+  }
+  .btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: px2vw(40);
+    font-size: px2vw(30);
+    font-weight: 400;
+    padding: 0 px2vw(40);
+    box-sizing: border-box;
+    /deep/ .van-button {
+      height: px2vw(90);
+      width: px2vw(310);
+      border-radius: px2vw(45);
+    }
+    .gohome {
+      background-color: #fff;
+      border: 1px solid #3e8fff;
+      color: #3e8fff;
+    }
+    .again {
+      background:linear-gradient(270deg,rgba(107,171,255,1) 0%,rgba(108,138,249,1) 100%);
+      border: px2vw(1) solid #3e8fff;
+      color: #fff;
+    }
+  }
+}
+</style>

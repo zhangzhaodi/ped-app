@@ -1,0 +1,279 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <!-- 产品信息 -->
+    <div class="product white">
+      <p class="name">
+        <span>游小宝</span>
+        <span class="rate">2.1234%</span>
+      </p>
+      <p class="num">
+        <span>易基天天理财货币A <span class="iconfont iconicon_gengduo-"></span></span>
+        <span>七日年化</span>
+      </p>
+    </div>
+    <!-- 付款卡 -->
+    <div class="payCard top white">
+      <div class="left">付款卡</div>
+      <div class="right">
+        <div class="bank">
+          <p>
+            <span>{{bank.name}} </span>
+            <span>{{ ' | '+bank.use}}</span>
+            <span>{{bank.bankCard|CardNoFour}}</span>
+          </p>
+          <p class="remain">
+            <span>可用余额:￥</span>
+            <span>{{bank.remain|Money}}</span>
+          </p>
+        </div>
+        <span class="iconfont iconicon_gengduo-"></span>
+      </div>
+    </div>
+    <!-- 输入金额 -->
+    <div class="money top white">
+      <p class="title">转账金额(人民币)</p>
+      <md-amount
+        :value="form.upperMoney"
+        is-capital
+        :style="{'visibility': form.money?'visible':'hidden'}"
+      ></md-amount>
+      <md-input-item
+        type="digit"
+        v-model="form.money"
+        @change="onInputChange"
+        placeholder="请输入"
+        maxlength="12"
+      >
+      <div class="input-operator" slot="right" @click="takeAll">全部转入</div>
+      </md-input-item>
+    <!-- <p class="toast">买入有一定费率，现在购买起息日08-23号</p> -->
+    </div>
+    <!-- 理财周期 -->
+    <!-- <div :class="['period','top','white',{'act':periodSelect}]">
+      <div class="content">
+        <div class="left">理财周期</div>
+        <div class="right" @click="selectPeriod">
+          <p class="label" v-if="!period">理财周期越长，业界比较基准越高</p>
+          <p class="label" v-else-if="periodSelect&&period">{{'当前选择周期'+period+' 业界比较基准4.9%'}}</p>
+          <p class="label selectEnd" v-else-if="!periodSelect&&period">
+            <span>{{period}}</span>
+            <span>(业界比较基准4.6%)</span>
+          </p>
+          <span
+            :class="['iconfont',{'iconicon_zhankai-':!periodSelect},{'iconicon_shouqi-':periodSelect}]"
+          ></span>
+        </div>
+      </div>
+      <div class="bottom" v-if="periodSelect">
+        <p
+          v-for="(item,index) in periodList"
+          :key="index"
+          @click="periodChange(item)"
+          :class="['item',{'active':item==period}]"
+        >{{item}}</p>
+      </div>
+    </div> -->
+    <!-- 到期方式 -->
+    <!-- <div :class="['methods','white',{'act':methodSelect}]">
+      <div class="content">
+        <div class="left">周期到期方式</div>
+        <div class="right" @click="selectMethod">
+          <p class="label" v-if="!methodSelect&&!method">请选择</p>
+          <p class="label" v-else>
+            <span v-if="!method">请选择</span>
+            <span class="selectEnd">{{method}}</span>
+          </p> -->
+          <!-- <p class="label" v-else>请选择</p> -->
+          <!-- <span
+            :class="['iconfont',{'iconicon_zhankai-':!methodSelect},{'iconicon_shouqi-':methodSelect}]"
+          ></span>
+        </div>
+      </div>
+      <div class="bottom" v-if="methodSelect">
+        <p
+          v-for="(item,index) in methodsList"
+          :key="index"
+          @click="methodChange(item)"
+          :class="['item',{'active':item==method}]"
+        >{{item}}</p>
+      </div>
+    </div> -->
+
+    <!-- 推荐人
+    <div class="referrer top white">
+      <p class="left">推荐人</p>
+      <div class="right">
+        <van-field v-model="artNumber" type="number" placeholder="选填" />
+      </div>
+    </div> -->
+    <!-- //转出方式 -->
+    <h5 class="teshu">转出方式</h5>
+    <div class="rollout_means">
+      <div class="rollout_left">
+        <div class="radio_box" v-for="(item,index) in radios" :key="item.id">
+          <span class="radio_one" :class="{'on':item.isChecked}"></span>
+          <input v-model="radio" :value="item.value" class="input_radio" :checked='item.isChecked'  @click="check(index)" type="radio">
+        </div>
+      </div>
+      <div class="rollout_right">
+        <div>
+        <h5>快速转出</h5>
+        <p>预计2小时内到账，转出金额当天不产生收益</p>
+        </div>
+        <div>
+        <h5>快速转出</h5>
+        <p>预计2小时内到账，转出金额当天不产生收益</p>
+        </div>
+      </div>
+      </div>
+    <!-- 提示 -->
+    <div class="notice">
+        <p @click="checkboxone" >
+          <img v-if="ischeckbox"  src="@/assets/travelTreasure/rollout/icon_weigouxuan_nor@2x.png" alt="">
+          <img v-else src="@/assets/travelTreasure/rollout/icon_gouxuan_nor@2x.png" alt="">
+          本人已阅读并同意 <span>《焦作中旅银行个人手机银行开放式基金服务协议》</span> <span>权益须知</span>
+          ，已充分了解并知晓本产品风险，愿意承担相关风险。
+        </p>
+    </div>
+    <!-- 确定 -->
+    <div
+      class="btn white"
+      :style="{'background':disabled?'linear-gradient(#ffdfc7, #d69f81)':''}"
+      @click="toConfirm"
+    >确定</div>
+    <!-- 提示 -->
+    <!-- <Mynotice></Mynotice> -->
+    <confirm :popupFlag="popupFlag" @toResult="toResult" v-if="popupFlag"></confirm>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+// import Notice from "../components/notice";
+import Confirm from "../components/notice";
+import { Amount, InputItem } from "mand-mobile";
+import { Field,RadioGroup, Radio } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    // Mynotice: Notice,
+    Confirm,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [Field.name]: Field
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      ischeckbox:true,
+      noticevalue:123,
+      bank: {
+        bankCard: 1231232131231231,
+        remain: 120000,
+        name: "焦作中旅银行",
+        use: "借记卡"
+      },
+      form: {
+        money: null,
+        upperMoney: null
+      },
+      // 选择状态
+       radio: '1',
+    radios:[
+      {
+        label: '是',
+        value:'1',
+        isChecked: false,
+      },
+      {
+        label: '否',
+        value:'2',
+        isChecked: false,
+      },
+    ],
+    // 时间选择
+      periodList: ["30天", "60天", "90天", "120天", "150天", "180天"],
+      methodsList: ["周期兑付", "周期续作", "自动到期"],
+      period: null,
+      method: null,
+      methodSelect: false,
+      periodSelect: false,
+      disabled: false,
+      artNumber: null, //人工号
+      popupFlag: false //确认页显示
+    };
+  },
+  created() {
+    this.data = this.$route.params;
+    // console.log(this.data);
+    window.scrollTo(0, 0);
+  },
+  mounted(){
+  //  console.log(this.$router.query);
+  },
+  methods: {
+    checkboxone(){
+      console.log('aa');
+     this.ischeckbox=!this.ischeckbox;
+    },
+     takeAll() {
+      this.value = '300000'
+    },
+    onInputChange(name, value) {
+      this.form.upperMoney = parseFloat(value);
+    },
+    periodChange(val) {
+      this.period = val;
+    },
+    methodChange(val) {
+      this.method = val;
+    },
+    selectPeriod() {
+      this.periodSelect = !this.periodSelect;
+    },
+    selectMethod() {
+      this.methodSelect = !this.methodSelect;
+    },
+    toConfirm() {
+
+      //弹出底部弹框
+      this.$router.push({
+        path: '/rolloutresult'
+      });
+      this.$store.state.params = { ...this.form, ...this.data };
+      this.$store.state.params.bank = { ...this.bank };
+      // console.log(1,this.form)
+      this.popupFlag = true;
+    },
+    toResult() {
+      window.NativeCall.SecureKeyboard(params => {
+        if (parasm.ReturnMsg == "交易成功") {
+          this.$router.push({ name: result });
+        }
+      });
+      // console.log('跳转到结果页')
+      this.$router.push({
+        name: 'result'
+      });
+    },
+    //选中状态
+     check(index) {
+    // 先取消所有选中项
+    this.radios.forEach((item) => {
+      item.isChecked = false;
+    });
+    //再设置当前点击项选中
+    this.radio = this.radios[index].value;
+    // 设置值，以供传递
+    this.radios[index].isChecked = true;
+    console.log(this.radio);
+  }
+  }
+};
+</script>
+<style lang="scss" scoped>
+@import "@/styles/travelTreasure/apply.scss";
+</style>

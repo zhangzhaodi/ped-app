@@ -1,0 +1,21 @@
+@import '../global.scss';
+
+.color-blue {
+  color: $color-blue;
+}
+
+.color-blue-light {
+  color: $color-blue-light;
+}
+
+.color-red {
+  color: $color-red;
+}
+
+.bg-white {
+  background-color: #fff;
+}
+
+.color-text {
+  color: $color-text;
+}

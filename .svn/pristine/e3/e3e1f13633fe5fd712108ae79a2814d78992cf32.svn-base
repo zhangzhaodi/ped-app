@@ -1,0 +1,125 @@
+<template>
+  <div>
+    <div class="lineTop"></div>
+    <van-cell-group class="execDate">
+      <van-field
+        label="发起日"
+        placeholder="请选择每周发起日"
+        v-model="weekText"
+        right-icon="arrow"
+        disabled
+        @click="selectTime"
+        :class="{active: weekText!=''}"
+      />
+    </van-cell-group>
+    <div class="lineTop"></div>
+    <van-cell-group class="execDate">
+      <van-field
+        label="执行日期"
+        placeholder="请选择日期"
+        v-model="exeTime"
+        disabled
+        right-icon="arrow"
+        @click="selectStart"
+        :class="{active: exeTime!=''}"
+      />
+    </van-cell-group>
+    <div class="lineTop"></div>
+    <van-cell-group class="execDate">
+      <van-field
+        label="截止日期"
+        placeholder="请选择日期"
+        v-model="endTime"
+        disabled
+        right-icon="arrow"
+        @click="selectEnd"
+        :class="{active: endTime!=''}"
+      />
+    </van-cell-group>
+    <selectWeek :selectWeek.sync="selectWeek"></selectWeek>
+    <selectDay :selectDay.sync="selectDay" :isExe.sync="isExe"></selectDay>
+  </div>
+</template>
+
+<script>
+import selectWeek from "./selectWeek";
+import selectDay from "./selectDay";
+export default {
+  data() {
+    return {
+      selectWeek: false,
+      selectDay: false,
+      week: "",
+      isExe: null,
+      exeTime: "",
+      endTime: "",
+      weekText: "",
+      weekList: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    };
+  },
+  watch: {
+    week: {
+      handler(val) {
+        let week = val;
+        this.weekText = "每" + this.weekList[val];
+        // this.$parent.$parent.form = { week, ...this.$parent.$parent.form };
+        this.$parent.$parent.form.week=val
+        this.$parent.$parent.check()
+      }
+    },
+    exeTime: {
+      handler(val) {
+        let exeTime = val;
+        // this.$parent.$parent.form = { exeTime, ...this.$parent.$parent.form };
+        this.$parent.$parent.form.exeTime=val
+        this.$parent.$parent.check()
+      }
+    },
+    endTime: {
+      handler(val) {
+        let endTime = val;
+        // this.$parent.$parent.form = { endTime, ...this.$parent.$parent.form };
+        this.$parent.$parent.form.endTime=val
+        this.$parent.$parent.check()
+      }
+    }
+  },
+  components: {
+    selectWeek,
+    selectDay
+  },
+  methods: {
+    selectTime() {
+      this.selectWeek = true;
+    },
+    selectStart() {
+      this.isExe = true;
+      this.selectDay = true;
+    },
+    selectEnd() {
+      this.isExe = false;
+      this.selectDay = true;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+/deep/ .van-cell {
+  padding: 0 px2vw(40);
+}
+/deep/ .van-field__control:disabled {
+  color: #a8a8a8;
+}
+.active {
+  /deep/ .van-field__control:disabled {
+    color: #262626;
+    margin-top: px2vw(-6);
+  }
+}
+/deep/ .van-field__label {
+  width: px2vw(120);
+  margin-right: px2vw(40);
+}
+</style>

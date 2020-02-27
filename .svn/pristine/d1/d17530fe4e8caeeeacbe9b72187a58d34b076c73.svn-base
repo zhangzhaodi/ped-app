@@ -1,0 +1,75 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue");
+const Friend = () => import("../pages/friend.vue");//推荐好友
+const AddReferrer = () => import("../pages/addReferrer.vue");
+const AddResult = () => import("../pages/addResult.vue");//添加推荐人
+const Rule = () => import("../pages/rule.vue");//活动规则
+const Invite = () => import("../pages/invite.vue");//二维码邀请
+
+Vue.use(Router);
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title:'推荐分享',
+        keepAlive: false
+      }
+    },
+    {
+      path: "/friend",
+      name: "friend",
+      component: Friend,
+      meta: {
+        title:'推荐好友',
+        keepAlive: false
+      }
+    },
+    {
+      path: "/addReferrer",
+      name: "addReferrer",
+      component: AddReferrer,
+      meta: {
+        title:'添加推荐人',
+        keepAlive: false
+      }
+    },
+    {
+      path: "/addResult",
+      name: "addResult",
+      component: AddResult,
+      meta: {
+        title:'添加推荐人',
+        keepAlive: false
+      }
+    },
+    {
+      path: "/rule",
+      name: "rule",
+      component: Rule,
+      meta: {
+        title:'活动规则',
+        keepAlive: false
+      }
+    },
+    {
+      path: "/invite",
+      name: "invite",
+      component: Invite,
+      meta: {
+        title:'二维码邀请',
+        keepAlive: false
+      }
+    },
+    
+  ]
+});

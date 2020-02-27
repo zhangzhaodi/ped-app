@@ -1,0 +1,212 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="outer-box">
+        <div class="account-box">
+          <p>卡/账号</p>
+          <span>{{ cardNum | CardHide }}</span>
+        </div>
+        <m-Input
+          v-model="phoneNumber"
+          @input="verify"
+          title="预留手机号"
+          type="phone"
+          placeholder="请输入银行卡预留手机号"
+          clearable
+        ></m-Input>
+        <m-Input
+          v-model="verifyCode"
+          @input="verify"
+          title="短信验证码"
+          type="digit"
+          placeholder="请输入短信验证码"
+          maxlength="6"
+        >
+          <template slot="right">
+            <span class="verify" @click="sendHandle" v-if="showTime"
+              >发送验证码</span
+            >
+            <van-count-down
+              @finish="finish"
+              v-else
+              :time="time"
+              format="sss后重发"
+            />
+          </template>
+        </m-Input>
+        <m-Input
+          v-model="tradersPsd"
+          @input="verify"
+          @click.native="SecureKeyboard"
+          title="交易密码"
+          type="password"
+          placeholder="请输入银行卡交易密码"
+          maxlength="6"
+        ></m-Input>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">解除受限</van-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import { Button, CountDown, Toast } from "vant";
+export default {
+  components: {
+    mInput,
+    Myheader: Header,
+    [Toast.name]: Toast,
+    [Button.name]: Button,
+    [CountDown.name]: CountDown
+  },
+  data() {
+    return {
+      params: {
+        backShow: true,
+        leftShow: false,
+        rightShow: false
+      },
+      cardNum: "",
+      phoneNumber: "",
+      verifyCode: "",
+      tradersPsd: "",
+      password: "",
+      forbidden: true,
+      //验证码
+      showTime: true,
+      time: 60 * 1000,
+      //短信验证码相关
+      userSmsId: "",
+      smsNbr: ""
+    };
+  },
+  created() {
+    this.cardNum = this.$route.query.cardNum;
+    //请求数据
+  },
+  methods: {
+    verify() {
+      if (
+        this.phoneNumber.length == 11 &&
+        this.verifyCode.length == 6 &&
+        this.tradersPsd.length == 6
+      ) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    },
+    next() {
+      this.AcctRemoveLimit();
+    },
+    //解除受限
+    AcctRemoveLimit() {
+      this.request("AcctRemoveLimit", {
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "39",
+        MainAcct: this.cardNum,
+        PhoneNbr: this.phoneNumber, //手机号
+        MobilePhone: this.phoneNumber, //手机号
+        Phone: this.phoneNumber, //手机号
+        OTPPassword: this.verifyCode, //6位验证码
+        SmsNbr: this.smsNbr,
+        TrsPassword: this.password,
+        TrsAcNo: this.cardNum
+      })
+        .then(res => {
+          this.$router.push({ name: "removeSuccess" });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //发送验证码
+    sendHandle() {
+      if (this.phoneNumber.length == "11") {
+        this.showTime = false;
+        this.request("SendSmsOtp", {
+          BankId: "9999",
+          BranchId: "1999",
+          ChnlId: "62",
+          SmsTransType: "1",
+          MobilePhone: this.phoneNumber,
+          PhoneNbr: this.phoneNumber
+        })
+          .then(res => {
+            console.log(res.UserSmsId, res.SmsNbr);
+            this.smsNbr = res.SmsNbr;
+            Toast("短信验证码发送成功");
+          })
+          .catch(error => {
+            console.log(error);
+          });
+      } else {
+        Toast("请输入11位手机号");
+      }
+    },
+    finish() {
+      this.showTime = true;
+    },
+    SecureKeyboard() {
+      document.activeElement.blur();
+      window.NativeCall.SecureKeyboard(param => {
+        this.password = param;
+        this.tradersPsd = "******";
+        this.verify();
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer-box {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(20);
+  background: #fff;
+  .account-box {
+    height: px2vw(110);
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    display: flex;
+    p {
+      width: px2vw(190);
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(110);
+    }
+    span {
+      font-size: px2vw(30);
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(110);
+    }
+  }
+  /deep/ .mand-input {
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    .md-field-item-title {
+      width: px2vw(190);
+    }
+    .md-field-item-right {
+      font-size: px2vw(28);
+      font-family: PingFangSC;
+      font-weight: 400;
+      .verify {
+        color: rgba(62, 143, 255, 1);
+      }
+      .van-count-down {
+        color: rgba(168, 168, 168, 1);
+      }
+    }
+  }
+}
+.btn-box {
+  padding: 0 px2vw(40);
+}
+</style>

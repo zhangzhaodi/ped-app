@@ -1,0 +1,274 @@
+<template>
+  <div>
+    <van-popup v-model="visible" :style="{  height: '100%',width: '80%',zIndex: 2020 }" position="right" :close-on-click-overlay="true">
+      <div class="outer fund-filter">
+        <div class="checkbox">
+          <div class="title">风险等级（可多选）</div>
+          <van-checkbox-group v-model="fundStatus">
+            <van-checkbox :name="allItem" class="check-item"  @click="checkAllChange"> 
+              <div slot="icon" slot-scope="props" class="icon-wrap">
+                <button :class="props.checked ? 'checked' : 'unchecked'">{{allItem.name}}</button>
+              </div>
+            </van-checkbox>
+            <van-checkbox :name="item" ref="checkboxes" v-for="(item,index) in statusList" :key="index" class="check-item" @click="checkOther"> 
+              <div slot="icon" slot-scope="props" class="icon-wrap">
+                <button :class="props.checked ? 'checked' : 'unchecked'">{{item.name}}</button>
+              </div>
+            </van-checkbox>
+          </van-checkbox-group>
+        </div>
+        <div class="main">
+          <div class="title">基金公司</div>
+          <van-cell is-link class="filed_cell picker" @click="companyShow = true">
+            <template slot="title">
+              <span class="custom-title" style="color:#262626;" v-if="company.length>0">已选择{{company.length}}个</span>
+              <span class="custom-title" style="color:#7d7d7d;" v-else>可多选</span>
+            </template>
+            <template>
+              <div></div>
+            </template>
+          </van-cell>
+        </div>
+        <div class="footer-box">
+          <div class="btn-box">
+            <van-button class="btn-reset" @click="reset">重置</van-button>
+            <van-button class="btn-sure"  @click="handleSubmit">确认</van-button>
+          </div>
+        </div>
+      </div>
+    </van-popup>
+    <!-- 基金公司选择 -->
+    <fund-company ref="fundCompany" :show.sync="companyShow" @submit="selectFundCompany"></fund-company>
+  </div>
+</template>
+<script>
+import { Popup } from "vant";
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import FundCompany from './selectCompany.vue';
+
+export default {
+  components: {
+    Myheader: Header,
+    [Popup.name]: Popup,
+    Scroller,
+    FundCompany
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+  },
+  data() {
+    return {
+      visible: this.show,
+      companyShow: false,
+      fundStatus: [],
+      allItem:{
+        name: '全部',
+        index: 0
+      },
+      statusList: [ {
+        name: '低风险',
+        index: 1
+      }, {
+        name: '中低风险',
+        index: 2
+      }, {
+        name: '中风险',
+        index: 3
+      }, {
+        name: '中高风险',
+        index: 4
+      }, {
+        name: '高风险',
+        index: 5
+      }],
+      company:[],
+      checkAll:false
+    };
+  },
+  created() {
+  },
+  methods: {
+    setTitle() {
+      window.NativeCall.SetTitle('选择开户网点')
+      window.NativeCall.RegisterHandler('VXBack', () => {
+        this.$emit('update:show', false)
+      })
+    },
+    onClickLeft() {
+      this.$emit("close", this.department);
+    },
+    selectItem(item) {
+      this.department = item;
+      this.onClickLeft();
+    },
+    selectFundCompany(data){
+      console.log("选择基金公司",data)
+      this.company = data;
+    },
+    reset(){
+      this.fundStatus = [];
+      this.$refs.fundCompany.clear();
+    },
+    // click事件不能监听到改变后的fundStatus  此写法本人还未梳理懂 但功能表现正常
+    checkAllChange(){
+      let checked = true;
+      for(let item of this.fundStatus){
+        if(item.name == "全部"){
+          checked = false;
+        }
+      }
+      if(checked){
+        this.fundStatus = []
+      }
+    },
+    checkOther(){
+      this.fundStatus.map((item,index)=>{
+        if(item.name == "全部"){
+          this.fundStatus.splice(index,1)
+        }
+      })
+    },
+    handleSubmit(){
+      console.log(this.company,this.fundStatus)
+      
+      let arr = [],arr1 = [];
+      this.company.map(item=>{
+        arr.push(item.companyCode);
+      })
+      this.fundStatus.map(item=>{
+        arr1.push(item.index);
+      })
+      let RiskGrade = '',TACode = '';
+      RiskGrade = arr1.join(',');
+      TACode = arr.join(',');
+      let data = {
+        RiskGrade: RiskGrade,
+        TACode: TACode,
+      }
+      this.visible = false;
+      this.$emit("submit",data)
+    },
+    handleChange(item){
+      console.log("ACD",item,this.fundStatus)
+      let selectAll = false;
+      // if(item.name == "全部")
+      // for(let item of this.fundStatus){
+      //   if(item.name == "全部"){
+      //     selectAll = true;
+      //   }
+      // }
+      // if(selectAll){
+      //   this.fundStatus = [{name:"全部",index: 0}]
+      // }else{
+
+      // }
+    }
+  },
+  watch: {
+    //监听父组件变化，并赋值
+    show: {
+      handler(val) {
+        this.visible = this.show;
+      }
+    },
+    visible: {
+      handler(val) {
+        this.$emit('update:show', val)
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.fund-filter {
+  padding: 0 px2vw(40);
+  .checkbox {
+    &:first-child {
+      margin-top: px2vw(120);
+    }
+    .title {
+      color: #7d7d7d;
+      font-size: px2vw(26);
+      font-weight: 400;
+      font-family: $font-family;
+      margin-bottom: px2vw(10);
+    }
+    /deep/ .van-checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      .check-item {
+        margin-top: px2vw(20);
+      }
+      .van-checkbox{
+        overflow: visible;
+      }
+      .van-checkbox__icon {
+        height: px2vw(60);
+        width: px2vw(160);
+        // margin-right: px2vw(20);
+        .icon-wrap {
+          height: px2vw(60);
+          width: px2vw(160);
+          button {
+            width: 100%;
+            height: 100%;
+            background: rgba(244, 245, 248, 1);
+            border-radius: px2vw(6);
+            font-size: px2vw(24);
+            line-height: px2vw(60);
+            text-align: center;
+            &.checked {
+              background: url("~@/assets/fund/img_xuanzhong@2x.png") no-repeat
+                center;
+              background-size: contain;
+              border-radius: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+  .main {
+    margin-top: px2vw(60);
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    .title {
+      color: #7d7d7d;
+      font-size: px2vw(26);
+      font-weight: 400;
+      font-family: $font-family;
+    }
+  }
+  .footer-box {
+    padding-bottom: px2vw(40);
+    .btn-box {
+      button {
+        height: px2vw(90);
+        line-height: px2vw(90);
+        font-size: px2vw(30);
+        width: px2vw(240);
+        margin-bottom: px2vw(20);
+        &.btn-reset {
+          border: 1px solid #DA9A78;
+          color: #DA9A78;
+          background: #fff;
+        }
+        &.btn-sure {
+          background: linear-gradient(
+            137deg,
+            rgba(224, 207, 174, 1) 0%,
+            rgba(199, 165, 127, 1) 100%
+          );
+          border: none;
+        }
+      }
+    }
+  }
+}
+</style>

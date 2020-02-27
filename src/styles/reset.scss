@@ -1,0 +1,157 @@
+* {
+  font-style: normal;
+  -webkit-touch-callout: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+body {
+  font-size: px2vw(14);
+  font-family: sans-serif;
+  -webkit-text-size-adjust: none;
+  -webkit-font-smoothing: antialiased;
+  background-color: #f5f5f5;
+}
+html,
+body,
+p,
+li,
+ul,
+button,
+input,
+a,
+img,
+header {
+  //div
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+:focus {
+  outline: 0;
+}
+ul,
+li {
+  list-style: none;
+}
+a {
+  text-decoration: none;
+}
+input,
+button,
+select,
+textarea {
+  font-size: 100%;
+  outline: none;
+}
+input,
+select,
+textarea {
+  -moz-user-select: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.v-input__inner{
+  &::-webkit-input-placeholder {
+    /* WebKit, Blink, Edge */
+    color: #a8a8a8;
+    font-size: px2vw(32);
+    line-height: normal;
+    font-family: PingFangSC;
+    font-weight: 300;
+  }
+  &::-moz-placeholder {
+    /* Mozilla Firefox 19+ */
+    color: #a8a8a8;
+    font-size: px2vw(32);
+    font-family: PingFangSC;
+    font-weight: 300;
+  }
+  &::placeholder {
+    /* 大部分现代浏览器 */
+    color: #a8a8a8;
+    font-size: px2vw(32);
+    font-family: PingFangSC;
+    font-weight: 300;
+  }
+  &::-ms-input-placeholder {
+    /* Microsoft Edge */
+    color: #a8a8a8;
+    font-size: px2vw(32);
+    font-family: PingFangSC;
+    font-weight: 300;
+  }
+}
+
+
+//提交按钮
+.btn-box button {
+  width: 100%;
+  text-align: center;
+  font-size: px2vw(32);
+  color: rgba(255, 255, 255, 1);
+  background:linear-gradient(270deg,rgba(107,171,255,1) 0%,rgba(108,138,249,1) 100%);
+  border-radius: px2vw(45);
+  height: px2vw(90);
+  line-height: px2vw(90);
+}
+/* mint-ui 样式重写 start */
+/* toast宽度 */
+.mint-toast {
+  width: 50%;
+}
+.mint-indicator {
+  transition: none !important;
+}
+/* indicator 置于最上层 */
+.mint-indicator-wrapper {
+  z-index: 9999;
+}
+.mint-indicator-mask {
+  z-index: 9998;
+  top: 0;
+  left: 0;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5) !important;
+  opacity: 1 !important;
+}
+/* mint-ui 样式重写 end */
+
+/* vant-ui 样式重写 start */
+#app .van-cell:not(:last-child)::after {
+  right: 15px;
+}
+
+.van-cell {
+  padding: px2vw(29) 0;
+  .van-cell__title {
+    font-size: px2vw(30);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+  }
+  .van-switch--on {
+    background: rgba(39, 205, 111, 1);
+  }
+  &.van-cell--clickable:active{
+    background:#fff;
+  }
+}
+
+/deep/ .check-icon {
+  width: px2vw(40);
+  height: px2vw(40);
+}
+/* vant-ui 样式重写 end */
+

@@ -1,0 +1,351 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <div v-show="isHint" class="notify">{{ notify }}</div>
+      <div class="outer-box" :class="{ hint: isHint }">
+        <div class="account-box">
+          <p>卡/账号</p>
+          <span>{{ cardNum | CardHide }}</span>
+        </div>
+        <div class="valid-box">
+          <p>挂失有效期</p>
+          <div
+            class="time-limit"
+            :class="{ select: shortselected }"
+            @click="shortPeriod"
+          >
+            短期
+          </div>
+          <div
+            class="time-limit"
+            :class="{ select: longselected }"
+            @click="longPeriod"
+          >
+            长期
+          </div>
+        </div>
+      </div>
+      <div class="cell-box">
+        <div class="cell-remark" @click="visible = true">
+          <div class="left">证件类型</div>
+          <div class="right">
+            <p v-if="accType" class="remark-name">{{ accType }}</p>
+            <p v-else>请选择证件类型</p>
+            <span class="iconfont">&#xe649;</span>
+          </div>
+        </div>
+        <mInput
+          v-show="accType"
+          v-model="idNumber"
+          :value="idNumber"
+          @input="verify"
+          :title="`${accType}号`"
+          maxlength="19"
+          placeholder="请输入证件号码"
+        ></mInput>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">挂失冻结</van-button>
+        </div>
+      </div>
+      <MyDialog
+        @cancel="cancel"
+        :show="alertShow"
+        :isClose="false"
+        @con="confirm"
+        confirmButtonText="挂失冻结"
+        cancelButtonText="暂不挂失"
+      >
+        <p slot="content" class="dialog-content">
+          您确定要挂失卡号为 “{{ cardNum | bankCardNum }}”的银行卡么
+        </p>
+      </MyDialog>
+      <IDType :visible.sync="visible" @click="getClickData" />
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import IDType from "../../components/IDType";
+import { Toast } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    mInput,
+    IDType,
+    [Toast.name]: Toast,
+    MyDialog: Dialog
+  },
+  data() {
+    return {
+      cardNum: "",
+      notify: "",
+      //提示信息
+      isHint: false,
+      shortselected: false,
+      longselected: false,
+      //按钮禁用
+      forbidden: true,
+      //账户类型
+      accType: "",
+      type: "",
+      //证件号码
+      idNumber: "",
+      //是否弹出Dialog
+      alertShow: false,
+      //是否弹出证件类型
+      visible: false,
+      flag: "2"
+    };
+  },
+  watch: {
+    accType: function(val) {
+      switch (val) {
+        case "身份证":
+          this.type = "00";
+          break;
+        case "户口簿":
+          this.type = "07";
+          break;
+        case "护照":
+          this.type = "23";
+          break;
+        case "士兵证":
+          this.type = "04";
+          break;
+        case "警官证":
+          this.type = "03";
+          break;
+        case "军官证":
+          this.type = "01";
+          break;
+        case "港澳居民来往内地通行证":
+          this.type = "06";
+          break;
+        case "台湾居民来往内地通行证":
+          this.type = "13";
+          break;
+        case "外国人居留证":
+          this.type = "09";
+          break;
+        case "其他":
+          this.type = "22";
+      }
+    }
+  },
+  created() {
+    this.cardNum = this.$route.query.cardNum;
+  },
+  methods: {
+    shortPeriod() {
+      this.shortselected = true;
+      this.longselected = false;
+      this.flag = "1";
+      //显示提示信息
+      this.isHint = true;
+      if (this.idNumber.length == 18) {
+        this.forbidden = false;
+      }
+      //解除禁用提交按钮
+      this.notify = "挂失立即生效，5日后失效。";
+    },
+    longPeriod() {
+      this.shortselected = false;
+      this.longselected = true;
+      this.flag = "2";
+      //显示提示信息
+      this.isHint = true;
+      //解除禁用提交按钮
+      if (this.idNumber.length == 18) {
+        this.forbidden = false;
+      }
+      this.notify = "挂失立即生效，直至主动解除挂失成功后才可使用。";
+    },
+    verify() {
+      if (this.shortselected || this.longselected) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    },
+    //关闭弹出框
+    cancel() {
+      this.alertShow = false;
+    },
+    //弹出框确认事件
+    confirm() {
+      this.alertShow = false;
+      this.SuspendAccount();
+    },
+    next() {
+      this.SuspendAccountConfirm();
+    },
+    //
+    getClickData(value) {
+      console.log(value);
+      this.accType = value;
+      this.visible = false;
+    },
+    //挂失冻结
+    SuspendAccountConfirm() {
+      this.request("SuspendAccountConfirm", {
+        BankId: "9999",
+        BranchId: "PHNE",
+        ChnlId: "39",
+        AcctNo: this.cardNum,
+        ApplyIDType: this.type,
+        ApplyIDNo: this.idNumber,
+        LossType: "11",
+        IsSelf: "Y",
+        Flag: this.flag
+      })
+        .then(res => {
+          console.log(res);
+          this.alertShow = true;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    SuspendAccount() {
+      this.request("SuspendAccount", {
+        BankId: "9999",
+        BranchId: "PHNE",
+        ChnlId: "39",
+        AcctNo: this.cardNum,
+        ApplyIDType: this.type,
+        ApplyIDNo: this.idNumber,
+        LossType: "11",
+        IsSelf: "Y",
+        Flag: this.flag
+      })
+        .then(res => {
+          console.log(res);
+          Toast({
+            message: "挂失成功",
+            duration: 2000,
+            icon: require("@/assets/myAccount/addBankCard/ico_right@3x.png")
+          });
+          setTimeout(() => {
+            this.$router.go(-2);
+          }, 2000);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.notify {
+  height: px2vw(68);
+  background: rgba(255, 246, 239, 1);
+  line-height: px2vw(68);
+  text-indent: px2vw(40);
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(255, 110, 57, 1);
+}
+.outer-box {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(20);
+  background: #fff;
+  .account-box {
+    padding: px2vw(40) 0;
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    display: flex;
+    p {
+      width: px2vw(230);
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    span {
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+  .valid-box {
+    padding: px2vw(30) 0;
+    display: flex;
+    p {
+      width: px2vw(230);
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(52);
+    }
+    .time-limit {
+      border: 1px solid #7d7d7d;
+      border-radius: px2vw(6);
+      color: #262626;
+      width: px2vw(112);
+      height: px2vw(46);
+      text-align: center;
+      font-size: px2vw(26);
+      line-height: px2vw(48);
+      padding-top: px2vw(2);
+      margin-right: px2vw(20);
+    }
+    .select {
+      border: 1px solid #3e8fff;
+      color: #3e8fff;
+    }
+  }
+}
+.hint {
+  margin-top: 0;
+}
+.cell-box {
+  margin-top: px2vw(20);
+  padding: 0 px2vw(40);
+  background: #ffffff;
+  .cell-remark {
+    display: flex;
+    align-items: center;
+    line-height: px2vw(110);
+    border-bottom: 1px solid #eeeeee;
+    .left {
+      width: px2vw(230);
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    .right {
+      display: flex;
+      flex: 1;
+      justify-content: space-between;
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 300;
+      color: rgba(168, 168, 168, 1);
+      .remark-name {
+        color: rgba(38, 38, 38, 1);
+        font-weight: 400;
+      }
+      span {
+        font-size: px2vw(22);
+        margin-left: px2vw(20);
+        line-height: px2vw(110);
+      }
+    }
+  }
+  /deep/ .md-field-item-title {
+    width: px2vw(230);
+  }
+}
+.btn-box {
+  padding: 0 px2vw(40);
+}
+</style>

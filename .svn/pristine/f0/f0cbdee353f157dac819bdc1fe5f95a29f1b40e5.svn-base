@@ -1,0 +1,3 @@
+let name = '明白了一分耕耘觉得有些烦就早早地';
+
+module.exports =name

@@ -1,0 +1,82 @@
+<template>
+  <div class="header">
+    <span class="iconfont iconic_back" @click="goBack"></span>
+    <span class="title">{{$route.meta.title}}</span>
+    <p class="right">
+      <span class="toSigned" @click="toSigned">{{$route.meta.right}}</span>
+      <span class="iconfont iconicon_gengduoCopy- more"></span>
+    </p>
+  </div>
+</template>
+
+<script>
+export default {
+  methods: {
+    goBack() {
+      // console.log("back/...");
+      console.log(this.$router.options.routes);
+      if (
+        this.$route.name == this.$router.options.routes[1].name ||
+        this.$route.meta.goToNative
+      ) {
+        window.NativeCall.goBack();
+        console.log(1111)
+      } else {
+        //调用原生方法
+        this.$router.go(-1);
+      }
+    },
+
+    toSigned() {
+      this.$router.push({ name: "hasSigned" });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+// @import "../../../assets/IconFont/iconfont.css";
+.header {
+  height: px2vw(88);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-content: center;
+  align-items: center;
+  padding: 0 px2vw(40);
+  font-size: px2vw(26);
+  font-family: PingFangSC;
+  line-height: px2vw(26);
+  color: #262626;
+  background-color: #fff;
+  position: relative;
+  .title {
+    font-size: px2vw(36);
+    line-height: px2vw(80);
+    // margin-left: px2vw(140);
+    font-family: PingFangSC-Medium, PingFangSC;
+    font-weight: 500;
+    position: absolute;
+    text-align: center;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+  .right {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    position: relative;
+    z-index: 100;
+  }
+  .more {
+    margin-left: px2vw(24);
+  }
+}
+.iconfont {
+  font-size: px2vw(32);
+  font-weight: bold;
+  z-index: 1000;
+}
+</style>

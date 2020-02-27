@@ -1,0 +1,256 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <Scroller>
+      <div class="cell-box">
+        <div class="cell-remark">
+          <div class="left">卡号</div>
+          <div class="right">
+            <p>{{ cardNum | CardHide }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="hint-box">请上传身份证信息</div>
+      <div @click="ScanOcrIDCard('100')" class="front-box">
+        <div v-if="imageObj.front" class="img-box">
+          <img :src="'data:image/png;base64,' + imageObj.front" alt />
+        </div>
+        <div v-else class="upload-box">
+          <img
+            src="@/assets/bankIcon/icon_shenfenzhengdianjishangchuan.png"
+            alt
+          />
+          <p>点击上传身份证人像面</p>
+        </div>
+      </div>
+      <div @click="ScanOcrIDCard('200')" class="reverse-box">
+        <div v-if="imageObj.reverse" class="img-box">
+          <img :src="'data:image/png;base64,' + imageObj.reverse" alt />
+        </div>
+        <div v-else class="upload-box">
+          <img
+            src="@/assets/bankIcon/icon_shenfenzhengdianjishangchuan.png"
+            alt
+          />
+          <p>点击上传身份证国徽面</p>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">解除挂失</van-button>
+        </div>
+      </div>
+      <MyDialog
+        :showCancel="showCancel"
+        @cancel="cancel"
+        title="提示"
+        :show="alertShow"
+        :isClose="false"
+        @con="alertShow = false"
+      >
+        <p slot="content" class="dialog-content">{{ dialogText }}</p>
+      </MyDialog>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { Button, Toast } from "vant";
+
+export default {
+  components: {
+    Myheader: Header,
+    MyDialog: Dialog,
+    Scroller,
+    // Pagetitle,
+    [Button.name]: Button,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      cardNum: "",
+      //是否禁用
+      forbidden: true,
+      imageObj: {
+        front: "",
+        reverse: ""
+      },
+      imgface: false,
+      imgrev: false,
+      //是否显示
+      alertShow: false,
+      //是否显示取消
+      showCancel: false,
+      dialogText: "身份证信息不匹配，请确认后重新验证",
+      idCard: "",
+      password: ""
+    };
+  },
+  computed: {},
+  created() {
+    this.cardNum = this.$route.query.cardNum;
+    console.log(this.cardNum);
+  },
+  mounted() {},
+  methods: {
+    ScanOcrIDCard(data) {
+      // 100是人脸 200是国徽
+      // "IDImage" :  "imagebase64字符串" IDImage是原生返回图片
+      window.NativeCall.ScanOcrIDCard(data, params => {
+        let res = JSON.parse(params);
+        if (data == "100") {
+          this.idCard = res.Cardno;
+          this.imgface = true;
+          this.imageObj.front = res.IDImage;
+        } else {
+          this.imgrev = true;
+          this.imageObj.reverse = res.IDImage;
+        }
+        this.verifyCheck();
+      });
+    },
+    //判断是否可以点击下一步按钮
+    verifyCheck() {
+      if (this.imgface && this.imgrev) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    },
+    //解除挂失
+    AcctRemoveSuspend() {
+      this.request("AcctRemoveSuspend", {
+        BankId: "9999",
+        BranchId: "PHNE",
+        ChnlId: "39",
+        PayerAcNo: this.cardNum,
+        PayCodeFlag: "Y",
+        OperateType: "21",
+        TrsPassword: this.password,
+        TrsAcNo: this.cardNum,
+        IdNum: this.idCard
+      })
+        .then(res => {
+          console.log(res);
+          Toast({
+            message: "解除成功",
+            duration: 2000,
+            icon: require("@/assets/myAccount/addBankCard/ico_right@3x.png")
+          });
+          setTimeout(() => {
+            this.$router.go(-2);
+          }, 2000);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    next() {
+      //人脸识别
+      window.NativeCall.FaceRecognition(param => {
+        if (param == 1) {
+          //安全键盘
+          window.NativeCall.SecureKeyboard(param => {
+            this.password = param;
+            this.AcctRemoveSuspend();
+          });
+        }
+      });
+    },
+    //隐藏dialog
+    cancel() {
+      this.alertShow = false;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.cell-box {
+  background: #f5f6f8;
+  padding: px2vw(20) 0;
+  .cell-remark {
+    display: flex;
+    align-items: center;
+    line-height: px2vw(110);
+    padding: 0 px2vw(40);
+    background: #fff;
+    .left {
+      width: px2vw(100);
+      font-size: px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    .right {
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+}
+.hint-box {
+  padding: px2vw(40) px2vw(40) px2vw(20);
+  font-size: px2vw(24);
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: rgba(125, 125, 125, 1);
+}
+.front-box {
+  padding: 0 px2vw(40);
+  background: url("~@/assets/bankIcon/img_shenfenzhengrenxiangmian.png")
+    no-repeat;
+  background-size: px2vw(670) px2vw(360);
+  background-position: px2vw(40) 0;
+  height: px2vw(360);
+}
+.reverse-box {
+  padding: 0 px2vw(40);
+  background: url("~@/assets/bankIcon/img_shenfenzhengguohiumian.png") no-repeat;
+  background-size: px2vw(670) px2vw(360);
+  background-position: px2vw(40) 0;
+  height: px2vw(360);
+  margin-top: px2vw(20);
+}
+.upload-box {
+  padding-top: px2vw(105);
+  margin-left: px2vw(167);
+  .img {
+    height: 100%;
+    width: 100%;
+  }
+}
+.upload-box img {
+  width: px2vw(90);
+  margin-left: px2vw(104);
+}
+.upload-box p {
+  margin-top: px2vw(19);
+  font-size: px2vw(30);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(30);
+}
+.img-box {
+  width: 100%;
+  img {
+    width: 100%;
+    height: px2vw(360);
+  }
+}
+.footer-box {
+  display: flex;
+  justify-content: center;
+  .btn-box {
+    width: px2vw(670);
+  }
+}
+</style>

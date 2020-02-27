@@ -1,0 +1,295 @@
+<template>
+  <div class="outer phone-transfer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller style="background:#F5F6F8;">
+      <section class="field-section">
+
+        <div class="filed_cell">
+          <div class="label">备注</div>
+          <div class="filed">
+            <m-input v-model="form.receiverName" :value="form.receiverName" placeholder="备注预约转账的目的">
+            </m-input>
+          </div>
+        </div>
+   
+        <div class="filed_cell picker">
+          <van-cell is-link>
+            <template slot="title" class="label">
+              <span class="custom-title">转账周期</span>
+            </template>
+            <template>
+              <div v-if="form.type" style="color:#262626;">{{form.typeName}}</div>
+              <div v-else>请选择转账周期</div>
+            </template>
+          </van-cell>
+        </div>
+        <div class="filed_cell picker">
+          <van-cell is-link>
+            <template slot="title" class="label">
+              <span class="custom-title">转账日期</span>
+            </template>
+            <template>
+              <div v-if="form.receiverBank" style="color:#262626;">{{form.receiverBank}}</div>
+              <div v-else>请选择转账日期</div>
+            </template>
+          </van-cell>
+        </div>
+        <div class="filed_cell picker">
+          <van-cell is-link>
+            <template slot="title" class="label">
+              <span class="custom-title">执行日期</span>
+            </template>
+            <template>
+              <div v-if="form.receiverBank" style="color:#262626;">{{form.receiverBank}}</div>
+              <div v-else>请选择执行日期</div>
+            </template>
+          </van-cell>
+        </div>
+      </section>
+
+      <section class="field-section">
+        <debit-card :label="`付款卡`" :balanceShow="balanceShow" :card="debitCard" @select="selectPayeeCard"></debit-card>
+        <div class="filed_cell">
+          <div class="label">转账金额</div>
+          <div class="filed">
+            ￥<m-input style="flex:1;" v-model="form.money" :value="form.money" placeholder="备注预约转账的目的">
+            </m-input>
+          </div>
+        </div>
+      </section>
+
+      <!-- 非本行卡 或者 金额超过5w 或者 没有超级网银时需选择 -->
+      <section class="field-section">
+        <div class="filed_cell picker">
+          <van-cell>
+            <template slot="title">
+              <span class="custom-title">收款人</span>
+            </template>
+            <template>
+              <div v-if="form.openCity" style="color:#262626;">{{form.openCity}}</div>
+              <div v-else>请输入收款人</div>
+            </template>
+          </van-cell> 
+        </div>
+        <div class="filed_cell picker">
+          <van-cell>
+            <template slot="title" class="label">
+              <span class="custom-title">收款账号</span>
+            </template>
+            <template>
+              <div v-if="form.openBank" style="color:#262626;">{{form.openBank}}</div>
+              <div v-else>请输入收款账号</div>
+            </template>
+          </van-cell>
+        </div>
+        <div class="filed_cell picker">
+          <van-cell>
+            <template slot="title" class="label">
+              <span class="custom-title">收款银行</span>
+            </template>
+            <template>
+              <div v-if="form.openBank" style="color:#262626;">{{form.openBank}}</div>
+              <div v-else>请选择收款银行</div>
+            </template>
+          </van-cell>
+        </div>
+      </section>
+
+      <section class="field-section">
+        <div class="filed_cell">
+          <div class="label">附言</div>
+          <div class="filed">
+            <m-input :maxlength="20" v-model="form.desc" :value="form.desc" placeholder="不超过20字(选填)"></m-input>
+          </div>
+        </div>
+        <div class="filed_cell">
+          <van-switch-cell v-model="notifyPayee" title="通知收款人" />
+        </div>
+        <div class="filed_cell notify_payee-filed" v-if="notifyPayee">
+          <div class="label">收款人手机号</div>
+          <div class="filed">
+            <m-input type="tel" :maxlength="20" v-model="form.receiverPhone" :value="form.receiverPhone" placeholder="请输入手机号"></m-input>
+          </div>
+          <img class="right-icon" src="@/assets/transferAccounts/icon_tongxunlu@2x.png" alt />
+        </div>
+      </section>
+
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="disabled" class="marginLR40" @click="next">下一步</van-button>
+          <div class="repeal" @click="repeal">撤销预约</div>
+        </div>
+      </div>
+
+    </Scroller>
+    <!-- 弹出组件 -->
+    <accountList :show.sync="accountListShow" @select="selectPayee"></accountList>
+    <area-picker :visible.sync="areaShow" :title="`请选择开户地址`" @confirm="selectArea"></area-picker>
+    <bankList :show.sync="bankListShow" @select="selectBank"></bankList>
+    <captcha :visible.sync="captchaShow"></Captcha>
+    <security :visible.sync="securityShow" @confirm="handleConfirm"></security>
+
+  
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import DebitCard from "../components/DebitCard"
+import { mapGetters, mapActions } from "vuex";
+import { SwitchCell, Picker } from "vant";
+import { Amount, InputItem } from "mand-mobile";
+import PopupRound from "@/components/PopupRound";
+import AreaPicker from '@/components/Picker/Area'
+import myDialog from '@/components/Dialog/Dialog'
+import Security from '@/components/Popup/Security'
+import Captcha from '@/components/Popup/Captcha'
+import AccountList from "../components/accountList";
+import BankList from "../components/bankList";
+import Dialog from "@/components/Dialog/Dialog.vue";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    mInput,
+    DebitCard,
+    [SwitchCell.name]: SwitchCell,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [Picker.name]: Picker,
+    PopupRound,
+    AreaPicker,
+    myDialog,
+    AccountList,
+    BankList,
+    Captcha,
+    Security,
+    Mydialog: Dialog
+  },
+  data() {
+    return {
+      balanceShow: false,
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      payeesNum: 100,
+      form: {
+        receiverName: '张印',
+        receiverCard: '42001200210203',
+        money: 0,
+        upperMoney: null,
+        address: '',
+        desc: '',
+      },
+      debitCard: {
+        bankname: '中旅银行',
+        username: "买买买",
+        number: '412301023',
+        balance: '200000'
+      },
+      notifyPayee: true,
+      bankList: [],
+      order: {
+        text: '预计次日9：00到账',
+        id: '1'
+      },
+      orderList: [{
+        text: '预计次日9：00到账',
+        id: '1'
+      }, {
+        text: '预计次日10：00到账',
+        id: '2'
+      }, {
+        text: '预计次日11：00到账',
+        id: '3'
+      },],
+      areaShow: false,
+      alertShow: false,
+      accountListShow: false,
+      bankListShow: false,
+      securityShow: false,
+      captchaShow: false,
+      receiverBank: '',
+    };
+  },
+  computed: {
+    disabled() {
+      let disabled = true;
+      if (!this.form.receiverName) {
+        disabled = true;
+      } else if (!this.form.receiverCard) {
+        disabled = true;
+      } else if (!this.form.receiverBank) {
+        disabled = true;
+      } else if (!this.form.money) {
+        disabled = true;
+      } else if (this.notifyPayee && !this.form.receiverPhone) {
+        disabled = true;
+      } else {
+        disabled = false;
+      }
+      return false
+    },
+  },
+  created() { },
+  mounted() { },
+  methods: {
+   
+    selectPayeeCard(item) {
+      this.debitCard = { ...item };
+    },
+    onInputChange(name, value) {
+      this.form.upperMoney = parseFloat(value);
+    },
+    selectArea(data) {
+      let str = '';
+      for(let item of data){
+        str += item.name
+      }
+      this.form.openCity = str;
+      this.areaShow = false;
+    },
+    selectPayee(data) {
+      console.log("选择付款账户", data)
+      this.form.receiverName = data.name;
+      this.form.receiverCard = data.num;
+      this.form.receiverBank = data.bankName;
+      this.receiverBank = data.bankName;
+
+    },
+    selectBank(data) {
+      console.log(data, '选择银行');
+      this.form.receiverBank = data.bankName;
+      this.receiverBank = data.bankName;
+    },
+    //下一步确认
+    next() {
+      this.securityShow = true;
+    },
+    // 确认并打开验证码弹窗
+    handleConfirm(){
+      this.securityShow = false;
+      this.captchaShow = true;
+    },
+    // 撤销预约
+    repeal(){
+
+    }
+
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/ .van-hairline--top-bottom::after {
+  border: none;
+}
+.footer-box {
+  margin-top: px2vw(101);
+}
+
+</style>

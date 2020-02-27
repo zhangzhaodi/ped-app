@@ -1,0 +1,416 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams"  :backRouter="headerBackRouter" :backgroundColor="'none'" >
+    </Myheader>
+      <!-- 中部 -->
+    <div class="content">
+      <!-- 基金名字 -->
+      <div class="top">
+        <h6>{{foundationname}}</h6>
+        <li class="topli" v-for="(itme,i) in datalist">
+          <span>{{itme.data}}</span>
+        </li>
+        <div class="top_data">
+            <div>
+              <p class="top_data_p1">七日年化</p>
+              <p class="top_data_p2"><span>+</span>0.28<span>%</span></p>
+            </div>
+            <div class="shuxin"></div>
+            <div>
+              <p class="top_data_p3">万份收益<span>(08-20)</span></p>
+              <p class="top_data_p4">1.4516</p>
+            </div>
+        </div>
+      </div>
+      <!-- Echarts封装插件 -->
+      <Echarts></Echarts>
+      <!-- 历史收益 -->
+        <div class="historyearnings">
+            <div class="historyearnings_top">
+              <h4>历史收益</h4>
+              <span>更多
+               <i slot="left" class="iconfont">&#xe62a;</i>
+              </span>
+            </div>
+            <div class="historyearnings_content">
+                <div>
+                  <span>日期</span>
+                  <span>每万份收益(元)</span>
+                  <span>七日年化</span>
+                </div>
+                <div>
+                <li v-for="(itme,i) in historyearningsList">
+                  <span class="left">{{itme.day}}</span>
+                  <span class="middle">{{itme.price}}</span>
+                  <span class="right">{{itme.earnings}}</span>
+                </li>
+                </div>
+            </div>
+        </div>
+        <!-- 交易规则 -->
+        <div class="rule">
+            <div class="rule_top">
+              <h4>交易规则</h4>
+              <span>买入、卖出规则及费率
+               <i slot="left" class="iconfont">&#xe62a;</i>
+              </span>
+            </div>
+             <img class="img" src="@/assets/travelTreasure/rollin/img_jiaoyiguize@2x.png" alt="">
+              <div class="rule_content">
+                <div>
+                  <span>买入</span>
+                  <span>确认份额</span>
+                  <span>查看盈亏</span>
+                </div>
+                <div>
+                <li v-for="(itme,i) in ruleList">
+                  <span class="left">{{itme.day}}</span>
+                  <span class="middle">{{itme.price}}</span>
+                  <span class="right">{{itme.earnings}}</span>
+                </li>
+                </div>
+            </div>
+        </div>
+        <!-- 产品信息 -->
+        <div class="message">
+            <div class="message_top">
+              <h4>交易规则</h4>
+              <span>&nbsp;
+              </span>
+            </div>
+            <li v-for=" (itme,i) in  messagelist">
+               <span class="left">{{itme.name}}</span>
+               <span class="middle">{{itme.data}}</span>
+            </li>
+        </div>
+      </div>
+    </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Echarts from "../components/echarts.vue";
+export default {
+  components: {
+    Myheader: Header,
+    Echarts:Echarts,
+  },
+  data() {
+    return {
+      foundationname:'易基金天天理财货币A【001938】',
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      datalist:[
+        {data:'低风险'},
+        {data:'货币型'},
+        {data:'0元起购'},
+      ],
+      historyearningsList:[
+        {day:'2019-08-15',price:'0.84',earnings:'3.22%'},
+        {day:'2019-08-15',price:'0.84',earnings:'3.22%'},
+        {day:'2019-08-15',price:'0.84',earnings:'3.22%'}
+      ],
+      ruleList:[
+         {day:'08-05 15:00前',price:'08-09 (周五)',earnings:'08-09 (周一)'},
+      ],
+      messagelist:[
+        {name:"基金类型",data:"货币型"},
+        {name:"风险等级",data:"R3"},
+        {name:"起购金额",data:"0.01元"},
+        {name:"递增金额",data:"0元"},
+        {name:"最低追加金额",data:"0元"},
+        {name:"分红方式",data:"现金分红"},
+        {name:"产品发起人",data:"陈果夫"},
+        {name:"产品托管人",data:"陈果夫"},
+      ]
+    }
+  },
+  created() {
+    //请求数据
+  },
+  mounted(){
+    console.log(this.$router.query);
+    this.foundationname=this.$router.query.id
+  },
+  methods: {
+
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,h1,h2,h3,h4,h5,h6,img{
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  width: 100vw;
+   -webkit-scrollbar {display:none}
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  overflow: auto;
+  padding-bottom: px2vw(60);
+}
+
+// 头部
+.content .top{
+  box-sizing: border-box;
+  padding: px2vw(40);
+  width:px2vw(750);
+  height:px2vw(308);
+  background:rgba(255,255,255,1);
+  h6{
+    height:px2vw(36);
+    font-size:px2vw(36);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(36);
+  }
+  .topli{
+    display:inline-block;
+    height:px2vw(28);
+    background:linear-gradient(212deg,rgba(255,251,246,1) 0%,rgba(255,244,233,1) 100%);
+    border-radius:px2vw(4);
+    padding: px2vw(4) px2vw(8);
+    margin-right: px2vw(36);
+    margin-top: px2vw(20);
+  }
+  .top_data{
+    display: flex;
+    align-items: center;
+    justify-content:space-around;
+    margin-top: px2vw(60);
+  }
+  .shuxin{
+    width:px2vw(1);
+    height:px2vw(70);
+    background:rgba(219,219,219,1);
+  }
+  .top_data_p1{
+    height:px2vw(24);
+    font-size:px2vw(24);
+    font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(24);
+  }
+  .top_data_p2{
+    height:px2vw(50);
+    font-size:px2vw(50);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgb(249, 97, 89);
+    line-height:px2vw(50);
+    margin-top: px2vw(10);
+  }
+  .top_data_p3{
+    height:px2vw(24);
+    font-size:px2vw(24);
+    font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(24);
+    span{
+      height:px2vw(20);
+      font-size:px2vw(20);
+      font-family:PingFangSC-Regular,PingFangSC;
+      font-weight:400;
+      color:rgba(168,168,168,1);
+      line-height:px2vw(20);
+    }
+  }
+  .top_data_p4{
+    height:px2vw(50);
+    font-size:px2vw(50);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+    line-height:px2vw(50);
+    margin-top: px2vw(10);
+  }
+}
+// 历史收益
+.historyearnings{
+  box-sizing: border-box;
+  padding: px2vw(40) px2vw(40);
+  width:px2vw(750);
+  height:px2vw(529);
+  background:rgba(255,255,255,1);
+  margin-top: px2vw(20);
+  .historyearnings_top{
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+    line-height: px2vw(89);
+    height:px2vw(89);
+    font-size:px2vw(32);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+    span{
+      height:px2vw(26);
+      font-size:px2vw(26);
+      font-family:PingFangSC-Regular,PingFangSC;
+      font-weight:400;
+      color:rgba(153,156,160,1);
+       i{
+        font-size:px2vw(8);
+      }
+    }
+  }
+  .historyearnings_content div:nth-of-type(1){
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+    text-align: center;
+    height:px2vw(89);
+    font-size:px2vw(30);
+    font-family:PingFangSC-Light,PingFangSC;
+    font-weight:300;
+    color:rgba(125,125,125,1);
+    line-height:px2vw(89);
+  }
+  .historyearnings_content div:nth-of-type(2){
+    li{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      height:px2vw(89);
+      line-height:px2vw(89);
+        .left{
+        height:px2vw(89);
+        font-size:px2vw(30);
+        font-family:PingFangSC-Regular,PingFangSC;
+        font-weight:400;
+        color:rgba(38,38,38,1);
+        line-height:px2vw(89);
+      }
+      .middle,.right{
+      font-family:PingFangSC-Regular,PingFangSC;
+      font-weight:400;
+      color:rgba(249,97,89,1);
+      }
+    }
+  }
+}
+// 交易规则
+.rule{
+    box-sizing: border-box;
+    padding: px2vw(40) px2vw(40);
+    width:px2vw(750);
+    height:px2vw(282);
+    background:rgba(255,255,255,1);
+    margin-top: px2vw(20);
+     .rule_top{
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+    line-height: px2vw(89);
+    height:px2vw(89);
+    font-size:px2vw(32);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(38,38,38,1);
+     span{
+      height:px2vw(26);
+      font-size:px2vw(26);
+      font-family:PingFangSC-Regular,PingFangSC;
+      font-weight:400;
+      color:rgba(153,156,160,1);
+      i{
+        font-size:px2vw(8);
+      }
+    }
+  }
+  .img{
+    width: 100%;
+  }
+  .rule_content div:nth-of-type(1){
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+    text-align: center;
+    font-size:px2vw(28);
+    font-family:PingFangSC-Light,PingFangSC;
+    font-weight:400;
+    color:rgba(38,38,38,1);
+    margin-top: px2vw(10);
+  }
+  .rule_content div:nth-of-type(2){
+    li{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      margin-top: px2vw(10);
+        .left{
+        font-size:px2vw(24);
+        font-family:PingFangSC-Regular,PingFangSC;
+        font-weight:400;
+        color:rgba(125,125,125,1);
+      }
+      .middle,.right{
+      font-family:PingFangSC-Regular,PingFangSC;
+      font-weight:400;
+      color:rgba(125,125,125,1);
+      }
+      .middle{
+        margin-left: px2vw(-40);
+      }
+    }
+  }
+}
+// 产品信息
+.message{
+    box-sizing: border-box;
+    padding: px2vw(40) px2vw(40);
+    width:px2vw(750);
+    height:px2vw(700);
+    background:rgba(255,255,255,1);
+    margin-top: px2vw(20);
+    .message_top{
+      display: flex;
+      align-content: center;
+      justify-content: space-between;
+      line-height: px2vw(89);
+      height:px2vw(89);
+      font-size:px2vw(32);
+      font-family:PingFangSC-Medium,PingFangSC;
+      font-weight:500;
+      color:rgba(38,38,38,1);
+    }
+    li{
+      height:px2vw(28);
+      margin-top: px2vw(40);
+    }
+    .left{
+      font-size:px2vw(28);
+      font-family:PingFangSC-Light,PingFangSC;
+      font-weight:300;
+      color:rgba(125,125,125,1);
+      line-height:px2vw(28);
+      height:px2vw(28);
+      margin-right: px2vw(40);
+    }
+    .right{
+      height:px2vw(28);
+      font-size:px2vw(28);
+      font-family:PingFangSC-Regular,PingFangSC;
+      font-weight:400;
+      color:rgba(0,0,0,1);
+      line-height:px2vw(28);
+          }
+  }
+</style>

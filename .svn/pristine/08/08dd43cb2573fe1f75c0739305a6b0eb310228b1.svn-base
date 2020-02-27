@@ -1,0 +1,409 @@
+<template>
+  <div class="result">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <div class="top">
+      <div class="img">
+        <span class="iconfont iconcheck-"></span>
+      </div>
+      <p v-if="confirmCard" class="msg">支取成功</p>
+      <p v-if="confirmBig" class="msg">支取成功</p>
+      <p v-if="bigreceipt" class="msg">开户成功</p>
+      <p v-if="Carddeposit" class="msg">开户成功</p>
+      <p v-if="Calldeposit" class="msg">开户成功</p>
+    </div>
+    <div class="line"></div>
+    <!-- <div class="content">
+      <div class="detail">
+        <div class="payer">
+          <p class="left">产品名称</p>
+          <p class="center">
+            <span>{{data.name}}</span>
+          </p>
+        </div>
+        <div class="money">
+          <p class="left">投资金额</p>
+          <p class="center">{{data.money | Money}}</p>
+        </div>
+        <div class="notice">
+          <div class="left">
+            <span>申请日期</span>
+          </div>
+          <div class="center">2019-08-09</div>
+        </div>
+      </div>
+    </div>-->
+    <!-- <div class="line"></div> -->
+
+    <!-- 大额购买显示 -->
+    <div v-if="bigreceipt " class="dealline">
+      <div class="img">
+        <!-- <img src="@/assets/travelTreasure/rollin/bianjieshu@2x.png" /> -->
+      </div>
+      <div class="time">
+        <div class="start">
+          <p class="text">存入本金{{this.$store.state.params.money| Money}}元</p>
+          <!-- <p class="p1">2019-08-22 周四 15:00:00</p> -->
+        </div>
+        <div class="conter">
+          <!-- <p class="text">开始计息</p> -->
+          <!-- <p class="p1">2019-08-26</p> -->
+        </div>
+        <div class="end">
+          <!-- <p class="text">产品通知</p> -->
+          <!-- <p class="p1">2019-08-27 周二</p> -->
+        </div>
+      </div>
+    </div>
+    <!-- 整存购买显示 -->
+    <div v-if=" Carddeposit " class="dealline">
+      <div class="img">
+        <!-- <img src="@/assets/travelTreasure/rollin/bianjieshu@2x.png" /> -->
+      </div>
+      <div class="time">
+        <div class="start">
+          <p class="text">存入本金{{this.$store.state.params.money| Money}}元</p>
+          <!-- <p class="p1">2019-08-22 周四 15:00:00</p> -->
+        </div>
+        <div class="conter">
+          <!-- <p class="text">开始计息</p> -->
+          <!-- <p class="p1">2019-08-26</p> -->
+        </div>
+        <div class="end">
+          <!-- <p class="text">产品通知</p> -->
+          <!-- <p class="p1">2019-08-27 周二</p> -->
+        </div>
+      </div>
+    </div>
+    <!-- 通知购买显示 -->
+    <div v-if="Calldeposit " class="dealline">
+      <div class="img">
+        <!-- <img src="@/assets/travelTreasure/rollin/bianjieshu@2x.png" /> -->
+      </div>
+      <div class="time">
+        <div class="start">
+          <p class="text">存入本金{{this.$store.state.params.money| Money}}元</p>
+          <!-- <p class="p1">2019-08-22 周四 15:00:00</p> -->
+        </div>
+        <div class="conter">
+          <!-- <p class="text">开始计息</p> -->
+          <!-- <p class="p1">2019-08-26</p> -->
+        </div>
+        <div class="end">
+          <!-- <p class="text">产品通知</p> -->
+          <!-- <p class="p1">2019-08-27 周二</p> -->
+        </div>
+      </div>
+    </div>
+    <!-- 通知，整存赎回显示 -->
+    <div  v-if="confirmCard"  class="date">
+      <div class="date_left">
+        <p>支取金额</p>
+        <!-- <p>利率</p> -->
+        <!-- <p>到期日期</p> -->
+      </div>
+      <div class="date_middle">
+        <p>{{ this.$store.state.params.money | Money }}</p>
+        <!-- <p>{{this.datainfo.Rate |  toFixedNum}}%</p> -->
+        <!-- <p>{{ 0 | Money}}</p> -->
+      </div>
+    </div>
+      <!-- 大额赎回显示 -->
+    <div  v-if="confirmBig"  class="date">
+      <div class="date_left">
+        <p>支取金额</p>
+        <!-- <p>利率</p> -->
+        <!-- <p>利息</p> -->
+      </div>
+      <div class="date_middle">
+        <p>{{ this.$store.state.params.money | Money }}</p>
+        <!-- <p>{{this.datainfo.Rate |  toFixedNum}}%</p> -->
+        <!-- <p>{{ this.datainfo.InterestAmt | Money}}</p> -->
+      </div>
+    </div>
+    <!-- 大额购买显示 -->
+     <div v-if="bigreceipt"  class="btn">
+      <van-button type="default" class="again" @click="again(1)">我的定期存款</van-button>
+      <van-button type="default" class="final" @click="final">明细查询</van-button>
+    </div>
+      <!-- 整存购买显示 -->
+    <div v-if="Carddeposit"  class="btn">
+      <van-button type="default" class="again" @click="again(2)">我的定期存款</van-button>
+      <van-button type="default" class="final" @click="final">明细查询</van-button>
+    </div>
+    <!-- 通知购买显示 -->
+    <div v-if="Calldeposit"  class="btn">
+      <van-button type="default" class="again" @click="again(3)">我的定期存款</van-button>
+      <van-button type="default" class="final" @click="final">明细查询</van-button>
+    </div>
+    <!-- 通知，整存赎回显示 -->
+     <div v-if="confirmCard"  class="btn">
+      <van-button type="default" class="again" @click="again(1)">查看我的定期</van-button>
+      <van-button type="default" class="final" @click="final">明细查询</van-button>
+    </div>
+     <!-- 大额赎回显示 -->
+    <div v-if="confirmBig" class="btn">
+      <van-button type="default" class="again" @click="again(1)">查看我的定期</van-button>
+      <van-button type="default" class="final" @click="final">明细查询</van-button>
+    </div>
+    <!-- 行业优先 -->
+    <div class="best">
+      <img src="@/assets/manageMoney/img_guanggao@2x.png" />
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  props: {
+    datainfo: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false,
+        backShow:false,
+      },
+      //购买
+      bigreceipt:false,//大额购买
+      Calldeposit:false,//通知购买
+      Carddeposit:false,//整存购买
+      //赎回
+      confirmCard: false,//整存整取，通知存款赎回
+      confirmBig:false,//大额赎回
+    };
+  },
+  created() {
+    console.log(this.datainfo);
+    console.log(this.$store.state.params,this.$store.state.params.money,"vuex进入触发")
+    // 整存，通知赎回
+    if (this.datainfo.confirmCard == true) {
+      this.confirmCard = true;
+    }
+    if(this.datainfo.confirmBig ==  true){
+      this.confirmBig = true
+    }
+    if (this.datainfo.bigreceipt == true) {
+      this.bigreceipt = true;
+    }
+    if (this.datainfo.Calldeposit == true) {
+      this.Calldeposit = true;
+    }
+    if (this.datainfo.Carddeposit == true) {
+      this.Carddeposit = true;
+    }
+  },
+  methods: {
+    final() {
+      this.$router.push({ path: "/depositdetail" });
+    },
+    again(nbr) {
+      var info ={ Nbr:nbr }
+      this.$router.push({ path: "/mydeposit",
+      query:{
+        watch:true,
+        info
+        }
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.top {
+  height: px2vw(348);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  .img {
+    height: px2vw(110);
+    width: px2vw(110);
+    background: linear-gradient(#27cd6f, #39df8d);
+    border-radius: 50%;
+    color: #fff;
+    line-height: px2vw(110);
+    text-align: center;
+    margin: 0 auto;
+    .iconfont {
+      font-size: px2vw(56);
+    }
+  }
+  .msg {
+    font-size: px2vw(40);
+    font-weight: 400;
+    color: #262626;
+    text-align: center;
+    line-height: px2vw(40);
+    margin-top: px2vw(40);
+  }
+}
+.content {
+  font-family: PingFangSC;
+  padding: px2vw(50) 0;
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer,
+    .money,
+    .notice {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        width: px2vw(152);
+        flex: none;
+        color: #7d7d7d;
+      }
+      .center {
+        flex: 1;
+        color: #000;
+        font-weight: 400;
+      }
+      .right {
+        color: #008bff;
+        flex: none;
+      }
+    }
+    .payer {
+      margin-top: 0;
+    }
+  }
+}
+.dealline {
+  height: px2vw(400);
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  padding: px2vw(51) px2vw(40) px2vw(70) px2vw(40);
+  .img {
+    box-sizing: border-box;
+    padding: px2vw(20) 0;
+    height: px2vw(250);
+    width: px2vw(30);
+    // background: url("~@/assets/travelTreasure/rollin/bianjieshu@2x.png");
+    background-size: 100% 100%;
+    // img {
+    //   width: px2vw(15);
+    //   height: 100%;
+    // }
+  }
+  .time {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-left: px2vw(14);
+    .text {
+      font-size: px2vw(26);
+      font-weight: 400;
+      color: #262626;
+    }
+    .p1 {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #7d7d7d;
+      margin-top: px2vw(6);
+    }
+  }
+}
+
+.date{
+  padding: 0 px2vw(40) 0;
+  margin-top: px2vw(20);
+  background: #fff;
+  display: flex;
+  height: px2vw(315);
+  p{
+      margin-top: px2vw(40);
+  }
+  .date_left{
+    height:px2vw(28);
+    font-size:px2vw(28);
+    font-family:PingFangSC-Light,PingFang SC;
+    font-weight:300;
+    color:rgba(125,125,125,1);
+    line-height:px2vw(35);
+  }
+  .date_middle{
+    height:px2vw(28);
+    font-size:px2vw(28);
+    font-family:PingFangSC-Light,PingFang SC;
+    font-weight:400;
+    color:rgba(0,0,0,1);
+    line-height:px2vw(35);
+    margin-left: px2vw(30);
+  }
+}
+
+
+
+
+.btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: px2vw(30);
+  font-weight: 400;
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  /deep/ .van-button {
+    height: px2vw(90);
+    width: px2vw(310);
+    border-radius: px2vw(45);
+  }
+  .again {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background-color: #fff;
+    border: 1px solid #DA9A78FF;
+    color:#DA9A78FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    span {
+      height: px2vw(90);
+      line-height: px2vw(90);
+    }
+  }
+  .final {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background:linear-gradient(270deg,rgba(248,204,173,1) 0%,rgba(218,154,120,1) 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    span {
+      height: px2vw(90);
+      line-height: px2vw(90);
+    }
+  }
+}
+.best {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(80);
+  img {
+    width: 100%;
+  }
+}
+</style>

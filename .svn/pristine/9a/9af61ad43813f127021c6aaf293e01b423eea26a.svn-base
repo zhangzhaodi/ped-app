@@ -1,0 +1,792 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <div class="outer-box">
+        <DebitCard @select="gainBindCardInfo" cardType="收款账户"></DebitCard>
+      </div>
+      <section class="field-section">
+        <header class="field-header">
+          <span class="title">提现金额</span>
+        </header>
+        <div class="tranfer-amount">
+          <md-amount
+            class="upper"
+            :value="upperMoney"
+            is-capital
+            :style="{ visibility: transAmt ? 'visible' : 'hidden' }"
+          ></md-amount>
+          <div class="input-out">
+            <md-input-item
+              type="money"
+              class="amount"
+              @input="verify"
+              v-model="transAmt"
+              :is-amount="true"
+              @change="onInputChange"
+              :placeholder="`可转出${balance}元`"
+            >
+              <div slot="left">￥</div>
+              <div @click="allMoney" slot="right" class="all-money">
+                全部转出
+              </div>
+            </md-input-item>
+          </div>
+          <div class="wrong" v-if="wrongShow">
+            <img class="right-icon" src="@/assets/cuowu.png" alt />
+            超出卡内余额
+          </div>
+        </div>
+        <div class="accounting-date">到账时间以银行具体信息为准</div>
+      </section>
+      <div class="account" v-show="showWebSite">
+        <div class="account-box" @click="selectPayee">
+          <div class="left">开户地</div>
+          <div class="right">
+            <div v-if="address" class="address">{{ address }}</div>
+            <div v-else class="bank-left">请选择城市</div>
+            <div class="bank-right">
+              <i class="iconfont">&#xe649;</i>
+            </div>
+          </div>
+        </div>
+        <div class="account-box" v-show="address" @click="selectDotName">
+          <div class="left">开户网点</div>
+          <div class="right">
+            <div v-if="address" class="address">{{ payee.dotName }}</div>
+            <div v-else class="bank-left">请选择开户网点</div>
+            <div class="bank-right">
+              <i class="iconfont">&#xe649;</i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden" @click="next">确定</van-button>
+        </div>
+      </div>
+      <Payment :visible.sync="visible" title="确认提现">
+        <div class="slot">
+          <p><span>¥</span>{{ transAmt | Money }}</p>
+          <div class="text-box">
+            <div class="text-left">订单信息</div>
+            <div class="text-right">提现</div>
+          </div>
+          <div class="text-box">
+            <div class="text-left">到账银行卡</div>
+            <div class="text-right">
+              {{ selectItem.BundingBankName }}({{
+                selectItem.BundingAcctNo | CardNoFour
+              }})
+            </div>
+          </div>
+          <div class="footer-box">
+            <div class="btn-box">
+              <van-button @click="SecureKeyboard">立即提现</van-button>
+            </div>
+          </div>
+        </div>
+      </Payment>
+      <van-popup class="popup-round" round v-model="show" position="bottom">
+        <div class="select-box">
+          <i @click="closePopup" class="iconfont">&#xe62b;</i>
+          <p>请选择</p>
+        </div>
+        <div class="nav-box">
+          <ul v-show="isSelected == 1">
+            <li>
+              <p>请选择</p>
+              <div class="state-bottom"></div>
+            </li>
+            <li></li>
+            <li></li>
+          </ul>
+          <ul v-show="isSelected == 2">
+            <li @click="isSelected = 1">
+              <p class="selected">{{ province }}</p>
+            </li>
+            <li>
+              <p>请选择</p>
+              <div class="state-bottom"></div>
+            </li>
+            <li></li>
+          </ul>
+          <ul v-show="isSelected == 3">
+            <li @click="isSelected = 1">
+              <p class="selected">{{ province }}</p>
+            </li>
+            <li @click="isSelected = 2">
+              <p class="selected">{{ city }}</p>
+            </li>
+            <li>
+              <p>请选择</p>
+              <div class="state-bottom"></div>
+            </li>
+          </ul>
+        </div>
+        <Scroller>
+          <div class="address-list" v-show="isSelected == 1">
+            <van-cell
+              @click="changeSite(2, item.provinceName, item.provinceCode)"
+              v-for="(item, index) in provinces"
+              :key="index"
+              :title="item.provinceName"
+              clickable
+            >
+              <van-radio slot="right-icon" :name="item.provinceCode">
+                <img
+                  slot="icon"
+                  slot-scope="props"
+                  v-show="props.checked"
+                  class="check-icon"
+                  :src="props.checked ? icon.active : icon.inactive"
+                />
+              </van-radio>
+            </van-cell>
+          </div>
+          <div class="address-list" v-show="isSelected == 2">
+            <van-cell
+              @click="changeSite(3, item.cityName, item.cityCode)"
+              v-for="(item, index) in citys"
+              :key="index"
+              :title="item.cityName"
+              clickable
+            >
+              <van-radio slot="right-icon" :name="item.cityCode">
+                <img
+                  slot="icon"
+                  slot-scope="props"
+                  v-show="props.checked"
+                  class="check-icon"
+                  :src="props.checked ? icon.active : icon.inactive"
+                />
+              </van-radio>
+            </van-cell>
+          </div>
+        </Scroller>
+      </van-popup>
+      <BankNetWorkList
+        :show.sync="bankNetWorkListShow"
+        :bankId="selectItem.BankId"
+        :cityCode="cityCode"
+        @select="selectBankNewWork"
+      ></BankNetWorkList>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import DebitCard from "../../components/DebitCard.vue";
+import Payment from "@/components/Popup/Payment.vue";
+import { Button, Popup, Cell, CellGroup, RadioGroup, Radio } from "vant";
+import { Amount, InputItem } from "mand-mobile";
+import BankNetWorkList from "../../components/bankNetWorkList";
+
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button,
+    [Popup.name]: Popup,
+    [Amount.name]: Amount,
+    [InputItem.name]: InputItem,
+    [Cell.name]: Cell,
+    [CellGroup.name]: CellGroup,
+    [Radio.name]: Radio,
+    [RadioGroup.name]: RadioGroup,
+    DebitCard,
+    Payment,
+    Scroller,
+    BankNetWorkList
+  },
+  data() {
+    return {
+      cardNum: "", //卡号
+      balance: "", //余额
+      password: "", //密码
+      //
+      detailAddress: "", //详细地址
+      //显示1省2市3县
+      isSelected: 1,
+      showList: 1,
+      forbidden: true,
+      //是否显示popup
+      show: false,
+      //省市县选中状态
+      active: false,
+      cardNum: "",
+      //省市县数据
+      provinces: [],
+      province: "",
+      citys: [],
+      city: "",
+      countys: [],
+      address: "",
+      visible: false,
+      transAmt: "",
+      upperMoney: null,
+      openIbpsYn: "", //Y支持
+      clearBankNo: "", //清算行号
+      innerCardFlag: "", //是否本行卡 1 本行 其他不是
+      tokenName: "",
+      cityCode: "", //市编码
+      checked: true,
+      icon: {
+        active: require("@/assets/electronicAccounts/icon_xueli_xuanze@2x.png"),
+        inactive: ""
+      },
+      radio: "",
+      radio1: "",
+      bankNetWorkListShow: false, //选择开户行的dialog
+      payee: {
+        //开户行信息
+        dotNbr: "",
+        dotName: ""
+      },
+      selectItem: {}, //绑定卡信息
+      showWebSite: false
+    };
+  },
+  created() {
+    this.cardNum = this.$route.query.cardNum;
+    this.balance = this.$route.query.balance;
+  },
+  mounted() {},
+  computed: {
+    wrongShow() {
+      let show = false;
+      if (Number(this.transAmt) > Number(this.balance)) {
+        show = true;
+      }
+      return show;
+    }
+  },
+  watch: {
+    transAmt: {
+      handler: function(val, oldVal) {
+        // console.log(val, oldVal);
+        val = val.toString();
+        var arr0 = val.split("");
+        var arr = val.split(".");
+        // 第一位输入的是0的时候进行处理采用第二位的数字
+        if (arr0.length == 2 && arr0[0] == "0" && arr0[1] !== ".") {
+          this.transAmt = Number(arr0[1]);
+          return;
+        }
+        //小数点后超过两位时取前两位
+        if (val == "") {
+          this.transAmt = "";
+        } else if (
+          (arr.length == 2 && arr[1].length > 2) ||
+          arr[0].length > 14
+        ) {
+          this.transAmt = Number(oldVal);
+        }
+      }
+    }
+  },
+  methods: {
+    onInputChange(name, value) {
+      this.upperMoney = parseFloat(value);
+    },
+    next() {
+      this.visible = true;
+    },
+    SecureKeyboard() {
+      this.EleAcNoTransInOutConfirm();
+    },
+    verify() {
+      // console.log(this.openIbpsYn, this.transAmt - 0 >= 50000);
+      //本行卡可以直接提现 外行金额大于5万或者不支持超级网银都要走大额
+      if (this.innerCardFlag == "1") {
+        this.showWebSite = false;
+        if (
+          Number(this.transAmt) <= Number(this.balance) &&
+          this.transAmt.length > 0
+        ) {
+          this.forbidden = false;
+        } else {
+          this.forbidden = true;
+        }
+      } else {
+        if (
+          (this.transAmt - 0 >= 1000000 || this.openIbpsYn != "Y") &&
+          this.transAmt.length > 0
+        ) {
+          this.showWebSite = true;
+          if (this.address && this.payee.dotName) {
+            this.forbidden = false;
+          } else {
+            this.forbidden = true;
+          }
+        } else {
+          this.showWebSite = false;
+          if (
+            Number(this.transAmt) <= Number(this.balance) &&
+            this.transAmt.length > 0
+          ) {
+            this.forbidden = false;
+          } else {
+            this.forbidden = true;
+          }
+        }
+      }
+    },
+    //打开省市列表
+    selectPayee() {
+      document.activeElement.blur();
+      this.request("QryProvince", {
+        BranchId: "2336",
+        ChnlId: "62"
+      })
+        .then(res => {
+          console.log(res);
+          this.provinces = res.ProvinceList;
+          this.show = true;
+          this.isSelected = 1;
+          this.showList = 1;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //关闭popup
+    closePopup() {
+      this.show = false;
+    },
+    //省市县切换
+    changeSite(value, data, code) {
+      if (value == 2) {
+        this.request("QryCity", {
+          BranchId: "2336",
+          ChnlId: "62",
+          ProvinceCode: code
+        })
+          .then(res => {
+            console.log(res);
+            this.citys = res.CityList;
+            this.province = data;
+            this.isSelected = value;
+            this.showList = value;
+          })
+          .catch(error => {
+            console.log(error);
+          });
+      } else {
+        this.show = false;
+        this.city = data;
+        this.address = this.city;
+        this.cityCode = code;
+        console.log(this.cityCode);
+      }
+    },
+    //获取绑定卡信息
+    gainBindCardInfo(params) {
+      this.selectItem = params;
+      this.BankBinQuery();
+    },
+    //查询清算行号
+    BankBinQuery() {
+      this.request("BankBinQuery", {
+        AcctNbr: this.selectItem.BundingAcctNo,
+        BranchId: "2336",
+        ChnlId: "62"
+      })
+        .then(res => {
+          console.log(res);
+          this.openIbpsYn = res.OpenIbpsYn;
+          this.clearBankNo = res.ClearBankNo;
+          this.innerCardFlag = res.InnerCardFlag;
+          this.verify();
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //提现confirm
+    EleAcNoTransInOutConfirm() {
+      this.request("EleAcNoTransInOutConfirm", {
+        BranchId: "1966",
+        ChnlId: "62",
+        PayerAcctNbr: this.cardNum, //二类户
+        PayeeAcctNbr: this.selectItem.BundingAcctNo, //绑定卡
+        TransAmt: this.transAmt,
+        ExtTransTypCd: "1146",
+        IsFGBiz: "2",
+        PayerAcctName: this.selectItem.AcctName,
+        PayeeBankNbr: this.payee.dotNbr || this.clearBankNo,
+        TransMode: "2",
+        PayeeOpenAcctBankCode: this.payee.dotNbr || this.clearBankNo,
+        PayeeBankName: this.selectItem.BundingBankName
+      })
+        .then(res => {
+          console.log(res);
+          this.tokenName = res._tokenName;
+          this.visible = false;
+          window.NativeCall.SecureKeyboard(param => {
+            this.password = param;
+            this.EleAcNoTransInOut();
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //提现
+    EleAcNoTransInOut() {
+      this.request("EleAcNoTransInOut", {
+        BranchId: "1966",
+        ChnlId: "62",
+        PayerAcctNbr: this.cardNum, //二类户
+        PayeeAcctNbr: this.selectItem.BundingAcctNo, //绑定卡
+        TransAmt: this.transAmt,
+        ExtTransTypCd: "1146",
+        IsFGBiz: "2",
+        PayerAcctName: this.selectItem.AcctName,
+        PayeeBankNbr: this.payee.dotNbr || this.clearBankNo,
+        TransMode: "2",
+        PayeeOpenAcctBankCode: this.payee.dotNbr || this.clearBankNo,
+        PayeeBankName: this.selectItem.BundingBankName,
+        Password: this.password,
+        TrsAcNo: this.cardNum,
+        _tokenName: this.tokenName
+      })
+        .then(res => {
+          console.log(res);
+          this.$router.push({
+            name: "resultsPageD"
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //选择开户网点
+    selectBankNewWork(data) {
+      console.log("选择开户网点", data);
+      this.payee.dotNbr = data.bankno; //网点号
+      this.payee.dotName = data.bankname; //网点名
+      this.verify();
+    },
+    selectDotName() {
+      this.bankNetWorkListShow = true;
+    },
+    //全部提取
+    allMoney() {
+      this.transAmt = this.balance;
+      this.upperMoney = parseFloat(this.transAmt);
+      this.verify();
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer-box {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(20);
+  background: #fff;
+}
+.account {
+  margin-top: px2vw(20);
+  background: #fff;
+  padding: 0 px2vw(40);
+  .account-box {
+    height: px2vw(110);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ebeef0;
+    .left {
+      width: px2vw(204);
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+    .right {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      .bank-left {
+        font-size: px2vw(30);
+        font-family: PingFangSC-Light, PingFangSC;
+        font-weight: 300;
+        color: rgba(168, 168, 168, 1);
+      }
+      .address {
+        font-size: px2vw(30);
+        font-family: PingFangSC-Light, PingFangSC;
+        font-weight: 300;
+        color: rgba(38, 38, 38, 1);
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        text-overflow: ellipsis;
+      }
+      .bank-right {
+        i {
+          font-size: px2vw(12);
+          color: #7d7d7d;
+        }
+      }
+    }
+  }
+  .account-box:last-child {
+    border: 0;
+  }
+}
+
+.footer-box {
+  .btn-box {
+    padding: 0 px2vw(40);
+    .van-button {
+      color: #fff;
+    }
+  }
+}
+.field-section {
+  margin-top: px2vw(20);
+  background: #fff;
+  .field-header {
+    display: flex;
+    align-items: center;
+    height: px2vw(80);
+    font-weight: 400;
+    padding-left: px2vw(40);
+    padding-right: px2vw(40);
+    img {
+      width: px2vw(32);
+      height: px2vw(32);
+      margin-right: px2vw(20);
+    }
+    .title {
+      color: $color-text;
+      font-size: px2vw(30);
+    }
+  }
+  .tranfer-amount {
+    position: relative;
+    margin: 0 px2vw(40);
+    /deep/ .upper.md-amount {
+      display: block;
+      color: #ffb52b;
+      font-size: px2vw(24);
+      font-weight: 400;
+      margin-bottom: px2vw(8);
+      text-indent: px2vw(40);
+    }
+    /deep/ .md-field-item-content {
+      font-size: px2vw(40);
+      font-weight: 500;
+      padding-bottom: px2vw(30);
+      // min-height: inherit;
+      border-bottom: 1px solid rgba(239, 240, 241, 1);
+      display: flex;
+      justify-content: space-between;
+      .md-field-item-control {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        .md-input-item-input {
+          width: 100%;
+          &::-webkit-input-placeholder {
+            /* WebKit, Blink, Edge */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            line-height: normal;
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::-moz-placeholder {
+            /* Mozilla Firefox 19+ */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::placeholder {
+            /* 大部分现代浏览器 */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+          &::-ms-input-placeholder {
+            /* Microsoft Edge */
+            color: #a8a8a8;
+            font-size: px2vw(40);
+            font-family: PingFangSC;
+            font-weight: 300;
+          }
+        }
+      }
+      .all-money {
+        padding-top: px2vw(7);
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(62, 143, 255, 1);
+      }
+    }
+    .wrong {
+      position: absolute;
+      bottom: px2vw(2);
+      font-size: px2vw(24);
+      color: #ff4040;
+      img {
+        width: px2vw(22);
+        height: px2vw(22);
+        margin-right: px2vw(10);
+      }
+    }
+  }
+  .accounting-date {
+    font-size: px2vw(24);
+    font-family: PingFangSC-Light, PingFangSC;
+    font-weight: 300;
+    color: rgba(125, 125, 125, 1);
+    margin-top: px2vw(16);
+    text-indent: px2vw(40);
+    padding-bottom: px2vw(20);
+  }
+  .filed_cell {
+    padding-left: px2vw(40);
+    padding-right: px2vw(40);
+    &:not(:last-child) .van-cell {
+      border-bottom: 1px solid #eff0f1;
+    }
+  }
+}
+.slot {
+  p {
+    padding-top: px2vw(74);
+    padding-bottom: px2vw(50);
+    font-size: px2vw(68);
+    font-family: PingFangSC-Medium, PingFangSC;
+    font-weight: 500;
+    color: rgba(38, 38, 38, 1);
+    text-align: center;
+    span {
+      font-size: px2vw(42);
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+  .text-box {
+    height: px2vw(100);
+    padding: 0 px2vw(40);
+    font-size: px2vw(28);
+    font-family: PingFangSC-Light, PingFangSC;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eff0f1;
+    .text-left {
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+    }
+    .text-right {
+      font-weight: 400;
+      color: rgba(0, 0, 0, 1);
+    }
+  }
+  .footer-box {
+    margin-top: px2vw(180);
+    margin-bottom: px2vw(20);
+  }
+}
+.van-popup--round {
+  border-radius: px2vw(20) px2vw(20) 0px 0px;
+  height: px2vw(990);
+  display: flex;
+  flex-direction: column;
+  .select-box {
+    font-family: PingFangSC-Regular, PingFangSC;
+    display: flex;
+    padding: 0 px2vw(40);
+    i {
+      font-size: px2vw(22);
+      line-height: px2vw(100);
+      margin-right: px2vw(265);
+      color: #7d7d7d;
+    }
+    p {
+      font-size: px2vw(34);
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      line-height: px2vw(100);
+    }
+  }
+  .nav-box {
+    background: rgba(255, 255, 255, 1);
+    padding-top: px2vw(38);
+    padding-bottom: px2vw(16);
+    ul {
+      display: flex;
+      li {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 33%;
+        p {
+          font-size: px2vw(30);
+          font-family: PingFangSC-Medium, PingFangSC;
+          font-weight: 500;
+          color: rgba(38, 38, 38, 1);
+          line-height: px2vw(30);
+        }
+        .selected {
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: rgba(125, 125, 125, 1);
+        }
+        .state-bottom {
+          width: px2vw(40);
+          height: px2vw(4);
+          background: none;
+          border-radius: px2vw(2);
+          margin-top: px2vw(12);
+          background: rgba(38, 38, 38, 1);
+        }
+      }
+    }
+  }
+  .scrollerBox {
+    .address-list {
+      // .list-out {
+      //   padding-left: px2vw(40);
+      //   padding-right: px2vw(50);
+      //   .list-box {
+      //     border-bottom: 1px solid rgba(239, 240, 241, 1);
+      //     display: flex;
+      //     justify-content: space-between;
+      //     .list-left {
+      //       font-size: px2vw(30);
+      //       font-family: PingFangSC-Regular, PingFangSC;
+      //       font-weight: 400;
+      //       color: rgba(51, 51, 51, 1);
+      //       line-height: px2vw(110);
+      //       letter-spacing: 1px;
+      //     }
+      //     i {
+      //       font-size: px2vw(30);
+      //       line-height: px2vw(110);
+      //       color: #3e8fff;
+      //     }
+      //   }
+      // }
+      .van-cell {
+        padding-left: px2vw(40);
+        padding-right: px2vw(50);
+        i {
+          font-size: px2vw(30);
+          color: #3e8fff;
+        }
+      }
+    }
+  }
+}
+</style>

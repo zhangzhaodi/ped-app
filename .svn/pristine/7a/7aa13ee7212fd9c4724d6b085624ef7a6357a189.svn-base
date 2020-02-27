@@ -1,0 +1,225 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :backgroundColor="header.color"
+      :isWhite="header.isWhite"
+    ></Myheader>
+    <div class="content">
+      <div class="title">
+        <img src="@/assets/recommendShare/img_zhuangshi@2x.png" alt />
+        <h1>添加我的推荐人</h1>
+        <img src="@/assets/recommendShare/img_zhuangshi@2x.png" alt />
+      </div>
+      <div class="tip">
+        <span>正确填写推荐人手机号</span>
+        <span>即可帮助小伙伴领取奖品</span>
+        <span>请在核对后点击提交按钮 提交后不可更改</span>
+      </div>
+      <div class="input">
+        <van-field
+          label="手机号"
+          placeholder="请输入您的手机号"
+          v-model="phone"
+          type="number"
+          maxlength="11"
+          :class="{'active':phone}"
+          @blur="checkPhone"
+        ></van-field>
+      </div>
+      <!-- <div class="ewm">
+        <img src="@/assets/recommendShare/icon_ewm@2x.png" alt />
+        <p class="text">扫描推荐人二维码添加</p>
+      </div> -->
+      <div class="btn">
+        <van-button type="default" @click="confirm">确定</van-button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Field } from "vant";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      header: {
+        color: "transparent",
+        isWhite: true
+      },
+      phone: null
+    };
+  },
+  components: {
+    Myheader: Header,
+    [Field.name]: Field
+  },
+  methods: {
+    checkPhone() {
+      //检验手机号正确性
+      const regPhone = /^1[3456789]\d{9}$/;
+      if (!regPhone.test(this.phone)) {
+        this.$toast("手机号输入错误，请重新输入");
+        this.$children[1].focus();
+      }
+    },
+    confirm() {
+      this.$router.push({ name: "addResult" });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .content {
+    padding-top: px2vw(88);
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+  .headerBox {
+    position: absolute;
+  }
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(#2b2471, #25144d);
+  .title {
+    margin-top: px2vw(86);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    img {
+      width: px2vw(24);
+      height: px2vw(24);
+    }
+    h1 {
+      font-size: px2vw(50);
+      font-family: PingFangSC-Semibold, PingFang SC;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 1);
+      padding: 0 px2vw(30);
+    }
+  }
+  .tip {
+    margin-top: px2vw(30);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    span {
+      font-size: px2vw(26);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+      line-height: px2vw(37);
+    }
+  }
+  .input {
+    width: px2vw(670);
+    height: px2vw(140);
+    box-sizing: border-box;
+    padding: px2vw(10);
+    background: rgba(248, 244, 248, 0.4);
+    margin-top: px2vw(86);
+  }
+  .ewm {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: px2vw(78);
+    img {
+      width: px2vw(50);
+      height: px2vw(50);
+    }
+    .text {
+      font-size: px2vw(28);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(247, 230, 187, 1);
+      margin-left: px2vw(12);
+    }
+  }
+  .btn {
+    width: px2vw(530);
+    margin-top: px2vw(100);
+    .van-button {
+      width: 100%;
+      height: px2vw(90);
+      border-radius: px2vw(45);
+      background: linear-gradient(#f9c94f, #ffb42a);
+    }
+    .van-button__text {
+      font-size: px2vw(34);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+}
+// reset
+input::-webkit-input-placeholder {
+  /* WebKit browsers */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input:-moz-placeholder {
+  /* Mozilla Firefox 4 to 18 */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input::-moz-placeholder {
+  /* Mozilla Firefox 19+ */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input:-ms-input-placeholder {
+  /* Internet Explorer 10+ */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+/deep/ .van-field__control:disabled {
+  color: #a8a8a8;
+  font-size: px2vw(30);
+}
+.active {
+  /deep/ .van-field__control:disabled {
+    color: #262626;
+    margin-top: px2vw(-6);
+    font-size: px2vw(30);
+  }
+}
+/deep/ .van-field__label {
+  width: px2vw(150);
+  margin-right: px2vw(40);
+}
+.van-cell {
+  height: 100%;
+  padding: 0 !important;
+  border-radius: px2vw(18);
+}
+/deep/ .van-cell__title {
+  text-align: center;
+  line-height: px2vw(120);
+}
+/deep/ .van-cell__value {
+  line-height: px2vw(120);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+</style>

@@ -1,0 +1,128 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <div v-if="backInfo.length > 0" class="outer-box">
+        <div
+          @click="removeLimited(item.cardNum)"
+          class="account-box"
+          v-for="(item,index) in backInfo"
+          :key="index"
+        >
+          <div class="left">
+            <img src="@/assets/bankIcon/icon_BOC.png" alt />
+          </div>
+          <div class="right">
+            <p>{{item.cardNum | CardHide}}</p>
+            <span>{{item.bankName}} | {{item.bankType}}</span>
+          </div>
+        </div>
+      </div>
+      <div v-else class="no-limit">
+        <div class="img-box">
+          <img src="@/assets/myAccount/removeLimited/img_kongzhuangtai@2x.png" alt />
+          <p>暂无受限账户</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      backInfo: [
+        {
+          cardNum: "6445557575757898966",
+          bankName: "工商银行",
+          bankType: "储蓄卡"
+        },
+        {
+          cardNum: "6445557575757898966",
+          bankName: "工商银行",
+          bankType: "储蓄卡"
+        },
+        {
+          cardNum: "6445557575757898966",
+          bankName: "工商银行",
+          bankType: "储蓄卡"
+        }
+      ]
+    };
+  },
+  created() {
+    //请求数据
+  },
+  methods: {
+    removeLimited(cardNum) {
+      this.$router.push({
+        name: "removeLimited",
+        query: { cardNum: cardNum }
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer-box {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(20);
+  background: #fff;
+  .account-box {
+    padding: px2vw(20) 0;
+    display: flex;
+    border-bottom: 1px solid rgba(235, 238, 240, 1);
+    .left {
+      img {
+        width: px2vw(55);
+      }
+    }
+    .right {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      margin-left: px2vw(24);
+      p {
+        font-size: px2vw(30);
+        font-family: PingFangSC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        letter-spacing: 1px;
+      }
+      span {
+        font-size: px2vw(24);
+        font-family: PingFangSC;
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+      }
+    }
+  }
+  .account-box:last-child {
+    border-bottom: 0;
+  }
+}
+.no-limit {
+  .img-box {
+    width: px2vw(300);
+    margin: px2vw(106) auto 0;
+    img {
+      width: 100%;
+    }
+    p {
+      font-size: px2vw(28);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(40);
+      text-align: center;
+      margin-top: px2vw(26);
+    }
+  }
+}
+</style>

@@ -1,0 +1,41 @@
+import Vue from "vue";
+import Router from "vue-router";
+import Index from "../pages/index";
+import BillDetails from "../pages/billDetails";
+
+Vue.use(Router);
+const router = new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "收支明细",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/billDetails",
+      name: "billDetails",
+      component: BillDetails,
+      meta: {
+        title: "账单详情",
+        keepAlive: false
+      }
+    }
+  ]
+});
+// router.beforeEach((to, from, next) => {
+//   if (from.path == "/billDetails") {
+//     to.meta.keepAlive = false;
+//   } else {
+//     to.meta.keepAlive = true;
+//   }
+//   next();
+// });
+export default router;

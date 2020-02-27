@@ -1,0 +1,179 @@
+<template>
+  <div class="pickOuter">
+    <Myheader :title="$route.meta.title" :backgroundColor="header.color">
+      <template slot="left">
+        <p class="iconfont iconicon_search-" @click="toSearch"></p>
+      </template>
+    </Myheader>
+    <div class="content">
+      <!-- banner图 -->
+      <div class="top">
+        <van-swipe indicator-color="white" :autoplay="3000">
+          <van-swipe-item>
+            <img src="~@/assets/manageMoney/img_bannner@2x.png" />
+          </van-swipe-item>
+          <van-swipe-item>
+            <img src="~@/assets/manageMoney/img_bannner@2x.png" />
+          </van-swipe-item>
+          <van-swipe-item>
+            <img src="~@/assets/manageMoney/img_bannner@2x.png" />
+          </van-swipe-item>
+          <van-swipe-item>
+            <img src="~@/assets/manageMoney/img_bannner@2x.png" />
+          </van-swipe-item>
+        </van-swipe>
+      </div>
+      <!-- 选择按钮 -->
+      <div class="option">
+        <div class="item">
+          <img src="@/assets/manageMoney/icon_yuqishoouyi@2x.png" />
+          <span>预期收益型</span>
+        </div>
+        <div class="item">
+          <img src="@/assets/manageMoney/icon_jingzhixing@2x.png" />
+          <span>净值型</span>
+        </div>
+        <div class="item">
+          <img src="@/assets/manageMoney/icon_quanbu@2x.png" />
+          <span>全部产品</span>
+        </div>
+      </div>
+      <!-- 通知 -->
+      <div class="info">
+        <img src="@/assets/manageMoney/icon_tongzhi@2x.png" />
+        <p class="text">
+          根据监管部门要求，体验理财产需先进行风险评估
+          <a>立即前往</a>
+        </p>
+        <span class="iconfont iconicon_guanbi-"></span>
+      </div>
+      <div class="line"></div>
+      <!-- 为你精选 -->
+      <div class="handpick">
+        <div class="title">
+          <h2>为你精选</h2>
+        </div>
+        <div class="items">
+          <div class="item" v-for="(item,index) in pickList" :key="index">
+            <p class="name">{{item.title}}</p>
+            <p class="per">{{item.per}}</p>
+            <p class="expect">预期收益率</p>
+            <p class="detail">{{item.detail}}</p>
+          </div>
+        </div>
+      </div>
+      <!-- 热销理财 -->
+      <div class="hot">
+        <div class="title">
+          <h2>热销理财</h2>
+          <span class="subTitle">明星产品稳健推荐</span>
+          <span class="more" @click="toMore">更多</span>
+          <span class="iconfont iconicon_gengduo-"></span>
+        </div>
+        <Myproduct :data="data"></Myproduct>
+        <div class="notice">
+          <p class="centerLine"></p>
+          <p>理财非存款，产品有风险，购买需谨慎</p>
+          <p class="centerLine"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Product from "./product";
+import { Swipe, SwipeItem } from "vant";
+export default {
+  components: {
+    Myproduct: Product,
+    Myheader: Header,
+    [Swipe.name]: Swipe,
+    [SwipeItem.name]: SwipeItem
+  },
+  data() {
+    return {
+      header: {
+        color: "transparent"
+      },
+      data: [
+        {
+          maxRate: 4.95,
+          day: 96,
+          theCast: 10000,
+          info: "业绩比较基准",
+          name: "星旅财富鑫盛理财",
+          tab: ["高收益", "1.0万元起投", "160天"],
+          gatherTime: "2019.08.03-08.19",
+          remain: 32000,
+          per: 80,
+          num: "XLZX2019018",
+          currency:'美元'
+        },
+        {
+          maxRate: 4.95,
+          day: 96,
+          theCast: 10000,
+          info: "业绩比较基准",
+          name: "星旅财富鑫盛理财",
+          tab: ["高收益", "1.0万元起投", "160天"],
+          gatherTime: "2019.08.03-08.19",
+          remain: 32000,
+          per: 0,
+          num: "XLZX2019018",
+          currency:'人民币'
+        },
+        {
+          maxRate: 6.95,
+          minRate: 3.45,
+          day: 96,
+          theCast: 10000,
+          info: "业绩比较基准",
+          name: "星旅财富鑫盛理财",
+          tab: ["高收益", "1.0万元起投", "160天"],
+          gatherTime: "2019.08.03-08.19",
+          remain: 32000,
+          per: 20,
+          num: "XLZX2019018",
+          currency:'人民币'
+        }
+      ],
+      pickList: [
+        {
+          title: "季度最佳",
+          per: "4.15%",
+          detail: "“鑫盛稳健”理财好好好好"
+        },
+        {
+          title: "季度最佳",
+          per: "4.15%",
+          detail: "“鑫盛稳健”理财好好好好"
+        },
+        {
+          title: "季度最佳",
+          per: "4.15%",
+          detail: "“鑫盛稳健”理财好好好好"
+        },
+        {
+          title: "季度最佳",
+          per: "4.15%",
+          detail: "“鑫盛稳健”理财好好好好"
+        }
+      ]
+    };
+  },
+  methods: {
+    toSearch() {
+      console.log(1);
+    },
+    toMore() {
+      this.$router.push({ name: "manageMoneyList" });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/manageMoney/pick.scss";
+</style>

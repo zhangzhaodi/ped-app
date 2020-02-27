@@ -1,0 +1,53 @@
+/**
+ * Created by Administrator on 2019/7/23.
+ */
+/** 
+ * 兼容处理
+ */ 
+// import 'babel-polyfill'  //（务必千万一定放在第一行）
+// import Es6Promise from 'es6-promise'
+// Es6Promise.polyfill()
+// require('es6-promise').polyfill()
+
+import Vue from 'vue'
+import App from './App'
+import router from './router'
+import vuex from 'vuex'
+
+import "@/lib/commend/WVJSBridge"
+import "@/lib/commend/nativecall"
+
+import store from '@/store/store.js'
+Vue.use(vuex);
+import request from '@/axios/http.js'
+import '@/filter/filter'
+import '@/tools/tools'
+import '@/tools/directive'
+import 'mand-mobile/lib-vw/mand-mobile.css'
+import 'vant/lib/icon/local.css';
+import '@/assets/IconFont/iconfont.css'
+import "normalize.css"
+import 'mint-ui/lib/style.css'
+import tools from '@/tools/tools.js';
+
+Vue.prototype.tools= tools;
+import { Dialog, RadioGroup,Cell, CellGroup, Radio ,Button, Checkbox, CheckboxGroup,Field , Toast, Lazyload} from "vant"
+import { Amount } from 'mand-mobile';
+Vue.use(Dialog).use(RadioGroup).use(Radio).use(Button).use(Checkbox).use(CheckboxGroup).use(Cell).use(CellGroup).use(Field).use(Toast)
+Vue.use(Amount)
+// import "../../styles/global.scss"
+Vue.use(request)
+Vue.use(Lazyload, {
+  lazyComponent: true
+});
+Vue.config.productionTip = false;
+/* eslint-disable no-new */
+window.vm = new Vue({
+  el: '#app',
+  router,
+  store,
+  data:{
+    request:request
+  },
+  render: h => h(App)
+})

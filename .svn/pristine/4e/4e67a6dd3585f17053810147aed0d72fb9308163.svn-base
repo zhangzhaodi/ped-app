@@ -1,0 +1,260 @@
+/* swiper样式 start */
+/* .swiper-container {
+  width: 100%;
+  height: px2vw(200);
+  padding: px2vw(14) 0;
+  background: #fff;
+}
+.bannar {
+  width: 100%;
+  height: 100%;
+  border-radius: px2vw(10);
+}
+.swiper-slide{
+  width: px2vw(325);
+}
+.swiper-container-3d .swiper-slide-shadow-left,.swiper-container-3d .swiper-slide-shadow-right {
+  background-image: linear-gradient(to right,rgba(0,0,0,0),rgba(0,0,0,0))!important
+}
+.swiper-pagination {
+  position: relative!important;
+  bottom: 0 !important;
+  left: 0;
+  width: 98% !important;
+} */
+/* swiper样式 end */
+
+.font24 {
+  font-size: px2vw(24);
+}
+
+.color-red {
+  color: #ff531a;
+}
+
+.bg-white {
+  background: #fff !important;
+}
+
+.space-lr {
+  padding: 0 px2vw(8);
+}
+
+.top-line {
+  margin-top: px2vw(8);
+}
+
+.choice-box {
+  padding: px2vw(14) px2vw(14) 0;
+  font-size: px2vw(12);
+  color: #999;
+}
+
+.choice-box img {
+  width: px2vw(16);
+  height: px2vw(16);
+  margin-right: px2vw(5);
+  margin-bottom: px2vw(-3);
+}
+
+.paddingLR40 {
+  padding-left: px2vw(40);
+  padding-right: px2vw(40);
+}
+
+.marginLR40 {
+  margin: 0 px2vw(40)
+}
+
+//按钮
+.footer-box {
+  width: 100%;
+
+  .btn-box {
+    display: flex;
+
+    button:not(:first-child) {
+      margin-left: px2vw(50);
+    }
+
+    button {
+      width: 100%;
+      text-align: center;
+      font-size: px2vw(32);
+      color: rgba(255, 255, 255, 1);
+      background: linear-gradient(270deg, rgba(107, 171, 255, 1) 0%, rgba(108, 138, 249, 1) 100%);
+      border-radius: px2vw(45);
+      height: px2vw(90);
+      line-height: px2vw(90);
+
+      &.ghost {
+        border: 1px solid #3E8FFF;
+        background: #fff;
+        color: #3E8FFF;
+      }
+    }
+  }
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// 无数据页面
+.nodata-box {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  flex-direction: column;
+
+  img {
+    margin-top: px2vw(168);
+    margin-bottom: px2vw(40);
+    width: px2vw(300);
+    height: px2vw(300);
+  }
+
+  .text {
+    font-size: px2vw(28);
+    text-align: center;
+    font-family: $font-family;
+    font-weight: 400;
+  }
+
+  .btn-box {
+    width: 100%;
+
+    button {
+      margin: px2vw(101) px2vw(40) 0 px2vw(40);
+
+      &.ghost {
+        border: 1px solid #3E8FFF;
+        background: #fff;
+        color: #3E8FFF;
+      }
+    }
+  }
+}
+
+
+.van-overlay {
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #fbfbfb;
+    align-items: center;
+    justify-content: center;
+
+    .loading-img {
+      width: px2vw(82);
+      height:px2vw(36);
+      margin-bottom: px2vw(40);
+      img{
+        width:100%;
+      }
+    }
+
+    .loading-info {
+      text-align: center;
+      margin: 0 px2vw(40);
+      color: $color-text;
+      font-size: px2vw(28);
+      font-family: $font-family;
+      font-weight: 400;
+      width: 100%;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+
+// 阅读条款勾选 checkbox
+.terms {
+  font-size: px2vw(24);
+  color: #a8a8a8;
+  padding: px2vw(30) px2vw(40);
+
+  .van-checkbox {
+    align-items: flex-start;
+    .van-checkbox__label{
+      color:#7d7d7d;
+      font-family: $font-family;
+    }
+  }
+  
+  img {
+    width: px2vw(32);
+    height: px2vw(32);
+  }
+
+  a {
+    color: #008bff;
+  }
+}
+
+
+/deep/ .popup-round {
+  // min-height: px2vw(700);
+  .van-picker__toolbar {
+    height: px2vw(100);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 px2vw(40);
+  }
+
+  .van-picker__title {
+    font-size: px2vw(34);
+  }
+
+  .van-picker__cancel,
+  .van-picker__confirm {
+    padding: 0;
+    font-size: $font-size;
+    font-weight: 400;
+    font-family: $font-family;
+  }
+
+  .van-picker__cancel {
+    color: $color-text;
+  }
+
+  .van-picker__confirm {
+    color: #107aee;
+  }
+
+  .van-picker__columns {
+    .van-hairline--top-bottom::after {
+      border-width: 0;
+    }
+  }
+
+  .van-picker__frame {
+    border-top: 1px solid rgba(229, 229, 229, 1);
+    border-bottom: 1px solid rgba(229, 229, 229, 1);
+  }
+}
+
+.custom-header {
+  height: px2vw(88);
+  background-color: #fff;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-content: center;
+  align-items: center;
+  padding: 0 px2vw(40);
+
+  .title {
+    font-size: px2vw(36);
+    line-height: px2vw(36);
+  }
+
+  .iconfont {
+    font-size: px2vw(32);
+  }
+}

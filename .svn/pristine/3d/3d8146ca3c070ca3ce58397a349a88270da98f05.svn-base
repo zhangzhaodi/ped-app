@@ -1,0 +1,161 @@
+<template>
+  <div class="content">
+    <Myheader :title="title"
+              :params="params"></Myheader>
+    <div>
+      <div class="icon_right">
+        <img src="@/assets/payImages/icon_支付成功.png">
+        <p>支付成功</p>
+      </div>
+      <div class="lined"></div>
+      <div class="pay_info">
+        <ul v-if="result">
+          <li>
+            <span>缴费单位</span>
+            <p>{{result.BusinessName}}</p>
+          </li>
+          <li>
+            <span>缴费户号</span>
+            <p>{{result.UserNo}}</p>
+          </li>
+          <li>
+            <span>缴费单号</span>
+            <p>{{result.PayTranSeqNo}}</p>
+          </li>
+          <li>
+            <span>充值金额</span>
+            <p>{{(result.PayAmt/100)}}元</p>
+          </li>
+          <!-- <li>
+            <span>支付方式</span>
+            <p>{{result.payType}}</p>
+          </li> -->
+          <li>
+            <span>交易日期</span>
+            <p>{{result.PayDate.replace(/(\d{4})(\d{2})/, "$1-$2-")}}</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <button @click="$router.push('/index')">完成</button>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header"
+export default {
+  components: {
+    Myheader: Header,
+  },
+  data () {
+    return {
+      params: {
+        leftShow: false
+      },
+      result: null
+    }
+  },
+  computed: {
+    title () {
+      if (this.result) {
+        return {
+          '0': '水费',
+          '1': '电费',
+          '2': '燃气费',
+          '4': '电话费'
+        }[this.result.PayType]
+      }
+    }
+  },
+  mounted () {
+    this.initBill()
+  },
+  methods: {
+    initBill () {
+      const { PayTranSeqNo, PayUserName, UserNo } = this.$route.query
+      this.request("PaymentRecord", {
+        PayUserName,
+        UserNo,
+        PayTranSeqNo,
+        QueryFlag: '2',
+        BankId: "9999",
+        BranchId: "1001",
+        ChnlId: "62",
+      }).then(response => {
+        this.result = response.List[0]
+      })
+    }
+  }
+}
+</script>
+
+<style lang='scss' scoped>
+.content {
+  background-color: #fff;
+  height: 100vh;
+}
+.icon_right {
+  width: px2vw(200);
+  height: px2vw(200);
+  margin: px2vw(50) auto;
+}
+.icon_right {
+  img {
+    width: px2vw(150);
+    height: px2vw(150);
+    margin-left: px2vw(20);
+  }
+  p {
+    font-size: px2vw(40);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+  }
+}
+.lined {
+  width: px2vw(670);
+  height: px2vw(1);
+  background: rgba(239, 240, 241, 1);
+  margin: 0 auto;
+}
+.pay_info {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(50);
+  ul {
+    height: px2vw(400);
+    border-bottom: 1px solid #eff0f1;
+    li {
+      height: px2vw(80);
+      display: flex;
+      justify-content: start;
+      span {
+        font-size: px2vw(28);
+        font-family: PingFangSC-Light, PingFang SC;
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+      }
+      p {
+        font-size: px2vw(28);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(0, 0, 0, 1);
+        margin-left: px2vw(41);
+      }
+    }
+  }
+}
+button {
+  width: px2vw(670);
+  height: px2vw(90);
+  margin: px2vw(100) px2vw(40);
+  background: linear-gradient(
+    270deg,
+    rgba(107, 171, 255, 1) 0%,
+    rgba(108, 138, 249, 1) 100%
+  );
+  border-radius: px2vw(45);
+  font-size: px2vw(34);
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+}
+</style>

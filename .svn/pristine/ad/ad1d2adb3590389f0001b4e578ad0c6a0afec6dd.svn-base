@@ -1,0 +1,316 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :backgroundColor="backgroundColor"
+      :isWhite="isWhite"
+    ></Myheader>
+    <div class="content">
+      <div class="top">
+        <div class="left">
+          <img :src="data.FullHeadImg" alt v-if="data.FullHeadImg" />
+          <img src="@/assets/personalInterests/img_touxiang@2x.png" alt v-else />
+        </div>
+        <div class="center">
+          <p class="name">{{data.Name}}</p>
+          <img :src="userLevel" class="labelCard" v-show="userLevel"/>
+        </div>
+        <div class="right">
+          <span>查看我的资产</span>
+          <span class="iconfont icongengduo-"></span>
+        </div>
+      </div>
+      <div class="level">
+        <div class="levelImg">
+          <img :src="item" :class="'levelImg'+index" v-for="(item,index) in imgList" v-show="item" :key="index" />
+        </div>
+        <div class="plots">
+          <img src="@/assets/personalInterests/img_yidadaodengji@2x.png" alt class="img1" />
+          <img src="@/assets/personalInterests/img_yidadaodengji@2x.png" alt class="img2" />
+          <img src="@/assets/personalInterests/img_weidadaodengji@2x.png" alt class="img3" />
+        </div>
+      </div>
+      <Cards :Level="Level" :equityList="equityList"></Cards>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import Cards from "../components/cards";
+import equities from "../tool/equities";
+const v1 = require("@/assets/personalInterests/v1/img_quanyi_yixing@2x.png");
+const v1_1 = require("@/assets/personalInterests/v1/img_yidadao_v1@2x.png");
+const v1_2 = require("@/assets/personalInterests/v1/img_weidadao_v2@2x.png");
+const v2 = require("@/assets/personalInterests/v2/img_quanyi_erxing@2x.png");
+const v2_1 = require("@/assets/personalInterests/v2/img_yiguoqu_v1@2x.png");
+const v2_2 = require("@/assets/personalInterests/v2/img_yidadao_v2@2x.png");
+const v2_3 = require("@/assets/personalInterests/v2/img_weidadao_v3@2x.png");
+const v3 = require("@/assets/personalInterests/v3/img_quanyi_sanxing@2x.png");
+const v3_2 = require("@/assets/personalInterests/v3/img_yiguoqu_v2@2x.png");
+const v3_3 = require("@/assets/personalInterests/v3/img_yidadao_v3@2x.png");
+const v3_4 = require("@/assets/personalInterests/v3/img_weidadao_v4@2x.png");
+const v4 = require("@/assets/personalInterests/v4/img_quanyi_sixing@2x.png");
+const v4_3 = require("@/assets/personalInterests/v4/img_yiguoqu_v3@2x.png");
+const v4_4 = require("@/assets/personalInterests/v4/img_yidadao_v4@2x.png");
+const v4_5 = require("@/assets/personalInterests/v4/img_weidadao_v5@2x.png");
+const v5 = require("@/assets/personalInterests/v5/img_quanyi_wuxing@2x.png");
+const v5_4 = require("@/assets/personalInterests/v5/img_yiguoqu_v4@2x.png");
+const v5_5 = require("@/assets/personalInterests/v5/img_yidadao_v5@2x.png");
+const v5_6 = require("@/assets/personalInterests/v5/img_weidadao_v6@2x.png");
+const v6 = require("@/assets/personalInterests/v6/img_quanyi_liuxing@2x.png");
+const v6_5 = require("@/assets/personalInterests/v6/img_yiguoqu_v5@2x.png");
+const v6_6 = require("@/assets/personalInterests/v6/img_yidadao_v6@2x.png");
+const v6_7 = require("@/assets/personalInterests/v6/img_weidadao_v7@2x.png");
+const v7 = require("@/assets/personalInterests/v7/img_quanyi_qixing@2x.png");
+const v7_6 = require("@/assets/personalInterests/v7/img_yiguoqu_v6@2x.png");
+const v7_7 = require("@/assets/personalInterests/v7/img_yidadao_v7@2x.png");
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      backgroundColor: "transparent",
+      isWhite: true,
+      equityList: [],
+      data: {},
+      Level: null
+    };
+  },
+  components: {
+    Myheader: Header,
+    Cards
+  },
+  created() {
+    this.login();
+  },
+  methods: {
+    login() {
+      let params = {
+        LoginId: "15670538691",
+        // LoginId: "18039578108",
+        // Password: "111111",
+        Password: "123456asd",
+        EquipmentId: "125657",
+        LoginType: "R",
+        BranchId: "01001",
+        ChnlId: "62",
+        BankId: "9999",
+        LoginMode: "1",
+        AddrInfo: "郑州"
+      };
+      //测试
+      // this.equityList = equities(4);
+      // this.Level = "5";
+      this.request("login", { ...params }).then(res => {
+        this.data = res;
+        this.getUserLevel()
+      });
+      window.NativeCall.getUserInfo(userInfo => {
+        this.data = JSON.parse(userInfo);
+        this.getUserLevel()
+      });
+    },
+    getUserLevel() {
+      let params = {
+        BranchId: "7010",
+        ChnlId: "62",
+        BankId: "9999"
+      };
+      this.request('CrmCustInfoLevelQry',params).then(res=>{
+        this.Level = res.CustLevel.slice(-1)
+        this.equityList = equities(res.CustLevel.slice(-1) - 1);
+      })
+    }
+  },
+  computed: {
+    userLevel() {
+      switch (this.Level) {
+        case "1":
+          return v1;
+          break;
+        case "2":
+          return v2;
+          break;
+        case "3":
+          return v3;
+          break;
+        case "4":
+          return v4;
+          break;
+        case "5":
+          return v5;
+          break;
+        case "6":
+          return v6;
+          break;
+        case "7":
+          return v7;
+          break;
+      }
+    },
+    imgList() {
+      switch (this.Level) {
+        case "1":
+          return ["", v1_1, v1_2];
+          break;
+        case "2":
+          return [v2_1, v2_2, v2_3];
+          break;
+        case "3":
+          return [v3_2, v3_3, v3_4];
+          break;
+        case "4":
+          return [v4_3, v4_4, v4_5];
+          break;
+        case "5":
+          return [v5_4, v5_5, v5_6];
+          break;
+        case "6":
+          return [v6_5, v6_6, v6_7];
+          break;
+        case "7":
+          return [v7_6, v7_7, ""];
+          break;
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .content {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: url("~@/assets/personalInterests/img_beijing@2x.png");
+    background-size: 100% px2vw(1741);
+    margin-top: px2vw(-88);
+    padding-top: px2vw(88);
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+}
+.content {
+  .top {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 px2vw(40);
+    box-sizing: border-box;
+    .left {
+      width: px2vw(110);
+      height: px2vw(110);
+      border-radius: 50%;
+      border: px2vw(2) solid #5a5a6f;
+
+      img {
+        width: px2vw(110);
+        height: px2vw(110);
+        border-radius: 50%;
+      }
+    }
+    .center {
+      flex: 1;
+      margin-left: px2vw(40);
+      img {
+        width: px2vw(104);
+        height: px2vw(32);
+        margin-top: px2vw(10);
+      }
+      .name {
+        font-size: px2vw(36);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 1);
+        margin-top: px2vw(11);
+      }
+    }
+    .right {
+      font-size: 0;
+      margin-top: px2vw(23);
+      span {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 1);
+      }
+      .iconfont {
+        font-size: px2vw(20);
+        font-weight: 400;
+        color: rgba(255, 255, 255, 1);
+      }
+    }
+  }
+  .level {
+    width: 100%;
+    min-height: px2vw(170);
+    max-height: px2vw(170);
+    background: url("~@/assets/personalInterests/img_dengji@2x.png");
+    background-size: 100% 100%;
+    position: relative;
+    .plots {
+      .img1 {
+        width: px2vw(20);
+        height: px2vw(20);
+        position: absolute;
+        left: px2vw(92);
+        top: px2vw(89);
+      }
+      .img2 {
+        width: px2vw(24);
+        height: px2vw(24);
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: px2vw(125);
+        margin: 0 auto;
+      }
+      .img3 {
+        width: px2vw(20);
+        height: px2vw(20);
+        position: absolute;
+        right: px2vw(92);
+        top: px2vw(89);
+      }
+    }
+    .levelImg {
+      // position: relative;
+      .levelImg0 {
+        width: px2vw(54);
+        height: px2vw(34);
+        position: absolute;
+        left: px2vw(95);
+        top: px2vw(46);
+      }
+      .levelImg1 {
+        width: px2vw(58);
+        height: px2vw(30);
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: px2vw(81);
+        margin: 0 auto;
+      }
+      .levelImg2 {
+        width: px2vw(54);
+        height: px2vw(34);
+        position: absolute;
+        right: px2vw(95);
+        top: px2vw(46);
+      }
+    }
+  }
+}
+</style>

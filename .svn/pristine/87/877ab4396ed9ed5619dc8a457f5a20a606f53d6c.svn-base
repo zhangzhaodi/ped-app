@@ -1,0 +1,115 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <img src="~@/assets/enjoyPower/img_guibinfuwu.png" />
+      <img src="~@/assets/enjoyPower/img_guibinfuwu2.png" class="img2" />
+      <img src="~@/assets/enjoyPower/img_guibinfuwu3.png" class="img2" />
+      <div class="btn">
+        <van-button @click="toDetail">立即预约</van-button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      }
+    };
+  },
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  created() {
+    this.login();
+  },
+  methods: {
+    login() {
+      let params = {
+        BankId: "9999",
+        LoginId: "15670538691",
+        Password: "123456asd",
+        EquipmentId: "125657",
+        ChnlId: "62",
+        LoginType: "R",
+        BranchId: "01001",
+        LoginMode: "1",
+        AddrInfo: "郑州"
+      };
+      //测试
+
+      // this.request("login", { ...params }).then(res => {
+      //   this.$store.state.userInfo = JSON.parse(userInfo);
+      //   this.getImage();
+      // });
+      window.NativeCall.getUserInfo(userInfo => {
+        // alert(userInfo)
+        this.$store.state.userInfo = JSON.parse(userInfo);
+        // this.getImage();
+      });
+    },
+    toDetail() {
+      this.$router.push({ name: "detail" });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: linear-gradient(#2b2471, #25144d);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .content {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+  img {
+    width: 100%;
+  }
+  .img2 {
+    margin-top: -1px;
+  }
+  .btn {
+    width: 100%;
+    min-height: px2vw(130);
+    margin-top: px2vw(-130);
+    background: #000000;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    .van-button {
+      height: px2vw(90);
+      width: px2vw(670);
+      background: linear-gradient(
+        173deg,
+        rgba(238, 217, 192, 1) 0%,
+        rgba(226, 184, 139, 1) 100%
+      );
+      border-radius: px2vw(45);
+      .van-button__text {
+        font-size: px2vw(34);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 1);
+      }
+    }
+  }
+}
+</style>

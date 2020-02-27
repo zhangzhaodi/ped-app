@@ -1,0 +1,29 @@
+/**
+ * Created by Su on 2019/8/30
+ */
+import Vue from 'vue'
+import App from './App'
+import router from './router'
+import vuex from 'vuex'
+
+import "@/lib/commend/WVJSBridge"
+import "@/lib/commend/nativecall"
+import { Dialog } from "vant";
+Vue.use(Dialog)
+// import store from '@/store/store.js'
+Vue.use(vuex);
+import request from '@/axios/http.js'
+import '@/filter/filter'
+import '@/tools/tools'
+import '@/tools/directive'
+import 'mint-ui/lib/style.css'
+import 'mand-mobile/lib-vw/mand-mobile.css'
+import "normalize.css"
+import 'vant/lib/icon/index.css';
+import '@/assets/IconFont/iconfont.css';
+Vue.use(request)
+new Vue({
+  el: '#app',
+  router,
+  render: h => h(App)
+})

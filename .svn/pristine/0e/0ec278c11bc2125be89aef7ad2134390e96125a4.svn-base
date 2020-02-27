@@ -1,0 +1,199 @@
+<template>
+  <div>
+    <div :class="['btn',{'isLast':nowIndex==this.length-1}]">
+      <p @click="up" :class="['up',{'hidden':nowIndex==0}]">
+        <van-icon name="arrow-left" />
+        <span>上一题</span>
+      </p>
+      <p @click="next" :class="['next',{'hidden':nowIndex==this.length-1}]">
+        <span>下一题</span>
+        <van-icon name="arrow" />
+      </p>
+    </div>
+    <van-button
+      v-if="nowIndex==this.assessmentList.length-1"
+      @click="doSubmit"
+    >提交</van-button>
+  </div>
+</template>
+
+<script>
+import { Button, Icon, Toast } from "vant";
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+export default {
+  components: {
+    [Button.name]: Button,
+    [Icon.name]: Icon,
+    [Toast.name]: Toast
+  },
+  props: {
+    nowIndex: {
+      require: true
+    },
+    ExamPaperNum: {
+      require: true
+    }
+  },
+  data() {
+    return {
+      length: null
+    };
+  },
+  computed:{
+     ...mapState('common', ['userInfo']),
+     ...mapState('assessment',['assessmentOptions','assessmentList'])
+  },
+  methods: {
+    up() {
+      this.$emit("up");
+    },
+    next() {
+      if (this.nowIndex < this.length - 1) {
+        this.$emit("next");
+      }
+    },
+    doSubmit() {
+      let questions = [];
+      let options = [];
+     
+      this.assessmentOptions.map((item, index) => {
+        questions.push(item.check);
+        options.push(item.question);
+      });
+      let len = this.assessmentList.length;
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        ProductType: "1",
+        CustomerIdentifyType: "1",
+        CustomerIdentify: this.userInfo.CifNo,
+        CustomerType: "1",
+        CustomerGroup: "0",
+        QuestionType: "0",
+        ExamPaperNum: this.$store.state.assessment.ExamPaperNum,
+        QuestionSelList: questions.join(","),
+        EveryQstSelItem: options.join(",")
+      };
+      // console.log(this.$store.state.assessment.assessmentOptions.length,this.assessmentList.length)
+      if (len == options.length) {
+        this.request("RiskTestConfirm", { ...params }).then(res1 => {
+          this.request("riskTest", {
+            ...params,
+            _tokenName: res1._tokenName
+          }).then(res => {
+            let obj = {
+              type:
+                res.RiskGrade == 1 || res.RiskGrade == 2
+                  ? "1"
+                  : res.RiskGrade == 3 || res.RiskGrade == 4
+                  ? "2"
+                  : "3",
+              ...res
+            };
+            this.$store.state.assessment.assessmentOptions=[]
+            this.riskUpdata(res.RiskGrade,obj)
+            // console.log(res);
+          }).catch(err=>{
+            let str = err._RejMessage
+            this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+          });
+        });
+      } else {
+        let str = "";
+        console.log(questions);
+        for (let i = 1; i <= len; i++) {
+          if (questions.indexOf(i.toString()) == "-1") {
+            str = str + i.toString() + "、";
+          }
+        }
+        str = str.slice(0, -1);
+        this.$toast("请回答" + str + "题");
+      }
+    },
+    riskUpdata(grade, obj) {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        ProductType: "1",
+        RiskGrade: grade,
+        CustomerIdentifyType: "1",
+        CustomerIdentify: this.userInfo.CifNo
+      };
+      this.request("CustomRiskGrateUpdateConfirm", { ...params }).then(res => {
+        this.request("CustomRiskGrateUpdate", {
+          ...params,
+          _tokenName: res._tokenName
+        }).then(res1 => {
+          this.$router.push({
+            name: "riskResult",
+            params: obj
+          });
+        });
+      });
+    }
+  },
+  created() {
+    this.length = this.assessmentList.length;
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0 px2vw(40);
+  position: fixed;
+  left: 0;
+  bottom: px2vw(100);
+  width: 100%;
+  box-sizing: border-box;
+  p {
+    font-size: px2vw(24);
+    font-weight: 400;
+    color: rgba(0, 139, 255, 1);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .van-icon {
+    font-size: px2vw(24);
+    font-weight: 400;
+    color: rgba(0, 139, 255, 1);
+    line-height: px2vw(24);
+  }
+  .hidden {
+    visibility: hidden;
+  }
+  .disabled {
+    color: #ceced0;
+    .van-icon {
+      color: #ceced0;
+    }
+  }
+}
+.isLast {
+  display: block;
+  margin-top: px2vw(60);
+  position: inherit;
+}
+.van-button {
+  width: px2vw(690);
+  background: linear-gradient(
+    270deg,
+    rgba(107, 171, 255, 1) 0%,
+    rgba(108, 138, 249, 1) 100%
+  );
+  line-height: px2vw(90);
+  font-size: px2vw(34);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+  margin: 0 auto;
+  position: fixed;
+  border-radius: px2vw(45);
+  left: 0;
+  right: 0;
+  bottom: px2vw(93);
+}
+</style>

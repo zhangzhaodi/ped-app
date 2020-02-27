@@ -1,0 +1,76 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <div class="content">
+      <div class="outer-box">
+        <div class="bank-box">
+          <img src="@/assets/myAccount/removeLimited/img_jiebangchenggong@2x.png" alt />
+        </div>
+        <p>您可以正常使用您的银行卡</p>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button class="changeColor" @click="goBack">进入首页</van-button>
+          <van-button @click="next">返回我的账户</van-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header
+  },
+  data() {
+    return {};
+  },
+  created() {
+    //请求数据
+  },
+  methods: {
+    goBack() {
+      window.NativeCall.goBack();
+    },
+    next() {
+      this.$router.go(-3);
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer-box {
+  padding: 0 px2vw(40);
+  .bank-box {
+    width: px2vw(260);
+    margin: px2vw(92) auto px2vw(32);
+    img {
+      width: 100%;
+    }
+  }
+  p {
+    font-size: px2vw(28);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(28);
+    text-align: center;
+  }
+}
+.footer-box {
+  .btn-box {
+    display: flex;
+    justify-content: space-between;
+    .van-button {
+      width: px2vw(310);
+    }
+    .changeColor {
+      color: rgba(62, 143, 255, 1);
+      background: #fff;
+      border: 1px solid rgba(62, 143, 255, 1);
+    }
+  }
+}
+</style>

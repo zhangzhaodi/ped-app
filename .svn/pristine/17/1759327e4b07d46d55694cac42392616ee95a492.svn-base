@@ -1,0 +1,384 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader :title="$route.meta.title" :params="headerParams"  :backRouter="headerBackRouter" :backgroundColor="'none'" :isWhite="true"   ></Myheader>
+      <!-- 中部展示 -->
+      <div class="content">
+        <img src="@/assets/farmersTreasure/index/bg_xinnongbao_title@2x.png" class="youxiaobao" />
+        <h5 class="content_advertising">靠档计息 安心理财</h5>
+        <!-- 控制显示 -->
+         <!-- <div class="earnings">
+          <div class="temp" >
+            <h4 class="title">鑫农宝一号</h4>
+            <p class="earnings_p">3年期满利率</p>
+            <h3 class="earnings_h3">4.5000%</h3>
+          </div>
+           <div class="earnings_data">
+            <div><li>昨日收益</li><p>2.25</p></div>
+            <div></div>
+            <div>累计收益<p>407.85</p></div>
+            <div></div>
+            <div>七日年化<i slot="left" class="iconfont little_mark">&#xe62c;</i><p>2.4680%</p></div>
+          </div>
+
+           <Echarts></Echarts>
+            <button class="earnings_but"  @click="hreftwo" ><span>立即存入</span></button>
+        </div>  -->
+        <!-- 另一块 -->
+           <div class="earnings other">
+          <!-- 控制显示 -->
+          <div class="temp" >
+            <h4 class="title">鑫农宝二号</h4>
+            <p class="earnings_p">3年期满利率</p>
+            <h3 class="earnings_h3">4.5000%</h3>
+          </div>
+           <div class="earnings_data">
+            <div><li>昨日收益</li><p>2.25</p></div>
+            <div></div>
+            <div>累计收益<p>407.85</p></div>
+            <div></div>
+            <div>七日年化<p>2.4680%</p></div>
+          </div>
+        <button class="earnings_but"  @click="hreftwo" ><span>立即存入</span></button>
+        </div>
+          <!-- 底部 -->
+      <div class="foot">
+          <div>
+            <img src="@/assets/farmersTreasure/index/img_zhuangshi@2x.png" alt="">
+            </div>
+          <h4>一分钟了解鑫农宝</h4>
+          <div class="last">
+            <span>鑫农宝是什么？</span>
+            <span>鑫农宝是一款定期存款组合产品，支持提前销户，提前销户时根据实际存期以靠近最高档次的通知存款或定期存款利率计息。</span>
+          </div>
+      </div>
+
+      </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Echarts from "../../components/farmersTreasurecomponents/echarts"
+import { Button } from "vant";
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+export default {
+  components: {
+    Myheader: Header,   //头部组件
+    [Button.name]: Button,
+    Echarts:Echarts
+  },
+  data() {
+    return {
+      activeClass: 0, // 0为默认选择第一个，-1为不选择
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+     title:'',
+    };
+  },
+  created() {
+    //请求数据
+    this.title=this.$route.meta.title
+    console.log(this.Setuserinfo,this.userInfo)
+  },
+  computed:{
+    ...mapGetters('deposit',['Setuserinfo']),
+    ...mapState("common", ["userInfo"]),
+  },
+  methods: {
+    ...mapActions("deposit",['setuserinfo']),
+    ...mapActions("common", ["getUserInfo"]),
+    hreftwo(){
+      this.$router.push({
+          path: '/farmersTreasurerollin',
+          query: {
+           title:this.title
+          }
+        })
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,h1,h2,h3,h4,h5,img{
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  background: url("~@/assets/farmersTreasure/index/bg_xinnongbao_lan@2x.png") no-repeat;
+  background-size:  100% 100%;
+  -webkit-scrollbar {display:none}
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  overflow: auto;
+}
+.youxiaobao {
+  width: 100%;
+  height: px2vw(366);
+}
+.content_advertising {
+  height: px2vw(28);
+  font-size: px2vw(28);
+  font-family: PingFangSC;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  line-height: px2vw(28);
+  margin-top: px2vw(-36);
+}
+// 显示设置
+.earnings {
+  width: px2vw(690);
+  background: linear-gradient(
+    170deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  border-radius: px2vw(16);
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  margin-top:px2vw(60);
+  padding-bottom: px2vw(40);
+  .title{
+    width: px2vw(390);
+    height:px2vw(45);
+    font-size:px2vw(32);
+    text-align: center;
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(58,140,255,1);
+    line-height:px2vw(45);
+    margin-top: px2vw(-11);
+    background: url("~@/assets/farmersTreasure/index/img_title@2x.png") no-repeat ;
+    background-size:  px2vw(390) px2vw(84);
+  }
+}
+.other{
+  margin-top: px2vw(90);
+}
+//数据展示
+.earnings_data{
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  padding:0 px2vw(81) 0 px2vw(89);
+  margin-top:px2vw(55);
+  margin-bottom:px2vw(55);
+}
+.earnings_data div{
+  // width:px2vw(96);
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC;
+  font-weight:300;
+  color:rgba(125,125,125,1);
+  line-height:px2vw(24);
+}
+.earnings_data div p{
+  width:px2vw(102);
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC;
+  font-weight:400;
+  color:rgba(38,38,38,1);
+  line-height:px2vw(24);
+  margin-top:px2vw(19);
+}
+.earnings_data div li{
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+}
+.earnings_data div  .little_mark{
+  font-size: px2vw(18);
+  font-weight:100;
+  color:#BDBDBD;
+  display: inline;
+}
+.earnings_data div:nth-of-type(2){
+  width:px2vw(1);
+  height:px2vw(41);
+  border-left:px2vw(1) solid rgba(151,151,151,1);
+  margin-top: px2vw(30)
+}
+.earnings_data div:nth-of-type(4){
+  width:px2vw(1);
+  height:px2vw(41);
+  border-left:px2vw(1) solid rgba(151,151,151,1);
+  margin-top: px2vw(30)
+}
+.temp{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.earnings_but {
+  width: px2vw(609);
+  height: px2vw(90);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 190, 78, 1) 0%,
+    rgba(255, 159, 8, 1) 100%
+  );
+  border-radius: px2vw(45);
+  margin-top:px2vw(85);
+}
+.earnings_but  span {
+  width:px2vw(68);
+  height:px2vw(34);
+  font-size:px2vw(34);
+  font-family:PingFangSC;
+  font-weight:400;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(34);
+}
+.earnings_p {
+  width: px2vw(252);
+  height: px2vw(36);
+  font-size: px2vw(36);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(36);
+  margin-top:px2vw(90);
+}
+.earnings_h3 {
+  width: px2vw(427);
+  height: px2vw(100);
+  font-size: px2vw(100);
+  font-family: PingFangSC;
+  font-weight: 500;
+  color: rgba(254, 110, 3, 1);
+  line-height: px2vw(100);
+  margin-top:px2vw(36);
+}
+.earnings_h5 {
+    height: px2vw(26);
+  font-size: px2vw(26);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(125, 125, 125, 1);
+  line-height: px2vw(26);
+  margin-top:px2vw(46);
+}
+.earnings_p1 {
+  width: 100%;
+  height: px2vw(33);
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 300;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(33);
+  margin-top:px2vw(70);
+  text-align:center;
+}
+.earnings_p1 span{
+  margin: 0 px2vw(40) 0;
+}
+
+//中部显示
+.paragraph{
+  width:100%;
+  height:px2vw(45);
+  font-size:px2vw(32);
+  font-family:PingFangSC;
+  font-weight:500;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top:px2vw(100);
+}
+.paragraph_other{
+  width:px2vw(460);
+  display: flex;
+  flex-direction:row;
+  align-items: center;
+  line-height:px2vw(45);
+  justify-content:space-around;
+}
+.paragraph .paragraph_imgleft{
+  width:px2vw(120);
+  height:px2vw(6);
+  display: inline-block;
+}
+.paragraph .paragraph_imgright{
+  transform: rotate(180deg);
+  width:px2vw(120);
+  height:px2vw(6);
+  display:inline-block;
+}
+// 底部样式
+.foot{
+  display: flex;
+  flex-direction: column;
+  // text-align: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 px2vw(40) px2vw(40) ;
+  div:nth-of-type(1){
+    width: px2vw(690);
+    height: px2vw(6);
+    img{
+    width:100%;
+    height:100%;
+   }
+  }
+  h4{
+    text-align: center;
+    box-sizing: border-box;
+    width: 100%;
+    height:px2vw(45);
+    font-size:px2vw(32);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(255,255,255,1);
+    line-height:px2vw(45);
+  }
+  .last{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  span:nth-of-type(1){
+    height:px2vw(33);
+    font-size:px2vw(24);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(255,255,255,1);
+    line-height:px2vw(33);
+    margin-top: px2vw(40)
+  }
+  span:nth-of-type(2){
+    height:px2vw(136);
+    font-size:px2vw(22);
+    font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    color:rgba(255,255,255,1);
+    line-height:px2vw(34);
+    margin-top: px2vw(10)
+  }
+  }
+}
+
+
+</style>

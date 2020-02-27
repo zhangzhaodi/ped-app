@@ -1,0 +1,240 @@
+<template>
+  <div class="outer result">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <Scroller style="background:#fff;">
+      <div class="top">
+        <div class="img">
+          <span class="iconfont iconcheck-"></span>
+        </div>
+        <p class="msg">委托撤单已成功</p>
+      </div>
+      <div class="content">
+        <div class="detail">
+          <div class="payer">
+            <p class="left">委托基金</p>
+            <p class="center">
+              <span>{{selectPosition.ProductName}}</span>
+            </p>
+          </div>
+          <div class="money">
+            <p class="left">基金代码</p>
+            <p class="center">{{selectPosition.ProductNo}}</p>
+          </div>
+          <div class="money">
+            <p class="left">交易流水号</p>
+            <p class="center">{{selectPosition.SerialNum}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="btn">
+        <van-button type="default" class="again" @click="again">我的持仓</van-button>
+        <van-button type="default" class="final" @click="final">完成</van-button>
+      </div>
+      <!-- 行业优先 -->
+      <div class="best">
+        <img src="@/assets/manageMoney/img_guanggao@2x.png">
+      </div>
+    </Scroller>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import dayjs from 'dayjs';
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Button.name]: Button,
+    Scroller
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+    };
+
+  },
+  computed: {
+    ...mapState('fund', ['selectPosition']),
+  },
+  created() {
+    console.log(this.selectPosition);
+  },
+  methods: {
+    final() {
+      this.$router.replace({ name: "position" });
+    },
+    again() {
+      this.$router.replace({ name: "position" });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/fundCollection/common.scss";
+.scrollerBox {
+  padding-bottom: px2vw(60);
+}
+.top {
+  height: px2vw(348);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  .img {
+    height: px2vw(110);
+    width: px2vw(110);
+    background: linear-gradient(#27cd6f, #39df8d);
+    border-radius: 50%;
+    color: #fff;
+    line-height: px2vw(110);
+    text-align: center;
+    margin: 0 auto;
+    .iconfont {
+      font-size: px2vw(56);
+    }
+  }
+  .msg {
+    font-size: px2vw(40);
+    font-weight: 400;
+    color: #262626;
+    text-align: center;
+    line-height: px2vw(40);
+    margin-top: px2vw(40);
+  }
+}
+.content {
+  font-family: PingFangSC;
+  padding: px2vw(50) 0;
+  .detail {
+    font-size: px2vw(28);
+    font-weight: 300;
+    line-height: px2vw(28);
+    .payer,
+    .money,
+    .notice {
+      padding: 0 px2vw(40);
+      display: flex;
+      flex-direction: row;
+      font-size: px2vw(28);
+      justify-content: space-between;
+      margin-top: px2vw(40);
+      .left {
+        width: px2vw(152);
+        flex: none;
+        color: #7d7d7d;
+      }
+      .center {
+        flex: 1;
+        color: #000;
+        font-weight: 400;
+      }
+      .right {
+        color: #008bff;
+        flex: none;
+      }
+    }
+    .payer {
+      margin-top: 0;
+    }
+  }
+}
+.dealline {
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  padding: px2vw(51) px2vw(40) px2vw(70) px2vw(40);
+  .img {
+    box-sizing: border-box;
+    height: px2vw(253);
+    padding: px2vw(20) 0;
+    width: px2vw(30);
+    background: url("~@/assets/fund/time_progress.png") no-repeat;
+    background-size: 100% 100%;
+    // img {
+    //   width: px2vw(15);
+    //   height: 100%;
+    // }
+  }
+  .time {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-left: px2vw(14);
+    .item{
+        margin-top: px2vw(50);
+    }
+    .text {
+      font-size: px2vw(26);
+      font-weight: 400;
+      color: #262626;
+    }
+    .p1 {
+      font-size: px2vw(20);
+      font-weight: 400;
+      color: #7d7d7d;
+      margin-top: px2vw(6);
+    }
+  }
+}
+.btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: px2vw(30);
+  font-weight: 400;
+  padding: 0 px2vw(40);
+  box-sizing: border-box;
+  /deep/ .van-button {
+    height: px2vw(90);
+    width: px2vw(310);
+    border-radius: px2vw(45);
+  }
+  .again {
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background-color: #fff;
+    border: px2vw(1) solid #DA9A78;
+    color: #DA9A78;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    span {
+      flex: 1;
+      text-align: center;
+    }
+  }
+  .final {
+    width: px2vw(310);
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background:linear-gradient(270deg,rgba(248,204,173,1) 0%,rgba(218,154,120,1) 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    span {
+      flex: 1;
+      text-align: center;
+    }
+  }
+}
+.best {
+  padding: 0 px2vw(40);
+  margin-top: px2vw(80);
+  img {
+    width: 100%;
+  }
+}
+</style>

@@ -1,0 +1,32 @@
+import Vue from "vue";
+import Router from "vue-router";
+import Index from "../pages/index";
+import Detail from "../pages/detail";
+
+Vue.use(Router);
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "我的资产",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/detail",
+      name: "detail",
+      component: Detail,
+      meta: {
+        title: "我的资产",
+        keepAlive: true
+      }
+    },
+  ]
+});

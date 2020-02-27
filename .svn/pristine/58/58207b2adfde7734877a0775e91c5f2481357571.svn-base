@@ -1,0 +1,388 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :isWhite="header.isWhite"
+      :backgroundColor="header.color"
+      :params="params"
+    ></Myheader>
+
+    <div class="cont">
+      <!-- 持仓信息 -->
+      <div class="main">
+        <div class="top">
+          <p class="text">
+            <span>持仓金额(元)</span>
+            <span
+              :class="['iconfont',{'iconyanjing-':isOpen},{'iconicon_home_hide-':!isOpen}]"
+              @click="open"
+            ></span>
+          </p>
+          <p class="money" v-if="isOpen">{{money|Money}}</p>
+          <p class="money" v-else @click="open">********</p>
+        </div>
+        <!-- 选择按钮 -->
+        <div class="option">
+          <div class="optionContent">
+            <div class="item" @click="toStatementAccount">
+              <img src="@/assets/manageMoney/icon_liciaduizhangdan@2x.png" />
+              <span>理财对账单</span>
+            </div>
+            <div class="item" @click="toHistory">
+              <img src="@/assets/manageMoney/icon_lishijilu@2x.png" />
+              <span>历史记录</span>
+            </div>
+          </div>
+        </div>
+        <!-- 切换 -->
+        <Mytab :tabIndex="tabIndex" :tabList="tabList" :flag="flag" @tabChange="tabChange"></Mytab>
+        <div class="product" v-if="tabIndex==0">
+          <Myproduct
+            :data="item"
+            :tabIndex="tabIndex"
+            v-for="(item,index) in entrustList"
+            :key="index"
+            @click.native="toDetail(item)"
+          ></Myproduct>
+        </div>
+        <div class="product" v-if="tabIndex==1">
+          <Myproduct
+            :data="item"
+            :tabIndex="tabIndex"
+            v-for="(item,index) in positionList"
+            :key="index"
+            @click.native="toDetail(item)"
+          ></Myproduct>
+        </div>
+      </div>
+    </div>
+    <Mynav :nowIndex="nowIndex" @navChange="navChange"></Mynav>
+  </div>
+</template>
+<script>
+import Nav from "../../components/nav";
+import Header from "@/components/Header/Header.vue";
+import Tab from "../../components/tab";
+import Product from "../../components/pocketproduct";
+import { Toast } from "vant";
+export default {
+  components: {
+    Mynav: Nav,
+    Myheader: Header,
+    Mytab: Tab,
+    Myproduct: Product,
+    [Toast.name]: name
+  },
+  data() {
+    return {
+      nowIndex: 2,
+      header: {
+        color: "transparent",
+        isWhite: true
+      },
+      params: {
+        leftShow: false
+      },
+      money: 0,
+      isOpen: true,
+      tabList: [{ text: "持仓中", value: 1 }, { text: "委托中", value: 0 }],
+      tabIndex: 1,
+      flag: false,
+      productList: [],
+      pageNum: 5,
+      page: 0,
+      entrustPage: 0,
+      positionPage: 0,
+      buttomRefreshFlag: true,
+      entrustList: [],
+      positionList: []
+    };
+  },
+  watch: {
+    tabIndex: {
+      handler(val) {}
+    }
+    // page: {
+    //   handler(val) {
+    //     // console.log(val);
+    //   }
+    // }
+  },
+  methods: {
+    tabChange(val) {
+      this.$toast.clear();
+      let tab = document.getElementsByClassName("tab")[0];
+      let content = document.getElementsByClassName("cont")[0];
+      if (content.scrollTop > tab.offsetTop - tab.clientHeight) {
+        content.scrollTo(0, 0);
+      }
+      this.tabIndex = val;
+      this.$store.state.manageMoney.productType = val;
+      this.reset();
+      if (val == "0" && this.entrustList.length == 0) {
+        this.entrust();
+      } else if (val == "1" && this.positionList.length == 0) {
+        console.log(111);
+        this.position();
+      }
+    },
+    navChange(val) {
+      if (val == 1) {
+        this.$router.push({ name: "index" });
+      }
+      this.$toast.clear();
+    },
+    reset() {
+      // this.pageNum = 5;
+      // this.page = 0;
+      // this.entrustList = [];
+      // this.positionList = [];
+      this.buttomRefreshFlag = true;
+    },
+    totalValue() {
+      //持仓总额
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        PrdTypes: "1",
+        AccType: "1",
+        Account: this.$store.state.userInfo.CifNo
+      };
+      if (!this.$store.state.manageMoney.totalValueFlag) {
+        this.request("CustomerAssetSumQry", { ...params })
+          .then(res => {
+            this.money = res.UseVol;
+            this.$store.state.manageMoney.totalValueFlag = true;
+            this.$store.state.manageMoney.totalValue = this.money;
+          })
+          .catch(err => {
+            let str = err._RejMessage;
+            this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+          });
+      } else {
+        this.money = this.$store.state.manageMoney.totalValue;
+      }
+    },
+    entrust() {
+      //委托中
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "39",
+        ProductType: "1",
+        PositionString: "1",
+        CustomerIdentifyType: "1",
+        CustomerIdentify: this.$store.state.userInfo.CifNo,
+        PositionString: this.entrustPage * this.pageNum + 1,
+        QueryRowsNum: this.pageNum,
+        OrderMark: "1"
+      };
+      if (this.buttomRefreshFlag) {
+        this.request("fundEntrustCurListQry", { ...params })
+          .then(res => {
+            // console.log(res);
+            if (res.CurCommisList.length == 0) {
+              this.$toast("查询无记录");
+              this.buttomRefreshFlag = false;
+            }
+            this.totalValue();
+            res.CurCommisList.map(item => {
+              this.entrustList.push({ ...item });
+              // console.log(this.productList);
+            });
+          })
+          .catch(err => {
+            this.buttomRefreshFlag = false;
+            this.error(err,this.entrustList)
+          });
+      } else {
+        this.$toast("拉到底了");
+      }
+    },
+    position() {
+      //持仓中
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        // AccType: "1",
+        CustomerIdentify: this.$store.state.userInfo.CifNo,
+        CustomerIdentifyType: "1",
+        ProductType: "1",
+        PositionString: this.positionPage * this.pageNum + 1,
+        QueryRowsNum: this.pageNum
+      };
+      if (this.buttomRefreshFlag) {
+        this.request("FinancialPositionQry", { ...params })
+          .then(res => {
+            if (res.CurCommisList.length == 0) {
+              this.buttomRefreshFlag = false;
+              this.$toast("查询无记录");
+            }
+            this.totalValue();
+            res.CurCommisList.map(item => {
+              this.positionList.push(item);
+            });
+          })
+          .catch(err => {
+            this.buttomRefreshFlag = false;
+            this.error(err,this.positionList)
+          });
+      } else {
+        this.$toast("拉到底了");
+      }
+    },
+    termination() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62"
+      };
+      this.request("finaTerminatedQry", { ...params })
+        .then(res => {
+          // this.productList = res.CurCommisList
+          this.productList = [];
+          this.$toast(res.message);
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    open() {
+      this.isOpen = !this.isOpen;
+    },
+    error(err,arr) {
+      let str = err._RejMessage;
+      let length;
+      if (str.indexOf("查询") != -1) {
+        if(arr.length>0){
+          this.$toast('拉到底了');
+        }else{
+          this.$toast('查询无记录');
+        }
+      }else if (str.indexOf(":") != -1 || str.indexOf("：") != -1) {
+        if (str.indexOf(":") != -1) {
+          length = str.indexOf(":");
+        } else {
+          length = str.indexOf("：");
+        }
+        this.$toast(str.slice(length + 1).trim());
+      } else if (str.indexOf("-") != -1) {
+        this.$toast(str.slice(str.lastIndexOf("-") + 1).trim());
+      } else {
+        this.$toast(str);
+      }
+    },
+    toDetail(val) {
+      //跳转到详情
+      this.$router.push({ name: "pocketDetail", params: val });
+    },
+    toStatementAccount() {
+      //跳转到理财对账单
+      this.$router.push({ name: "statementAccount" });
+    },
+    toHistory() {
+      //跳转到历史记录
+      this.$router.push({ name: "history" });
+    },
+    scroll() {
+      let tab = document.getElementById("tab");
+      let _this = this;
+      //屏幕滚动时修改header的背景
+      let height = tab.clientHeight;
+      let content = document.getElementsByClassName("cont")[0];
+      content.onscroll = function() {
+        // console.log(content.scrollTop,tab.offsetTop,height)
+        _this.$toast.clear();
+        if (content.scrollTop > 0) {
+          _this.header = {
+            color: "#fff",
+            isWhite: false
+          };
+        } else {
+          _this.header = {
+            color: "transparent",
+            isWhite: true
+          };
+        }
+        if (
+          Math.ceil(content.scrollHeight - content.scrollTop) -
+            Math.ceil(content.clientHeight) <=
+            1 &&
+          content.scrollTop != 0
+        ) {
+          _this.$toast.clear();
+          // this.page = parseInt(this.page)+1;
+          if (_this.tabIndex == 0) {
+            _this.entrustPage++;
+            _this.entrust();
+          } else if (_this.tabIndex == 1) {
+            _this.positionPage++;
+            _this.position();
+          } else {
+            _this.termination();
+          }
+        }
+        // console.log(content.scrollTop,tab.offsetTop,height)
+        if (content.scrollTop >= tab.offsetTop - height) {
+          _this.flag = true;
+        } else {
+          console.log(2);
+          _this.flag = false;
+        }
+      };
+    },
+    scrollBottom() {
+      //滚动加载
+      let content = document.getElementsByClassName("cont")[0];
+      let _this = this;
+      content.onscroll = function() {
+        console.log(
+          content.scrollHeight,
+          content.scrollTop,
+          content.clientHeight
+        );
+        if (content.scrollHeight - content.scrollTop === content.clientHeight) {
+          // this.page = parseInt(this.page)+1;
+          _this.page++;
+          if (_this.tabIndex == 0) {
+            _this.entrust();
+          } else if (_this.tabIndex == 1) {
+            _this.position();
+          } else {
+            _this.termination();
+          }
+        }
+      };
+    }
+  },
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      vm.tabIndex = vm.$store.state.manageMoney.productType
+        ? vm.$store.state.manageMoney.productType
+        : "0";
+      if (from.name != "pocketDetail") {
+        vm.tabIndex = 1;
+        vm.$store.state.manageMoney.productType = 1;
+      }
+      console.log(vm.tabIndex);
+      if (vm.tabIndex == 0) {
+        vm.entrust();
+      } else if (vm.tabIndex == 1) {
+        vm.position();
+      } else {
+        vm.termination();
+      }
+      // vm.totalValue();
+    });
+  },
+  created() {
+    window.scrollTo(0, 0);
+  },
+  mounted() {
+    this.scroll();
+    // this.scrollBottom();
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/styles/manageMoney/pocket.scss";
+</style>

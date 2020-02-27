@@ -1,0 +1,286 @@
+<template>
+  <div class="outer optional-edit" v-if="visible">
+    <div class="tip"><span>基金名称编码</span></div>
+    <Scroller>
+      <van-checkbox-group v-model="result">
+        <ul class="checkbox-wrapper">
+          <li v-for="(item,index) in fundList" :key="index" @click="toggle(index)" class="check-item">
+            <van-checkbox :name="item" ref="checkboxes">
+              <div class="fund">
+                <p class="fund-name">
+                  {{item.productName}}
+                </p>
+                <p class="fund-num">
+                  {{item.productNo}}
+                </p>
+              </div>
+
+              <img slot="icon" slot-scope="props" :src="props.checked ? icon.active : icon.inactive">
+            </van-checkbox>
+
+          </li>
+        </ul>
+      </van-checkbox-group>
+    </Scroller>
+
+    <div class="footer">
+      <div class='left'>
+        <van-checkbox v-model="checkAll" @change="checkAllFund">
+          <img slot="icon" slot-scope="props" :src="props.checked ? icon.active : icon.inactive">
+          全选
+        </van-checkbox>
+      </div>
+      <van-button :disabled="!result.length > 0" class="delete-btn" type="danger" @click="handleDelete">删除{{result.length > 0 ? `(${result.length})` : '' }}</van-button>
+    </div>
+
+  </div>
+</template>
+<script>
+import Scroller from "@/components/Scroller.vue";
+import Search from "@/components/Search";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+export default {
+  components: {
+    Search,
+    Scroller
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    fundList: {
+      type: Array,
+      default: []
+    }
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      visible: this.show,
+      icon: {
+        active: require("@/assets/fund/checked.png"),
+        inactive: require("@/assets/fund/unchecked.png"),
+      },
+      // fundList: [{}],
+      // fundList: [{
+      //   name: '天聚红利灵活1',
+      //   number: "001647",
+      //   newValue: "1.3722",
+      //   date: '08-15',
+      //   dayTrip: '29.34%',
+      //   monthTrip: '29.4262%',
+      // }, {
+      //   name: '天聚红利灵活2',
+      //   number: "001647",
+      //   newValue: "2.3722",
+      //   date: '08-15',
+      //   dayTrip: '12.34%',
+      //   monthTrip: '40.4262%',
+      // }, {
+      //   name: '天聚红利灵活3',
+      //   number: "001647",
+      //   newValue: "3.3722",
+      //   date: '08-15',
+      //   dayTrip: '31.34%',
+      //   monthTrip: '24.4262%',
+      // }, {
+      //   name: '天聚红利灵活4',
+      //   number: "001647",
+      //   newValue: "1.4722",
+      //   date: '08-15',
+      //   dayTrip: '24.34%',
+      //   monthTrip: '28.4262%',
+      // }],
+      department: {},
+      checkAll: false,
+      result: [],
+    };
+  },
+  created() {
+  },
+  computed:{
+    ...mapState('common',['userInfo']),
+  },
+  methods: {
+    //将checkbox 点击事件绑定至 li容器上
+    toggle(index) {
+      this.$refs.checkboxes[index].toggle();
+    },
+    // 点击全选按钮
+    checkAllFund(value) {
+      if (value) {
+        this.result = [...this.fundList];
+      } else {
+        this.result = [];
+      }
+    },
+    // 删除选中元素
+    handleDelete() {
+      let deleteArr = [];
+      this.result.map(item=>{
+        deleteArr.push(item.optionalinfoId)
+      })
+      let deleteSign = deleteArr.join(",");
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        OptionalinfoId: deleteSign,
+        UserId: this.userInfo.CifNo,
+      }
+      let newArr = [];
+      this.request('MyOwnChoiceDelete', params).then(res => {
+        console.log(res, "删除自选成功")
+        // 前端通过删选 后期可改为后台查询替代
+        this.fundList.forEach(item => {
+          if (this.result.indexOf(item) === -1) {
+            newArr.push(item)
+          }
+        })
+        this.result = [];
+        this.$emit('submit', newArr)
+      })
+    },
+  },
+  watch: {
+    //监听父组件变化，并赋值
+    show: {
+      handler(val) {
+        this.visible = this.show;
+      }
+    },
+    visible: {
+      handler(val) {
+        this.$emit('update:show', val)
+      }
+    },
+    //footer的全选按钮 与 多选列表 的联动
+    result: {
+      handler(val) {
+        if (val.length === this.fundList.length) {
+          this.checkAll = true;
+        } else {
+          this.checkAll = false;
+        }
+      },
+      deep: true
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.optional-edit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1002;
+  width: 100%;
+  .scrollerBox {
+    background: #f5f6f8;
+  }
+  .tip {
+    margin-top: px2vw(88);
+    height: px2vw(64);
+    line-height: px2vw(64);
+    width: 100%;
+    background: rgba(245, 246, 248, 1);
+    font-size: px2vw(24);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(168, 168, 168, 1);
+    span {
+      margin-left: px2vw(40);
+    }
+  }
+  .checkbox-wrapper {
+    padding: 0 px2vw(40);
+    background: #fff;
+    li {
+      height: px2vw(110);
+      display: flex;
+      align-items: center;
+      border-bottom: px2vw(1) solid #ebeef0;
+      /deep/ .van-checkbox__label {
+        margin-left: px2vw(15);
+        line-height: initial;
+        .fund-name {
+          font-size: px2vw(26);
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: $color-text;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+          margin-bottom: px2vw(8);
+        }
+        .fund-num {
+          font-size: px2vw(24);
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: rgba(125, 125, 125, 1);
+        }
+      }
+    }
+  }
+  .checked {
+    background: linear-gradient(
+      137deg,
+      rgba(224, 207, 174, 1) 0%,
+      rgba(199, 165, 127, 1) 100%
+    );
+    width: px2vw(32);
+    height: px2vw(32);
+    padding: px2vw(2);
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .iconfont {
+      font-size: px2vw(24);
+      color: #fff;
+    }
+  }
+  .unchecked {
+    width: px2vw(32);
+    height: px2vw(32);
+    border-radius: 6px;
+    border: px2vw(2) solid rgba(212, 212, 212, 1);
+  }
+  .footer {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    width: 100%;
+    justify-content: space-between;
+    height: px2vw(120);
+    box-shadow: -5px -5px 20px 0px rgba(69, 69, 83, 0.05);
+    .left {
+      display: flex;
+      padding-left: px2vw(40);
+      align-items: center;
+      font-size: px2vw(28);
+    }
+    .delete-btn {
+      width: px2vw(260);
+      font-size: px2vw(34);
+      height: 100%;
+      background: #ff4040;
+    }
+  }
+}
+/deep/ .van-checkbox__icon {
+  width: px2vw(32);
+  // height: 100%;
+  // line-height:
+  img {
+    width: px2vw(32);
+  }
+}
+</style>

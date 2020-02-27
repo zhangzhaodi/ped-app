@@ -1,0 +1,220 @@
+<template>
+  <div class="outer">
+    <div class="header">
+      <span class="iconfont" @click="goBack">&#xe630;</span>
+      <span class="title">{{$route.meta.title}}</span>
+      <span class="edit" @click="goEdit">{{$route.meta.right}}</span>
+    </div>
+    <div class="img">
+      <img :src="require(`@/assets/bankIcons/default.png`)" v-bankIcon="form.bankNbr" alt />
+      <p class="name">{{form.payeeName}}</p>
+    </div>
+    <div class="content">
+      <div class="item">
+        <div class="label">账户</div>
+        <div class="value">
+          {{form.payeeAcctNbr}}
+        </div>
+      </div>
+      <div class="item">
+        <div class="label">所属银行</div>
+        <div class="value">
+          {{form.bankName}}
+        </div>
+      </div>
+      <div class="item">
+        <div class="label">开户地</div>
+        <div class="value">
+          {{form.openCity}}
+        </div>
+      </div>
+      <div class="item">
+        <div class="label">开户网点</div>
+        <div class="value">
+          {{form.dotName}}
+        </div>
+      </div>
+      <div class="item">
+        <div class="label">手机号</div>
+        <div class="value">
+          {{form.payeePhoneNbr | phoneNumber}}
+        </div>
+      </div>
+    </div>
+    <div class="transfer">
+      <van-button type="default" @click="transfer" :close-on-click-overlay="false">转账</van-button>
+    </div>
+    <!-- 省市选择 -->
+
+    <area-picker :visible.sync="areaShow" :title="`请选择开户地址`" :params="area" @select="getAreaName"></area-picker>
+  </div>
+</template>
+
+<script>
+import request from "@/axios/http.js";
+import AreaPicker from '@/components/Picker/Area'
+import { mapGetters, mapActions, mapState } from "vuex";
+export default {
+  components: {
+    AreaPicker
+  },
+  data() {
+    return {
+      form: this.$route.params.payee,
+      areaShow: false,
+      area: {
+        cityCode: '',
+        provinceCode: ''
+      }
+    };
+  },
+  created() {
+  },
+  computed: {
+  },
+  mounted() {
+    this.area = {
+      cityCode: this.form.payeeCityCd,
+      provinceCode: this.form.payeeProvinceCd,
+    }
+    console.log(this.form, "收款人详情")
+  },
+  methods: {
+    goBack() {
+      this.$router.replace({ name: "allPayee" });
+    },
+    goEdit() {
+      this.$router.replace({ name: "edit", params: { payee: this.form } });
+    },
+    // 获取省市名称
+    getAreaName(data) {
+      if (this.form.payeeCityCd) {
+        let str = '';
+        for (let item of data) {
+          str += item.text
+        }
+        this.$set(this.form, 'openCity', str)//直接赋值，不能展示，需使用$set
+      }
+    },
+    transfer() {
+      this.$router.replace({ name: 'cardTransfer', params: { payee: this.form } });
+    },
+    getAreaName1(provinceCode, cityCode) {
+      let res = [];
+      let params2 = {
+        //branchId: '2336',
+        ChnlId: '62',
+        ProvinceCode: provinceCode
+      }
+      this.request('QryCity', params2, true)
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+@import "../../../../assets/IconFont/iconfont.css";
+// @import "../../../../styles/transferAccounts/common.scss";
+.outer {
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  font-size: px2vw(26);
+  font-family: PingFangSC;
+  line-height: px2vw(26);
+  .header {
+    height: px2vw(88);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-content: center;
+    align-items: center;
+    padding: 0 px2vw(40);
+    .iconfont {
+      font-size: px2vw(32);
+      color: #262626;
+    }
+    .title {
+      font-size: px2vw(36);
+      line-height: px2vw(36);
+      font-weight: 500;
+      font-family: $font-family;
+    }
+    .edit {
+      font-size: px2vw(30);
+      font-weight: 400;
+      font-family: $font-family;
+    }
+  }
+  .img {
+    width: 100%;
+    height: px2vw(349);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    img {
+      width: px2vw(110);
+      height: px2vw(110);
+      border-radius: 50%;
+    }
+    .name {
+      font-size: px2vw(30);
+      font-family: $font-family;
+      font-weight: 400;
+      margin-top: px2vw(9);
+      letter-spacing: 1px;
+    }
+  }
+}
+/deep/.van-cell:not(:last-child)::after {
+  border-bottom: 0px;
+}
+
+.content {
+  .item {
+    padding: 0 px2vw(40);
+    display: flex;
+    margin-bottom: px2vw(30);
+    .label {
+      display: flex;
+      color: #7d7d7d;
+      // width: px2vw(125);
+      flex-shrink: 0;
+      font-size: px2vw(26);
+      font-family: $font-family;
+      font-weight: 400;
+    }
+    .value {
+      display: flex;
+      color: #262626;
+      width: 100%;
+      overflow-x: hidden;
+      align-items: center;
+      justify-content: flex-end;
+      margin-left: px2vw(30);
+      white-space: nowrap;
+      font-size: px2vw(26);
+      line-height: px2vw(30);
+      font-weight: 400;
+      font-family: $font-family;
+    }
+  }
+}
+.transfer {
+  padding: 0 px2vw(40);
+  /deep/ .van-button {
+    width: px2vw(670);
+    height: px2vw(90);
+    color: #fff;
+    background: linear-gradient(
+      270deg,
+      rgba(107, 171, 255, 1) 0%,
+      rgba(108, 138, 249, 1) 100%
+    );
+    font-size: px2vw(34);
+    border-radius: px2vw(45);
+    margin-top: px2vw(101);
+  }
+}
+</style>

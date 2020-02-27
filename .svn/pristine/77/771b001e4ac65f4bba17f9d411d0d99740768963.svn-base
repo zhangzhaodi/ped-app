@@ -1,0 +1,280 @@
+<template>
+  <div class="stylesize">
+    <div id="myChart" :style="{width: '100%'}"></div>
+  </div>
+</template>
+
+<script>
+import echarts from "echarts";
+export default {
+  components: {},
+  data() {
+    return {
+      option: {}
+    };
+  },
+  props: {
+    chartData: {
+      require: true
+    },
+    chartType: {
+      type: String,
+      require: true
+    },
+    interval: {
+      type: Number,
+      default: 7
+    },
+    max: {
+      require:false,
+      default:null
+    },
+    min: {
+      require:false,
+      default:null
+    }
+  },
+  created() {
+    //请求数据
+    console.log(this.chartType);
+    let type;
+    let chartType = this.chartType;
+    if (chartType == "yield" || chartType == "prdValue") {
+      type = "time";
+    } else {
+      type = "value";
+    }
+    this.option = {
+      xAxis: {
+        // type: 'category',
+        type: type,
+        boundaryGap: false,
+        splitLine: {
+          show: false,
+          color: "RGBA(243, 245, 254, 1)",
+          height: 1
+        },
+        axisTick: {
+          show: false
+        },
+        axisLine: {
+          show: false
+        },
+        axisLabel: {
+          show: true,
+          textStyle: {
+            color: "#7D7D7D", //更改坐标轴文字颜色
+            fontSize: 10 //更改坐标轴文字大小
+          },
+          // formatter: function(val) {
+          //   if (type == "value") {
+          //     return val + "期";
+          //   }
+          // }
+        },
+        max:this.max,
+        min:this.min
+      },
+      grid: {
+        x: chartType=='prdValue'?70:50,
+        y: 25,
+        x2: 25,
+        y2: 40,
+        // containLabel:true
+      },
+      tooltip: {
+        trigger: "axis",
+        confine: true,
+        axisPointer: {
+          type: "line",
+          label: {
+            backgroundColor: "#6a7985"
+          }
+        },
+        formatter: this.get
+        // trigger:'none'
+      },
+      yAxis: {
+        type: "value",
+        scale:chartType=='prdValue',
+        axisLine: {
+          show: false,
+        },
+        axisTick: {
+          show: false
+        },
+        splitLine: {
+          show: true,
+          lineStyle: {
+            color: ["rgba(243, 245, 254, 0.5)"],
+            width: 1,
+            opacity: 0.1,
+            type: "solid"
+          }
+        },
+        axisLabel: {
+          textStyle: {
+            color: "#7D7D7D", //更改坐标轴文字颜色
+            fontSize: 10 //更改坐标轴文字大小
+          },
+          formatter: function(val) {
+            if (chartType == "prdValue") {
+              return Math.round(val * 10000) / 10000;
+            } else if (chartType == "yield") {
+              return Math.ceil(val * 10000) / 100 + "%";
+            } else {
+              //incomedata
+              if (val > 1) {
+                return Math.ceil(val * 100) / 100 + "%";
+              } else {
+                return Math.ceil(val * 10000) / 100 + "%";
+              }
+            }
+          }
+        }
+      },
+      series: [
+        {
+          data: this.chartData,
+          type: "line",
+          lineStyle: {
+            color: "#3AABFF"
+          },
+          symbol: "circle",
+          symbolSize: "1",
+          showSymbol: false,
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              {
+                offset: 0,
+                color: "rgba(58, 138, 255, .6)"
+              },
+              {
+                offset: 1,
+                color: "rgba(58, 180, 255, .4)"
+              }
+            ])
+          },
+          itemStyle: {
+            normal: {
+              borderWidth: 3,
+              // borderColor: 'yellow',
+              color: "RGBA(39, 145, 250, 1)"
+            }
+          }
+        }
+      ]
+    };
+    if (this.interval) {
+      this.option.xAxis.interval = 3600 * 24 * 1000 * this.interval;
+    } else {
+      this.option.xAxis.interval = 1;
+    }
+    console.log(this.option);
+  },
+  mounted() {
+    this.drawLine();
+    //根据窗口的大小变动图表 --- 重点
+    window.onresize = function() {
+      myChart.resize();
+      //myChart1.resize();    //若有多个图表变动，可多写
+    };
+  },
+  watch: {
+    chartData: {
+      handler(val) {
+        console.log(val);
+        this.option.series[0].data = val;
+        if (this.interval) {
+          this.option.xAxis.interval = 3600 * 24 * 1000 * this.interval;
+        } else {
+          this.option.xAxis.interval = 1;
+        }
+        console.log(this.option);
+        this.drawLine();
+      }
+    }
+  },
+  methods: {
+    drawLine() {
+      // 基于准备好的dom，初始化echarts实例
+      let myChart = echarts.init(document.getElementById("myChart"));
+      // 绘制图表
+      myChart.setOption(this.option, true);
+      // console.log(this.$echarts);
+    },
+    Format(value, fmt) {
+      let getDate = new Date(value);
+      if (value == 0) {
+        return "";
+      }
+      let o = {
+        "M+": getDate.getMonth() + 1,
+        "d+": getDate.getDate(),
+        "h+": getDate.getHours(),
+        "m+": getDate.getMinutes(),
+        "s+": getDate.getSeconds(),
+        "q+": Math.floor((getDate.getMonth() + 3) / 3),
+        S: getDate.getMilliseconds()
+      };
+      if (/(y+)/.test(fmt)) {
+        fmt = fmt.replace(
+          RegExp.$1,
+          (getDate.getFullYear() + "").substr(4 - RegExp.$1.length)
+        );
+      }
+      for (let k in o) {
+        if (new RegExp("(" + k + ")").test(fmt)) {
+          fmt = fmt.replace(
+            RegExp.$1,
+            RegExp.$1.length === 1
+              ? o[k]
+              : ("00" + o[k]).substr(("" + o[k]).length)
+          );
+        }
+      }
+      return fmt;
+    },
+    get(params) {
+      const item = params[0];
+      //      `
+      // 当前日期:${item.data[0]}
+      // 年化收益率:${Math.ceil(parseFloat(item.data[1]) * 100) / 100 + "%"}
+      // `;
+      if (this.chartType == "yield") {
+        return `  
+        当前日期:${this.Format(item.data[0], "MM-dd")}
+        </br>
+        年化收益率:${Math.round(parseFloat(item.data[1]) * 10000) / 100 + "%"}`;
+      } else if (this.chartType == "prdValue") {
+        return `  
+        当前日期:${this.Format(item.data[0], "MM-dd")}
+        </br>
+        当前净值:${item.data[1]}`;
+      } else {
+        return `  
+        当前期数:${item.data[0]}期
+        </br>
+        预期收益率:${(parseFloat(item.data[1]) < 1
+          ? Math.ceil(parseFloat(item.data[1]) * 10000) / 100
+          : Math.ceil(parseFloat(item.data[1]) * 100) / 100) + "%"}`;
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.stylesize {
+  // width: 100%;
+  // height: px2vw(466);
+  background: rgba(255, 255, 255, 1);
+  // padding: 0 px2vw(40);
+  // box-sizing: border-box;
+}
+#myChart {
+  width: 100% !important;
+  height: px2vw(467);
+  // border: 1px solid red;
+  margin: 0 auto;
+}
+</style>

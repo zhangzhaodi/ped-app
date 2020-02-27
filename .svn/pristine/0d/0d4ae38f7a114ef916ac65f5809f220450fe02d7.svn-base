@@ -1,0 +1,531 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :isWhite="true" backgroundColor="linear-gradient(270deg,rgba(248,204,173,1) 0%,rgba(218,154,120,1) 100%)"></Myheader>
+    <div class="main-wrapper">
+      <div class="top">
+        <div class="aggregate">
+          <h3>持仓市值(元)</h3>
+          <p>{{useVol | Money}}</p>
+        </div>
+        <!-- <div class="earnings-box">
+          <div class="item">
+            <p class="title">昨日收益(元)</p>
+            <p class="money">{{aggregate | Money}}</p>
+          </div>
+          <div class="item">
+            <p class="title">累计收益(元)</p>
+            <p class="money">{{aggregate | Money}}</p>
+          </div>
+        </div> -->
+        <div class="nav-box">
+          <ul>
+            <!-- <li @click="goEarnings">
+              <img src="@/assets/fund/icon_shouyimingxi@2x.png" alt />
+              <p>收益明细</p>
+            </li> -->
+            <li @click="goHistory">
+              <img src="@/assets/fund/icon_jiaoyilishi@2x.png" alt />
+              <p>交易历史</p>
+            </li>
+            <li @click="goFundPlan">
+              <img src="@/assets/fund/icon_wodedingtou@2x.png" alt />
+              <p>我的定投</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="stick-box">
+        <van-tabs class="content" v-model="active" sticky line-width="16" line-height="2">
+          <van-tab title="持仓中">
+            <div v-if="positionList.length > 0" class="list-box" v-for="(item,index) in positionList" :key="index" @click="toDetail(item)">
+              <div class="name">
+                {{item.ProductName}}
+                <p class="num">
+                  {{item.ProductNo}}
+                </p>
+              </div>
+              <div class="bottom">
+                <div class='item'>
+                  <p class="title">昨日收益(元)</p>
+                  <p class="money red">{{item.LastDayIncome | Money}}</p>
+                </div>
+
+                <div class='item'>
+                  <p class="title">持有收益(元)</p>
+                  <p class="money red">{{item.TolProfitAMT | Money}}</p>
+                </div>
+
+                <div class='item'>
+                  <p class="title">持有市值(元)</p>
+                  <p class="money">{{item.CurrentValue | Money}}</p>
+                </div>
+              </div>
+            </div>
+            <div v-if="positionList.length == 0" class="nodata-box list-box">
+              <img :src="require(`@/assets/fund/img_kongzhuangtai@2x.png`)" alt />
+              <p class="info">您暂无持仓中的基金</p>
+              <a class="link"  @click="goMarket">逛逛基金超市<span class="iconfont">&#xe649;</span></a>
+            </div>
+          </van-tab>
+
+          <van-tab title="委托中">
+            <div v-if="entrustList.length > 0" class="list-box" v-for="(item,index) in entrustList" :key="index" @click="toEntrustDetail(item)">
+              <div class="name">
+                {{item.ProductName}}
+                <p class="num">
+                  {{item.ProductNo}}
+                </p>
+              </div>
+              <div class="bottom">
+                <div class='item'>
+                  <p class="title">委托金额(元)</p>
+                  <p class="money red">{{item.AMT | Money}}</p>
+                </div>
+
+                <div class='item text-center'>
+                  <p class="title">委托类型</p>
+                  <p class="money">{{item.TransactionName}}</p>
+                </div>
+
+                <div class='item'>
+                  <p class="title text-right">委托日期</p>
+                  <p class="money">{{item.TransDate | dateFormatDot}}</p>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="entrustList.length == 0" class="nodata-box list-box">
+              <img :src="require(`@/assets/fund/img_kongzhuangtai@2x.png`)" alt />
+              <p class="info">您暂无委托中的基金</p>
+              <a class="link" @click="goMarket">逛逛基金超市<span class="iconfont">&#xe649;</span></a>
+            </div>
+          </van-tab>
+        </van-tabs>
+      </div>
+      <!-- <Footer :isShow="false"></Footer> -->
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+// import Footer from "../../components/Footer";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import dayjs from 'dayjs'
+import { Sticky } from "vant";
+export default {
+  components: {
+    Myheader: Header,
+    [Sticky.name]: Sticky,
+    Scroller
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      //总计
+      aggregate: "0",
+      underway: "3",
+      apply: "1",
+      active: '',
+      useVol: 0,
+      //持仓列表
+      positionList:[],
+      positionList1: [
+        {
+          name: '易方达财富快线货币市场基金A类【000647】',
+          shouldRepay: "10000",
+          refundDate: "2019-08-20",
+          refundMoney: "2000"
+        },
+        {
+          name: '易方达财富快线货币市场基金A类【000647】',
+          shouldRepay: "10000",
+          refundDate: "2019-08-20",
+          refundMoney: "2000"
+        },
+        {
+          name: '易方达财富快线货币市场基金A类【000647】',
+          shouldRepay: "10000",
+          refundDate: "2019-08-20",
+          refundMoney: "2000"
+        },
+        {
+          name: '易方达财富快线货币市场基金A类【000647】',
+          shouldRepay: "10000",
+          refundDate: "2019-08-20",
+          refundMoney: "2000"
+        },
+        {
+          name: '易方达财富快线货币市场基金A类【000647】',
+          shouldRepay: "10000",
+          refundDate: "2019-08-20",
+          refundMoney: "2000"
+        },
+        {
+          name: '易方达财富快线货币市场基金A类【000647】',
+          shouldRepay: "10000",
+          refundDate: "2019-08-20",
+          refundMoney: "2000"
+        },
+
+      ],
+      //委托列表
+      applying: [
+        {
+          name: '易方达财富快线货币市场基金A类【000647】',
+          money: "10000",
+          type: "赎回",
+          date: "2019-08-20"
+        },
+        {
+          name: '易方达财富快线货币市场基金A类【000647】',
+          type: "赎回",
+          money: "10000",
+          date: "2019-08-20"
+        },
+      ],
+      entrustList: [],
+    };
+  },
+  created() {
+    // let clientWidth = document.body.clientWidth;
+    // console.log(clientWidth);
+    // this.stickyHeight = (44 / 375) * clientWidth;
+    this.getPosiAmt();
+    this.getEntrustList();
+    this.getPositionList();
+  },
+  mounted() { },
+  computed: {
+    ...mapState('common', ['userInfo']),
+  },
+  filters: {
+    dateFormatDot(val) {
+      return dayjs(val).format('YYYY.MM.DD')
+    }
+  },
+  methods: {
+    ...mapMutations('fund', ['SELECTPOSITION']),
+    //客户资产查询
+    getPosiAmt(){
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        CustomerIdentifyType: '1',
+        Account: this.userInfo.CifNo,
+        PrdTypes: '0',
+        AccType: '1',
+      }
+      this.request("CustomerAssetSumQry", params).then(res => {
+        console.log(res, "持仓市值")
+        this.useVol = res.UseVol;
+      }).catch(err=>{
+      })
+    },
+    // 获取委托中列表
+    getEntrustList() {
+      // BranchId=PHNE&ChnlId=62&ProductType=0&CustomerIdentifyType=1&CustomerIdentify=12007573&PositionString=1&QueryRowsNum=10
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        CustomerIdentifyType: '1',
+        CustomerIdentify: this.userInfo.CifNo,
+        PositionString: '1',
+        QueryRowsNum: '10',
+        TemplateCode: "0102",//筛选普通基金标记
+      }
+      this.request("FundEntrustCurListQry", params,false,true).then(res => {
+        console.log(res, "wei")
+        this.entrustList = res.CurCommisList;
+      }).catch(err=>{
+        if(err._RejMessage.indexOf('无记录') > -0){
+          this.entrustList = [];
+        }
+      })
+    },
+    // 获取持仓中列表
+    getPositionList(){
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        CustomerIdentifyType: '1',
+        CustomerIdentify: this.userInfo.CifNo,
+        PositionString: '1',
+        QueryRowsNum: '10',
+        Flag: 1,//筛选普通基金标记
+      }
+      this.request("CustomerHolProdListQry", params).then(res => {
+        console.log(res, "wei")
+        this.positionList = res.FProPortAMTList;
+      }).catch(err=>{
+        this.positionList = [];
+      })
+    },
+    goEarnings() {
+      this.$router.push({ name: 'earnings' })
+    },
+    goHistory() {
+      this.$router.push({ name: 'positionHistory' })
+    },
+    goFundPlan() {
+      this.$router.push({ name: 'fundPlan' })
+    },
+    goMarket(){
+      this.$router.push({ name: 'market' })
+    },
+    toDetail(item){
+      this.SELECTPOSITION(item);
+      this.$router.push({name: 'positionDetail' ,params: { data: item }})
+    },
+    toEntrustDetail(item) {
+      this.SELECTPOSITION(item);
+      this.$router.push({ name: 'entrustDetail', params: { data: item } })
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/.main-wrapper .van-sticky--fixed {
+  top: px2vw(88);
+}
+.main-wrapper {
+  margin-top: px2vw(88);
+  height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.outer {
+  position: relative;
+  background: #f5f6f8;
+  .headerBox {
+    top: 0;
+    position: fixed;
+  }
+  .top {
+    background: linear-gradient(
+      270deg,
+      rgba(248, 204, 173, 1) 0%,
+      rgba(218, 154, 120, 1) 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 100% px2vw(402);
+    .aggregate {
+      padding-top: px2vw(50);
+      margin: 0 px2vw(30);
+      font-family: PingFangSC;
+      font-weight: 300;
+      text-align: center;
+      color: rgba(255, 255, 255, 1);
+
+      h3 {
+        font-size: px2vw(26);
+        font-weight: 300;
+        margin: 0;
+        margin-bottom: px2vw(20);
+      }
+      p {
+        font-size: px2vw(60);
+        font-weight: 500;
+      }
+      span {
+        font-size: px2vw(24);
+      }
+    }
+    .earnings-box {
+      display: flex;
+      margin: px2vw(50) px2vw(40) px2vw(0);
+      .item {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        .title {
+          font-size: px2vw(22);
+          color: #fff;
+          margin-bottom: px2vw(13);
+          font-weight: 300;
+        }
+        .money {
+          font-size: px2vw(34);
+          color: #fff;
+          font-weight: 500;
+        }
+      }
+    }
+    .nav-box {
+      margin: px2vw(45) px2vw(40) 0;
+      background: rgba(255, 255, 255, 1);
+      border-radius: px2vw(16);
+      box-shadow: 0px 2px 20px 0px rgba(168, 168, 168, 0.1);
+      padding: px2vw(16) px2vw(60) px2vw(18);
+      margin-bottom: px2vw(35);
+      ul {
+        display: flex;
+        justify-content: space-between;
+        li {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          img {
+            margin-bottom: px2vw(10);
+            width: px2vw(54);
+          }
+          p {
+            font-size: px2vw(26);
+            font-family: PingFangSC;
+            font-weight: 400;
+            color: rgba(38, 38, 38, 1);
+          }
+        }
+      }
+    }
+  }
+
+  .stick-box {
+    background: #f5f6f8;
+    .content {
+      height: 100%;
+      padding: 0 px2vw(30);
+      display: flex;
+      flex-direction: column;
+      /deep/ .van-tabs__nav {
+        background: #f5f6f8;
+        .van-tab {
+          font-size: px2vw(26);
+          font-weight: 400;
+          font-family: $font-family;
+        }
+        .van-tab--active {
+          font-size: px2vw(30);
+          font-weight: 500;
+          color: #262626;
+        }
+        .van-tabs__line {
+          background-color: #262626;
+          bottom: px2vw(45);
+        }
+      }
+      .state-box {
+        padding: px2vw(34) 0 px2vw(10);
+        display: flex;
+        justify-content: space-between;
+        .state {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          p {
+            font-size: px2vw(30);
+            font-family: PingFangSC;
+            font-weight: 400;
+            color: rgba(125, 125, 125, 1);
+            margin-bottom: px2vw(16);
+          }
+          .active {
+            color: rgba(38, 38, 38, 1);
+            font-weight: 500;
+          }
+          .state-bottom {
+            width: px2vw(40);
+            height: px2vw(4);
+            background: none;
+            border-radius: px2vw(2);
+          }
+          .activestate {
+            background: rgba(38, 38, 38, 1);
+          }
+        }
+      }
+      .div {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: px2vw(200);
+      }
+    }
+  }
+  .list-box {
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    padding: 0 px2vw(30);
+    border-radius: px2vw(16);
+    margin-bottom: px2vw(30);
+    .name {
+      font-size: px2vw(28);
+      font-family: $font-family;
+      font-weight: 400;
+      margin-top: px2vw(40);
+      .num{
+        color:#7d7d7d;
+        font-size:px2vw(24);
+        font-family: $font-family;
+        font-weight: 300;
+        margin-top: px2vw(22);
+      }
+    }
+    .bottom {
+      display: flex;
+      justify-content: space-between;
+      margin-top: px2vw(30);
+      padding-bottom: px2vw(41);
+      .item {
+        flex-direction: column;
+        .title {
+          font-size: px2vw(24);
+          margin-bottom: px2vw(20);
+          font-weight: 400;
+          font-family: $font-family;
+          color: #7d7d7d;
+        }
+        .money {
+          font-size: px2vw(30);
+          color: #262626;
+          font-weight: 500;
+          font-family: $font-family;
+          &.red {
+            color: #f75a50;
+          }
+        }
+      }
+    }
+  }
+  .nodata-box {
+    img {
+      margin-top: px2vw(63);
+      margin-bottom: px2vw(20);
+    }
+    .info{
+      color:#A8A8A8;
+      font-size: px2vw(24);
+      font-weight: 400;
+      font-family: $font-family;
+      margin-bottom:px2vw(20);
+    }
+    .link{
+      color:#008BFF;
+      font-size: px2vw(24);
+      font-weight: 400;
+      font-family: $font-family;
+      margin-bottom: px2vw(55);
+      .iconfont{
+        color:#008BFF;
+        font-size: px2vw(14);
+      }
+    }
+  }
+  .footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+  }
+}
+</style>

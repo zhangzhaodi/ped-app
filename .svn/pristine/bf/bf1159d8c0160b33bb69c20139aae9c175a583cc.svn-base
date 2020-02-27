@@ -1,0 +1,91 @@
+<template>
+  <div class="overlay">
+    <van-overlay :z-index="100" :show="loading">
+      <div class="wrapper">
+        <div class="loading-img" slot="img">
+          <img src="~@/assets/loading-gold.gif" />
+        </div>
+        <div class="loading-info">
+          <p class="top">请耐心等待申购结果…</p>
+          <p class="desc">结果返回前请不要重复操作</p>
+        </div>
+
+      </div>
+    </van-overlay>
+  </div>
+</template>
+
+<script>
+import { Overlay } from "vant";
+export default {
+  name: 'fundOverlay',
+  components: {
+    [Overlay.name]: Overlay,
+  },
+  props: {
+    visible: {
+      type: Boolean,
+      default: false
+    },
+  },
+  data() {
+    return {
+      loading: this.visible,
+      security: {
+        captcha: 'false',
+        password: '',
+      }
+    };
+  },
+  mounted() {
+
+  },
+  computed: {
+  },
+  methods: {
+    confirm() {
+      this.$emit('confirm');
+    }
+  },
+  watch: {
+    //监听父组件变化，并赋值
+    visible: {
+      handler(val) {
+        this.loading = val;
+      }
+    },
+    loading: {
+      handler(val) {
+        this.$emit("update:visible", val);
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.overlay{
+  .loading-img{
+    width:px2vw(84);
+    height:px2vw(36);
+    img{
+      width:100%;
+    }
+  }
+  .loading-info{
+    text-align:center;
+    .top{
+      font-size:px2vw(28);
+      font-family:$font-family;
+      font-weight:400;
+      color:#262626;
+      margin-bottom: px2vw(20);
+    }
+    .desc{
+      font-size:px2vw(24);
+      font-family: $font-family;
+      font-weight: 300;
+      color:#7d7d7d;
+    }
+  }
+}
+</style>

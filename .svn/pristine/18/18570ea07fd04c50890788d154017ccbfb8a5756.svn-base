@@ -1,0 +1,107 @@
+<template>
+    <div class="outer">
+    <Myheader
+    :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'#fff'">
+    </Myheader>
+    <div class="content">
+      <h4>个人税收居民身份声明文件</h4>
+      <p>姓名：___________</p>
+      <P>本人声明：✔️1.仅为中国税收居民 □ 2.仅为非居民</P>
+      <P>□ 3.既是中国税收居民又是其他国家（地区）税收居民</P>
+      <P>如在以上选项中勾选第2项或者第3项，请填写下列信息：</P>
+      <P>姓（英文或拼音）：___________名（英文或拼音）：</P>
+      <P>出生日期：</P>
+      <P>现居地址（中文）：     （国家）    （省）     （市）       （境外地址可不填此项）</P>
+      <P>（英文或拼音）：    （国家）    （省）     （市）</P>
+      <P>出生地（中文）：     （国家）    （省）     （市）         （境外地址可不填此项）</P>
+      <P>（英文或拼音）：     （国家）    （省）    （市）</P>
+      <P>税收居民国（地区）及纳税人识别号：</P>
+      <P>1.___________</P>
+      <P>2.（如有）___________</P>
+      <P>3.（如有）___________</P>
+      <P>如不能提供居民国（地区）纳税人识别号，请选择原因：</P>
+      <P> □ 居民国（地区）不发放纳税人识别号</P>
+      <P>□ 账户持有人未能取得纳税人识别号，如选此项，请解释具体原因：</P>
+      <P>本人确认上述信息的真实、准确和完整，且当这些信息发生变更时，将在30日内通知贵机构，否则本人承担由此造成的不利后果。</P>
+      <P>签名：_________________________________     日期：</P>
+      <P>签名人身份：✔️ 本人    □ 代理人</P>
+      <P>说明：</P>
+      <P>1. 本表所称中国税收居民是指在中国境内有住所，或者无住所而在境内居住满一年的个人。在中国境内有住所是指因户籍、家庭、经济利益关系而在中国境内习惯性居住。在境内居住满一年，是指在一个纳税年度中在中国境内居住365日。临时离境的，不扣减日数。临时离境，是指在一个纳税年度中一次不超过30日或者多次累计不超过90日的离境。</P>
+      <P>2. 本表所称非居民是指中国税收居民以外的个人。其他国家（地区）税收居民身份认定规则及纳税人识别号相关信息请参见国家税务总局网站（http://www.chinatax.gov.cn/aeoi_index.html）。</P>
+      <P>3. 军人、武装警察无需填写此声明文件。</P>
+    </div>
+    </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+export default {
+  components: {
+    Myheader: Header,
+  },
+  data(){
+    return{
+      headerParams: {
+        leftShow: false,
+        rightShow: false,
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  height: 100%;
+  padding: 0 px2vw(40) px2vw(40);
+}
+h4{   text-align: center;
+      height:px2vw(96);
+      font-size:px2vw(38);
+      font-family:PingFangSC-Medium,PingFang SC;
+      font-weight:500;
+      color:rgba(38,38,38,1);
+      line-height:px2vw(48);
+    }
+    p{
+      font-size:px2vw(42);
+      font-family:PingFangSC-Regular,PingFang SC;
+      font-weight:400;
+      font-size:px2vw(28);
+      color:rgba(38,38,38,1);
+      line-height:px2vw(42);
+    }
+</style>

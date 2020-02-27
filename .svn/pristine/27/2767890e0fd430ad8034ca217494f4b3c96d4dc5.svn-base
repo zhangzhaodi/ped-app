@@ -1,0 +1,34 @@
+
+/**
+ * 获取系统时间当前时间 
+ * 返回格式 YYYMMDDHHMMSS
+ */
+export const getSystemTime = () => {
+  const date = new Date()
+  const Y = date.getFullYear().toString()
+  const M = date.getMonth() + 1 > 9 ? (date.getMonth() + 1).toString() : '0' + (date.getMonth() + 1)
+  const D = date.getDate() > 9 ? date.getDate().toString() : '0' + date.getDate()
+  const h = date.getHours().toString()
+  const m = date.getMinutes().toString()
+  const s = date.getSeconds().toString()
+  return Y + M + D + h + m + s
+}
+/**
+ * 获取当前时间戳
+ * 返回16位不重复数字
+ */
+export const getCurrentTimer = () => {
+  const timer = new Date().getTime()
+  return '000' + timer
+}
+
+/**
+ * 获取与今天天数相差日期
+ * 返回8位如：20191126
+ */
+export const getDiffDays = (date, differ) => {
+  const getDate = new Date(new Date(date).getTime() + differ * 24 * 60 * 60 * 1000)
+  return `${getDate.getFullYear()}-${formatMonthAndDate(getDate.getMonth() + 1)}-${formatMonthAndDate(getDate.getDate())}`
+}
+
+const formatMonthAndDate = val => val < 10 ? '0' + val : val

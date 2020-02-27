@@ -1,0 +1,165 @@
+<template>
+  <div class="outer">
+    <Myheader class="header"
+              :title="title"
+              :isSet="false"
+              :params="headerparams">
+      <template slot="left">
+        <span class="iconfont iconicon_search-"
+              @click="toSearch"></span>
+      </template>
+    </Myheader>
+    <div class="content">
+      <md-scroll-view ref="list"
+                      v-if="list.length"
+                      :auto-reflow="true"
+                      :scrolling-x="false"
+                      @end-reached="$_onEndReached">
+        <div class="list-wrap"
+             v-for="(item,index) in list"
+             :key="index">
+          <p class="list-time"
+             v-show="index===0">{{item.releaseTime | dateAndTime}}</p>
+          <div class="list-item"
+               @click="$router.push({path:'/article',query:{noticeType ,bankAnnoucementId :item.bankAnnoucementId,isDeep:true}})">
+            <p class="list-title">{{item.title}}</p>
+            <p class="list-text">{{item.content}}</p>
+          </div>
+        </div>
+        <md-scroll-view-more slot="more"
+                             :is-finished="isFinished">
+        </md-scroll-view-more>
+      </md-scroll-view>
+    </div>
+  </div>
+</template>
+
+<script>
+import request from '@/axios/http.js'
+import Header from "@/components/Header/Header.vue";
+import announceList from "../components/announceList";
+import { getDateAndTime } from '../js/index'
+import { ScrollView, ScrollViewMore, Toast } from 'mand-mobile'
+export default {
+  components: {
+    Myheader: Header,
+    announceList,
+    [ScrollView.name]: ScrollView,
+    [ScrollViewMore.name]: ScrollViewMore
+  },
+  data () {
+    return {
+      headerparams: {
+        rightShow: false
+      },
+      title: '银行公告',
+      value: "",
+      pageIndex: 1,
+      pageSize: 10,
+      list: [],
+      noticeType: '',
+      isFinished: false
+    };
+  },
+  filters: {
+    dateAndTime (timer) {
+      return getDateAndTime(timer.replace(/-/g, '/')).replace(/\//g, '-')
+    }
+  },
+  mounted () {
+    window.NativeCall.getBankNoticeType(res => {
+      const response = JSON.parse(res)
+      if (response.noticeJumpType === '1') {
+        const { noticeType, noticeInfoId } = response
+        this.$router.replace({ path: '/article', query: { noticeType, bankAnnoucementId: noticeInfoId, isDeep: false } })
+      } else {
+        this.noticeType = response.noticeType
+        this.title = ['银行公告', '产品公告', '旅游快讯'][this.noticeType]
+        this.$nextTick(() => {
+          this.getList()
+        })
+      }
+    })
+  },
+  methods: {
+    getList () {
+      this.request("BankBulletinQry", {
+        BranchId: "0101",
+        ChnlId: "62",
+        StartPageNum: (this.pageIndex - 1) * 10 + 1,
+        EndPageNum: this.pageIndex * 10,
+        ChannelId: this.noticeType
+      }).then(res => {
+        if (res.QueryBankInfo.length < 10) {
+          this.isFinished = true
+        }
+        this.list = this.list.concat(res.QueryBankInfo)
+      });
+    },
+    toSearch () {
+      this.$router.push({ name: "search" });
+    },
+    $_onEndReached () {
+      if (this.isFinished) {
+        return
+      }
+      this.pageIndex++
+      // async data
+      setTimeout(() => {
+        this.getList();
+        this.$refs.list.finishLoadMore()
+      }, 1000)
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f6f8;
+  .header {
+    margin-bottom: px2vw(40);
+  }
+  .content {
+    flex: 1;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+    font-family: PingFangSC-Regular, PingFangSC;
+    .list-wrap {
+      margin-bottom: px2vw(30);
+      .list-time {
+        margin-bottom: px2vw(10);
+        text-align: center;
+        font-size: px2vw(24);
+      }
+      .list-item {
+        margin: 0 px2vw(30);
+        padding: px2vw(40) px2vw(40) px2vw(30);
+        border-radius: px2vw(16);
+        background: #fff;
+        .list-title {
+          margin-bottom: px2vw(20);
+          font-size: px2vw(30);
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+        }
+        .list-text {
+          font-size: px2vw(26);
+          font-weight: 400;
+          color: rgba(125, 125, 125, 1);
+        }
+      }
+    }
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+  .iconfont {
+    font-size: px2vw(40);
+    font-weight: bold;
+  }
+}
+</style>

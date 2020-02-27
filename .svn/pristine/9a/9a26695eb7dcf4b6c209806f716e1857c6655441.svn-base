@@ -1,0 +1,249 @@
+<template>
+  <div class="outer">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :backgroundColor="background"
+      :isWhite="isWhite"
+    ></Myheader>
+    <div class="content">
+      <img src="@/assets/recommendShare/img_jianzheyouli@2x.png" alt class="img1" />
+      <img src="@/assets/recommendShare/img_yaohaoyouzhuanhaoli@2x.png" alt class="img2" />
+      <!-- <img src class="img3" /> -->
+      <div class="img3">推荐分享</div>
+      <div class="box">
+        <div class="item" @click="toFriend">
+          <img src="@/assets/recommendShare/icon_yaoqingzhuce@2x.png" alt class="iconfont" />
+          <p class="text">邀好友注册</p>
+          <div class="right"></div>
+          <div class="bottom"></div>
+        </div>
+        <!-- <div class="item">
+          <img src="@/assets/recommendShare/icon_tiujianlicai@2x.png" alt class="iconfont" />
+          <p class="text">推荐理财</p>
+          <div class="right"></div>
+          <div class="bottom"></div>
+        </div>
+        <div class="item">
+          <img src="@/assets/recommendShare/icon_jijin@2x.png" alt class="iconfont" />
+          <p class="text">推荐基金</p>
+          <div class="bottom"></div>
+        </div>
+        <div class="item">
+          <img src="@/assets/recommendShare/icon_yaoqingzhuce@2x.png" alt class="iconfont" />
+          <p class="text">邀好友注册</p>
+          <div class="bottom"></div>
+          <div class="right"></div>
+        </div>
+        <div class="item">
+          <img src="@/assets/recommendShare/icon_yaoqingzhuce@2x.png" alt class="iconfont" />
+          <p class="text">邀好友注册</p>
+          <div class="bottom"></div>
+          <div class="right"></div>
+        </div>
+        <div class="item">
+          <img src="@/assets/recommendShare/icon_yaoqingzhuce@2x.png" alt class="iconfont" />
+          <p class="text">邀好友注册</p>
+
+          <div class="bottom"></div>
+        </div>
+        <div class="item">
+          <img src="@/assets/recommendShare/icon_yaoqingzhuce@2x.png" alt class="iconfont" />
+          <p class="text">邀好友注册</p>
+          <div class="right"></div>
+        </div>
+        <div class="item">
+          <img src="@/assets/recommendShare/icon_yaoqingzhuce@2x.png" alt class="iconfont" />
+          <p class="text">邀好友注册</p>
+          <div class="right"></div>
+        </div>
+        <div class="item">
+          <img src="@/assets/recommendShare/icon_yaoqingzhuce@2x.png" alt class="iconfont" />
+          <p class="text">邀好友注册</p>
+        </div> -->
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      background: "transparent",
+      isWhite: true
+    };
+  },
+  components: {
+    Myheader: Header
+  },
+  created() {
+    this.login();
+  },
+  methods: {
+    toFriend() {
+      this.$router.push({ name: "friend" });
+    },
+    getMoney() {
+      let params = {
+        BankId: 9999,
+        BranchId: 1699,
+        ChnlId: 39
+      };
+      this.request("GetShareFunction", { ...params }).then(res => {});
+    },
+    login() {
+      let params = {
+        BankId: "9999",
+        LoginId: "15670538691",
+        Password: "123456asd",
+        EquipmentId: "125657",
+        ChnlId: "62",
+        LoginType: "R",
+        BranchId: "01001",
+        LoginMode: "1",
+        AddrInfo: "郑州"
+      };
+      //测试
+      this.request("login", { ...params }).then(res => {
+        this.$store.state.userInfo = res;
+      });
+      window.NativeCall.getUserInfo(userInfo => {
+        // alert(userInfo)
+        this.$store.state.userInfo = JSON.parse(userInfo);
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background: url("~@/assets/recommendShare/bg_tiujianfenxiang@2x.png");
+  background-size: 100% 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  .content {
+    flex: 1;
+    overflow: auto;
+    height: px2vw(1341);
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .content::-webkit-scrollbar {
+    display: none;
+  }
+}
+.headerBox {
+  // position: absolute;
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  // padding-top: px2vw(88);
+  .img1 {
+    width: px2vw(630);
+  }
+  .img2 {
+    width: px2vw(458);
+    margin-top: px2vw(22);
+  }
+  .img3 {
+    width: px2vw(292);
+    margin-top: px2vw(179);
+    height: px2vw(50);
+    background: url("~@/assets/recommendShare/img_biaoti @2x.png");
+    background-size: 100% 100%;
+    font-size: px2vw(30);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    text-align: center;
+    color: rgba(255, 255, 255, 1);
+    line-height: px2vw(50);
+    z-index: 1000;
+  }
+  .box {
+    width: px2vw(650);
+    // height: px2vw(810);//测试
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    padding: px2vw(87) 0;
+    background: #fdfdfb;
+    border-radius: px2vw(18);
+    margin-top: px2vw(-37);
+    .item {
+      min-width: px2vw(216);
+      height: px2vw(220);
+      // display: flex;
+      // flex-direction: column;
+      // align-items: center;
+      position: relative;
+      .iconfont {
+        position: absolute;
+        width: px2vw(47);
+        // margin-top: px2vw(61);
+        left: 0;
+        top: px2vw(61);
+        right: 0;
+        margin: 0 auto;
+      }
+      .text {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Light, PingFang SC;
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+        // margin-top: px2vw(23);
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: px2vw(62);
+        margin: 0 auto;
+        text-align: center;
+      }
+    }
+  }
+}
+.right {
+  position: absolute;
+  width: px2vw(1);
+  height: px2vw(220);
+  background: #d8d8d8;
+  top: 0;
+  right: 0;
+}
+.bottom {
+  width: px2vw(216);
+  height: px2vw(1);
+  background: #d8d8d8;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+}
+.btn {
+  width: px2vw(530);
+  margin-top: px2vw(100);
+  .van-button {
+    width: 100%;
+    height: px2vw(90);
+    border-radius: px2vw(45);
+    background: linear-gradient(#f9c94f, #ffb42a);
+  }
+  .van-button__text {
+    font-size: px2vw(34);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+  }
+}
+</style>

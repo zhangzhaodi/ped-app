@@ -1,0 +1,423 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams"></Myheader>
+    <Scroller>
+      <div class="top"></div>
+      <Pagetitle :title="titleInfo" :notice="noticeInfo"></Pagetitle>
+      <div class="sel-item">
+        <div class="sel-m">
+          <van-field
+          @input="verifyCheck"
+            v-model="form.username"
+            :value="form.username"
+            placeholder="请输入姓名" />
+        </div>
+      </div>
+      <div class="sel-item">
+        <div class="sel-m">
+          <div class="sel-left">
+          <van-field
+          @input="verifyCheck"
+            v-model="form.IDCard"
+            :value="form.IDCard"
+            maxlength="18"
+            placeholder="请输入二代身份证号码"/>
+          </div>
+          <img src="@/assets/bankIcon/icon_dianzizanghu_saomiao.png" @click="ScanOcrIDCard('100')" alt />
+        </div>
+      </div>
+      <div class="sel-item">
+        <cell-select
+          class="sel-m"
+          :placeholder="`请选择开户网点`"
+          :title="form.network.DEPTNAME"
+          @click="goList"
+        ></cell-select>
+      </div>
+      <div class="sel-item">
+        <div class="sel-l sel-in">{{form.phone}}</div>
+      </div>
+      <div class="sel-item">
+        <div class="sel-m">
+          <div class="input-box">
+            <v-input
+              @input="verifyCheck"
+              type="verify"
+              :value="form.verify"
+              v-model="form.verify"
+              :useKeyboard="false"
+              placeholder="请输入短信验证码"
+            ></v-input>
+          </div>
+          <div>
+            <span class="verify" @click="sendHandle" v-if="showTime">发送验证码</span>
+            <van-count-down @finish="finish" v-else :time="time" format="sss后重发" />
+          </div>
+        </div>
+      </div>
+      <div v-if="config" class="report-box">
+        <p>验证码错误，请重新输入</p>
+      </div>
+      <div class="judge-box">
+        <div class="textbox" @click="changeCheck" >
+          <div class="check" >
+            <img v-if="!check"  src="@/assets/electronicAccounts/icon_gouxuan_nor@2x.png" alt="">
+            <img v-else src="@/assets/electronicAccounts/icon_gouxuan_sel@2x.png" alt="">
+          </div>
+        </div>
+        <div class="span-box">
+          <p>我已阅读并同意</p>
+          <span @click="gotoagreement">《电子账户服务协议》,《中国人民税收居民协议》</span>
+          <!-- @click="goProtocol" -->
+        </div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button class="marginLR40" :disabled="forbidden" @click="next">下一步</van-button>
+        </div>
+      </div>
+       <MyDialog
+                :showCancel="showCancel"
+                title="提示"
+                @con="confirm"
+                :show="alertShow"
+                :isClose="false"
+              >
+                <p slot="content" class="dialog-content">{{dialogText}}</p >
+              </MyDialog>
+    </Scroller>
+    <!-- 选择开户网点 -->
+    <department-list :show.sync="departmantShow"  :datainfo = "datainfo" @close="selectDepartMent"></department-list>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import CellSelect from "@/components/CellSelect";
+import DepartmentList from "./indexList.vue";
+import Pagetitle from "./components/Pagetitle";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { mapState, mapGetters, mapActions, mapMutations } from "vuex";
+import {
+  Popup,
+  Cell,
+  Checkbox,
+  CheckboxGroup,
+  CountDown,
+  Button,
+  Search,
+  Field,
+  // Dialog
+} from "vant";
+
+export default {
+  components: {
+    [Cell.name]: Cell,
+    Myheader: Header,
+    Scroller,
+    vInput,
+    Search,
+    MyDialog: Dialog,
+    Pagetitle,
+    CellSelect,
+    DepartmentList,
+    [Popup.name]: Popup,
+    [CheckboxGroup.name]: CheckboxGroup,
+    [Checkbox.name]: Checkbox,
+    [CountDown.name]: CountDown,
+    [Button.name]: Button,
+  },
+  data() {
+    return {
+       headerParams: {
+        leftShow: false,
+        rightShow: false,
+      },
+
+      department: {
+        name: ""
+      },
+      datainfo:null,//开会网点信息
+      titleInfo: "电子账户申请",
+      noticeInfo: "您正在进行II类账户开户",
+      verify: "", //验证码
+      idCard: "",
+      check: false,
+      show: false,
+      //验证码倒计时
+      showTime: true,
+      time: 60 * 1000,
+      //是否禁用
+      forbidden: true,
+      config: false,
+      //提示信息
+      dialogTitle: "提示",
+      dialogMessage: "短信验证错误超过5次，今日不能再申请注册手机银行",
+      showDialog: false,
+      confirmDialog: "确定",
+      config: false,
+      //选择开户网点
+      departmantShow: false,
+      //是否显示
+      alertShow: false,
+       //是否显示取消
+      showCancel: false,
+      dialogText:"",
+      SmsNbr:'',//短信验证信息
+      UserSmsId:'',//短信验证信息
+    };
+  },
+  computed: {
+    // 使用对象展开运算符将此对象混入到外部对象中
+    ...mapState("eleAccounts", {
+      form: "eleForm"
+      // count: state => state.count,
+      // 传字符串参数 'count' 等同于 `state => state.count`
+      // 为了能够使用 `this` 获取局部状态，必须使用常规函数
+      // countPlusLocalState (state) {
+      //   return state.count + this.localCount
+      // }
+    })
+    // ...mapGetters("eleAccounts", ["eleForm"])需要数据过滤配合created使用
+  },
+  beforeCreate(){
+  },
+  created(){
+    // this.form = { ...this.eleForm };
+    // 原生交互 获取用户信息  是否开通过电子账户 是否是开通时间
+    window.NativeCall.getUserInfo(params => {
+        let par=JSON.parse(params)
+        this.form.phone = par.MobilePhone;
+        this.form.UserId=par.UserId;
+        this.form.ChnlId=par.ChnlId;
+        this.form.ChannelCd=par.ChannelCd;
+        this.request('OpenBankFirst',{
+          BranchId:this.form.BranchId || "1666",
+        },true,true)
+          .then(res=>{
+            console.log(res)
+            this.datainfo = res.DeptInfoList
+          })
+          .catch(error=>{
+            console.log(error)
+            this.dialogText=error._RejMessage
+            this.alertShow=true
+          })
+    });
+  },
+  mounted() {
+    console.log(this.form);
+  },
+  methods: {
+    // 将 `this.updateEleForm()` 映射为 `this.$store.commit('updateEleForm',payload)`
+    ...mapActions("eleAccounts", ["updateEleForm"]),
+    //电子账户开户信息确认
+    next() {
+      this.request("OpenAcNoInfoConfirm",{
+            BranchId:this.form.BranchId || "1666",
+            ChnlId:this.form.ChnlId || '62',
+            CustNm: this.form.username || '',
+            CertNo:this.form.IDCard || '',
+            CertType:"1" || '',
+            HostOrg:'1323424'|| "",
+            Phone:this.form.phone || '',
+            SmsCode:this.form.verify ||  '',
+            UserSmsId:this.form.UserSmsId || '',
+            ApprTyp: "1" || '',
+            SmsNbr:this.form.SmsNbr || '',
+          })
+          .then((res)=>{
+            console.log(res);
+      this.form.verify = ''
+      this.updateEleForm(this.form);
+      this.$router.push({ name: "enterIdCard" });
+            // this.verifyCheck();
+          })
+          .catch((error)=>{
+              console.log(error);
+          })
+    },
+    //原生交互 调取拍照权限
+    ScanOcrIDCard(data) {
+      window.NativeCall.ScanOcrIDCard(data, params => {
+        let par=JSON.parse(params)
+        this.form.IDCard = par.Cardno;
+        this.form.username =par.Name;
+      });
+    },
+    //隐藏dialog
+    confirm(){
+      window.NativeCall.BackNative();
+      this.alertShow = false;
+    },
+    goHref() {
+      window.location.href = this.hrefUrl;
+    },
+    goList() {
+      this.departmantShow = true;
+    },
+    //选择营业网点
+    selectDepartMent(data) {
+      console.log(data, "选择营业部门");
+      this.departmantShow = false;
+      this.form.AcctOpenOrg=data.DEPTNBR
+      this.form.AcctOpenNam=data.DEPTNAME
+      this.form.network = data;
+      console.log(this.form);
+      this.verifyCheck();
+    },
+    sendHandle() {
+      this.showTime = false;
+      this.SendSmsPwd()
+    },
+    finish() {
+      this.showTime = true;
+    },
+    changeCheck() {
+      this.check = !this.check;
+      this.verifyCheck();
+    },
+    //判断是否可以点击下一步按钮
+    verifyCheck() {
+      if (
+        this.form.verify.length == 6 &&
+        this.form.IDCard.length >= 16 &&
+        this.form.network.DEPTNAME &&
+        this.form.username &&
+        this.check == true
+      ) {
+        this.forbidden = false;
+      } else {
+        this.forbidden = true;
+      }
+    },
+    gotoagreement(){
+      this.$router.push({ path: "/agreement" });
+    },
+    SendSmsPwd() {
+      let params = {
+        ApprTyp: "1",
+        BranchId: '1666',
+        ChnlId: '62',
+        VerifyTag: 'N',
+        PhoneNbr:this.form.phone,
+        VerifyScene: '1'
+      }
+      this.request('SendSmsOtpPassword',
+        params, true
+      ).then(res => {
+        let b={SmsNbr:res.SmsNbr,
+            UserSmsId:res.UserSmsId}
+        //同步赋值+更新 this.form = {...this.form,...b}
+        let newForm = {...this.form,...b}
+        this.updateEleForm(newForm);
+        console.log(res,"验证码已发送")
+        this.verifyCheck();
+      }).catch((error) => {
+        console.log(error)
+      })
+    },
+
+  }
+};
+</script>
+<style lang="scss" scoped>
+
+.img-box {
+  margin-top: px2vw(6);
+  float: right;
+  width: px2vw(10);
+  height: px2vw(20);
+  margin-right: px2vw(12);
+}
+/deep/ .sel-m .van-cell {
+  padding: 0;
+  font-size: px2vw(32);
+  margin-bottom: px2vw(-6);
+}
+
+.van-count-down {
+  font-size: px2vw(28);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.27);
+}
+.sel-in {
+  border: 0;
+}
+.input-box {
+  flex: 1;
+}
+.sel-item .sel-m  .verify{
+  color: #3e8fff;
+}
+.report-box {
+  padding: 0 px2vw(60);
+  margin-top: px2vw(20);
+}
+.report-box p {
+  font-size: px2vw(24);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(255, 64, 64, 1);
+  line-height: px2vw(24);
+}
+.judge-box {
+  padding-top: px2vw(31);
+  overflow: hidden;
+  display: flex;
+  padding-right: px2vw(40);
+}
+.textbox {
+  // margin-top: px2vw(26);
+  margin-right: px2vw(10);
+  padding-left: px2vw(60);
+  float: left;
+}
+.span-box p {
+  font-size: px2vw(24);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(149, 152, 160, 1);
+  float: left;
+}
+.span-box {
+  font-size: px2vw(24);
+  line-height: px2vw(33);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color:#0085FFFF;
+  float: left;
+  // margin-top: px2vw(31);
+}
+.textbox img {
+  width: px2vw(26);
+  height: px2vw(26);
+}
+.van-checkbox {
+  font-size: px2vw(26);
+}
+/deep/ .van-checkbox__icon {
+  font-size: 4.46667vw;
+}
+/deep/ .van-button {
+  line-height: 0;
+}
+
+  .check {
+    width: px2vw(24);
+    height: px2vw(24);
+    // background: url("~@/assets/electronicAccounts/icon_gouxuan_nor@2x.png")
+    //   no-repeat;
+    background-size: 100% 100%;
+
+    .iconfont {
+      color: #008bff;
+      font-size: px2vw(18);
+    }
+}
+.footer-box{
+  margin-top: px2vw(60);
+}
+</style>

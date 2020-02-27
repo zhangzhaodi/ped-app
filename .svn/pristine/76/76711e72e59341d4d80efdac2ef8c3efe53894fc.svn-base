@@ -1,0 +1,218 @@
+<template>
+  <div class="itemcontent">
+    <div class="letter search" v-if="isSearch">
+      <div class="van-index-anchor">
+        <span class="iconfont icon-iconset0157"></span>
+        <input type="text" :placeholder="searchPlaceholder" />
+      </div>
+    </div>
+    <div class="letter add" v-if="isAdd">
+      <router-link :to="{name:'add'}">
+        <div class="van-index-anchor">
+          <span class="icon">+</span>
+          <span>{{addPlaceholder}}</span>
+        </div>
+      </router-link>
+    </div>
+    <template v-for="(letter,index) in letter">
+      <van-index-anchor :index="letter" class="letter item" />
+      <template v-for="(item,i) in $store.state.linkmanList[letter]">
+        <van-swipe-cell>
+          <van-cell @click="toDetail(item)" class="detail">
+            <div class="left">
+              <img :src="item.img" />
+            </div>
+            <div class="right">
+              <p class="name">{{item.source}}</p>
+              <p class="bank">
+                <span>{{item.bankAccount | CardHide}}</span>
+                <span>|</span>
+                <span>{{item.bank}}</span>
+              </p>
+            </div>
+          </van-cell>
+          <template slot="right">
+            <van-button square type="danger" text="删除" />
+          </template>
+        </van-swipe-cell>
+      </template>
+    </template>
+  </div>
+</template>
+
+<script>
+import { IndexBar, IndexAnchor, SwipeCell } from "vant";
+export default {
+  components: {
+    [IndexAnchor.name]: IndexAnchor,
+    [SwipeCell.name]: SwipeCell,
+  },
+  props: {
+    letter: {
+      type: Array,
+      default: []
+    },
+    isSearch: {
+      type: Boolean,
+      default: true
+    },
+    searchPlaceholder: {
+      type: String,
+      default: "姓名/银行名/卡号后四位"
+    },
+    isAdd: {
+      type: Boolean,
+      default: true
+    },
+    addPlaceholder: {
+      type: String,
+      default: "新增收款人"
+    },
+    addTo: {
+      type: String,
+      default: "addPayer"
+    },
+    backRouter: {
+      type: String
+    }
+  },
+  methods: {
+    toDetail(row) {
+      this.$router.push({ name: "detail" });
+      row.city = "上海市";
+      row.branch = "长宁支行";
+      row.phone = "16746476578";
+      this.$store.state.payeeInfo = row;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "../css/iconfont.css";
+.item {
+  height: px2vw(60);
+  line-height: px2vw(60);
+}
+.search .iconfont {
+  color: #262626;
+  font-weight: 400;
+}
+a {
+  display: block;
+}
+.search {
+  width: 100%;
+  background-color: #fff;
+  height: px2vw(118);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 0.2px solid rgba(0, 0, 0, 0.1);
+  /deep/ .van-index-anchor {
+    width: 100%;
+    height: px2vw(70);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    border-radius: px2vw(35);
+    background-color: rgba(245, 246, 248, 1);
+    box-sizing: border-box;
+    margin: 0 px2vw(40);
+    input {
+      width: 100%;
+      height: px2vw(60);
+      line-height: px2vw(70);
+      margin-left: px2vw(20);
+      outline: none;
+      font-size: px2vw(24);
+      background-color: transparent;
+    }
+    .iconfont {
+      line-height: px2vw(70);
+    }
+  }
+}
+.add {
+  background-color: #fff;
+  text-align: center;
+  div {
+    height: px2vw(110);
+    line-height: px2vw(110);
+    span {
+      font-size: px2vw(34);
+      font-weight: 400;
+    }
+    .icon {
+      margin-right: px2vw(11);
+    }
+  }
+}
+/deep/ .van-swipe-cell {
+  height: px2vw(109);
+  background-color: paleturquoise;
+  /deep/.van-cell {
+    height: px2vw(109);
+    padding: px2vw(20) 0 px2vw(19) px2vw(45);
+  }
+}
+.detail {
+  /deep/ .van-cell__value {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    .left {
+      width: px2vw(55);
+      margin-right: px2vw(24);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      img {
+        width: px2vw(55);
+        height: px2vw(55);
+        border-radius: 50%;
+      }
+    }
+    .right {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      font-family: PingFangSC;
+      .name {
+        font-size: px2vw(30);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(30);
+        letter-spacing: 1px;
+      }
+      .bank {
+        font-size: px2vw(24);
+        font-family: PingFangSC;
+        font-weight: 300;
+        color: rgba(125, 125, 125, 1);
+        line-height: px2vw(24);
+        margin-top: px2vw(16);
+      }
+    }
+  }
+  /deep/ .van-cell:not(:last-child)::after {
+    right: px2vw(40);
+    left: px2vw(40);
+  }
+}
+/deep/ .van-swipe-cell__right {
+  width: px2vw(140);
+  height: px2vw(110);
+  button {
+    width: 100%;
+    height: 100%;
+    font-size: px2vw(34);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    line-height: px2vw(34);
+    letter-spacing: px2vw(1);
+  }
+}
+</style>

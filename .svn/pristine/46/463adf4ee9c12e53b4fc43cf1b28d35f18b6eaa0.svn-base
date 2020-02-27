@@ -1,0 +1,131 @@
+import Vue from "vue";
+import Router from "vue-router";
+const Index = ()=>import("../pages/index.vue")
+const Single = ()=>import("../pages/single.vue")
+const Earnings =()=>import("../pages/earnings.vue")
+const Detail =()=>import("../pages/detail.vue")
+const Transactionhistory =()=>import("../pages/transactionhistory.vue")
+const Rollin =()=>import("../pages/rollin.vue")
+const Rollout =()=>import("../pages/rollout.vue")
+const Rollinesult =()=>import("../pages/rollinresult.vue")
+const Rollouresult =()=>import("../pages/rolloutresult.vue")
+const Waitrollresult=()=>import("../pages/waitrollresult.vue")
+const Wait=()=>import("../pages/wait.vue")
+const Foundation=()=>import("../pages/foundation.vue")
+Vue.use(Router);
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/single",
+      name: "single",
+      component: Single,
+      meta: {
+        title: "游小宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/earnings",
+      name: "earnings",
+      component: Earnings,
+      meta: {
+        title: "收益明细",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/detail",
+      name: "detail",
+      component: Detail,
+      meta: {
+        title: "收益明细",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/transactionhistory",
+      name: "transactionhistory",
+      component: Transactionhistory,
+      meta: {
+        title: "交易历史",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/rollin",
+      name: "rollin",
+      component: Rollin,
+      meta: {
+        title: "转入游小宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/wait",
+      name: "wait",
+      component: Wait,
+      meta: {
+        title: "转入游小宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/waitrollresult",
+      name: "waitrollresult",
+      component: Waitrollresult,
+      meta: {
+        title: "转入游小宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/foundation",
+      name: "foundation",
+      component: Foundation,
+      meta: {
+        title: "基金详情",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/rollout",
+      name: "rollout",
+      component: Rollout,
+      meta: {
+        title: "转出游小宝",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/rollinresult",
+      name: "rollinresult",
+      component: Rollinesult,
+      meta: {
+        title: "转入结果",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/rolloutresult",
+      name: "rolloutresult",
+      component: Rollouresult,
+      meta: {
+        title: "转出结果",
+        keepAlive: false
+      }
+    },
+  ]
+});

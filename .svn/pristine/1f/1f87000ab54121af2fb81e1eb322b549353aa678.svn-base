@@ -1,0 +1,56 @@
+<template>
+  <div class="outer">
+    <Success :data="data"></Success>
+    <!-- <Fail :data="data" v-if="data.type==2"></Fail> -->
+  </div>
+</template>
+
+<script>
+import successResult from "../../components/successResult";
+// import failResult from "../components/failResult";
+export default {
+  components: {
+    Success: successResult
+    // Fail: failResult
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      // data: {
+      //   ProductName: "货币净值1107",
+      //   AMT: "10000.00",
+      //   ProdEndDate: "20191227",
+      //   ProdStartDate: "20191011"
+      // }
+      data: null
+    };
+  },
+  beforeRouteEnter(to, from, next) {
+    // console.log(from);
+    next(vm => {
+      if(from.name=='myPocket'){
+        vm.$router.push({name:'index'})
+      }
+      if(from.name=='index'){
+        vm.$router.push({name:'detail'})
+      }
+    });
+  },
+  created() {
+    // this.$store.state.params.type = 1
+    this.data = this.$route.params;
+    // console.log(this.$store.state.params)
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background-color: #fff;
+  box-sizing: border-box;
+  height: 100vh;
+}
+</style>

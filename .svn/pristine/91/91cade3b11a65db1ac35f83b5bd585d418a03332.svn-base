@@ -1,0 +1,228 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader :title="$route.meta.title"  :backRouter="headerBackRouter" :backgroundColor="'none'" ></Myheader>
+    <div class="content">
+        <!-- 月份 -->
+        <div v-for="(itme,index) in mounthlist">
+        <div v-if="mounth" class="mounth">
+          <div class="mounthtop">
+            <span>{{itme.mounth}}</span>
+            <span>{{itme.price}}</span>
+          </div>
+          <!-- 日子 -->
+          <div class="container">
+            <ul>
+              <li v-for="(itme,i) in list" @click="show(itme,i,$event)" >
+                <div class="container_data">
+                  <p class="title">{{itme.title}}
+                    <!-- <i  class="iconfont iconfont_down" v-if="downIcon" >&#xe622;</i>
+                    <i  class="iconfont iconfont_down" v-else="!downIcon" >&#xe623;</i> -->
+                  </p>
+                  <span>+2.00</span>
+                </div>
+                <!-- <div class="container_content">
+                  <div class="content_data" :class="{active:index}" >
+                    <P>{{itme.name}}</P>
+                    <span>+1.00</span>
+                  </div>
+                </div> -->
+              </li>
+            </ul>
+          </div>
+        </div>
+       </div>
+    </div>
+
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button} from "vant";
+export default {
+  components: {
+    Myheader: Header,   //头部组件
+    [Button.name]: Button,
+    headerParams: {
+        leftShow: true,
+        rightShow: false
+      }
+  },
+  data() {
+    return {
+      activeNames: ['1'],
+      mounth:true,
+      index:-1,
+      downIcon:true,
+      showData:false,
+      mounthlist:[
+        {mounth:'本月',price:"展示最近三月明细"},
+        {mounth:'7月',price:""},
+        {mounth:'6月',price:""}
+      ],
+      list:[
+        {title:"2019-09-01",name:"易基金天天理财A"},
+        {title:"2019-09-02",name:"易基金天天理财b"},
+        {title:"2019-09-03",name:"易基金天天理财c"}
+        ],
+       headerBackRouter: {
+        // name:'confirm',
+      }
+    };
+
+  },
+ computed: {
+
+  },
+  created(){
+
+  },
+  mounted() {
+    //请求数据
+  },
+  methods: {
+    show:function(m,i,e){
+      this.index = i;
+      this.wangbadan = !this.wangbadan
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,h1,h2,h3,h4,h5,img{
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  height: auto;
+  width: 100vw;
+  background: #fff;
+}
+// 内部样式
+.content{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+//top显示
+.top{
+  width: px2vw(690);
+  height: px2vw(238);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top:px2vw(76);
+}
+.top .top_p{
+  width:px2vw(148);
+  height:px2vw(26);
+  font-size:px2vw(26);
+  font-family:PingFangSC;
+  font-weight:400;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(26);
+  margin-top:px2vw(20);
+}
+.top .top_h3{
+  width:px2vw(285);
+  height:px2vw(60);
+  font-size:px2vw(60);
+  font-family:PingFangSC;
+  font-weight:500;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(60);
+}
+.mounth{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.mounth .mounthtop{
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left:px2vw(40);
+  padding-right: px2vw(40);
+  width: px2vw(750);
+  height:px2vw(90);
+  font-size:px2vw(24);
+  font-family:PingFangSC;
+  font-weight:300;
+  color:rgba(125,125,125,1);
+  line-height:px2vw(24);
+  background: #F5F6F8FF;
+}
+//点击动画
+.container{
+  width: 100%;
+  background:#fff;
+}
+.container ul{
+  width: 100%;
+}
+.container .container_data{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left:px2vw(40);
+  padding-right: px2vw(40);
+}
+.container li p.title{
+  width: 100%;
+  height: px2vw(90);
+  line-height: px2vw(90);
+  font-size: px2vw(28);
+  color: #000;
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+}
+.container li .container_content{
+  line-height: px2vw(90);
+  background: #F5F6F8FF;
+  padding-left:px2vw(60);
+  padding-right: px2vw(40);
+  font-size:px2vw(24);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  box-sizing:border-box;
+}
+.container .container_data span{
+  width:px2vw(75);
+  height:px2vw(30);
+  font-size:px2vw(28);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(247,90,80,1);
+  line-height:px2vw(30);
+}
+.container .container_data .iconfont_down{
+   font-size:px2vw(10);
+}
+.container .container_content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.container .container_content  span{
+  display: inline-block;
+  width:px2vw(60);
+  font-size:px2vw(24);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(247,90,80,1);
+  line-height:px2vw(90);
+}
+.container .content_data{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.container .content_data  .active{
+  display: block;
+}
+</style>

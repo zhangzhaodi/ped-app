@@ -1,0 +1,254 @@
+<template>
+  <div class="outer fundPlan">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter">
+      <i slot="left" class="iconfont" @click="toHistory">&#xe612;</i>
+    </Myheader>
+    <Scroller>
+      <van-list :finished="page.finished" @load="getData">
+        <div class="fund-item" v-for="(item,index) in fundPlanList" :key="index" @click="toDetail(item)">
+          <!-- <p :class="{'title': true,'stoped': item.stoped}">{{item.name}}</p> -->
+          <p class="title">{{item.ProductName}}【{{item.ProductNo}}】</p>
+          <div class="main">
+            <div class="item">
+              <div>{{getCycle(item)}}定投(元)</div>
+              <div v-if="!item.stoped">{{item.AMT | Money}}</div>
+              <div v-else>- -</div>
+              <!-- 还需展示小数点后两位.00 -->
+            </div>
+            <div class="item">
+              <div>下次扣款日期</div>
+              <div v-if="item.NextInvestDate">{{getNextInvestDate(item.NextInvestDate)}}</div>
+              <div v-else>- -</div>
+            </div>
+          </div>
+        </div>
+      </van-list>
+      <div v-if="fundPlanList.length==0" class="nodata-box">
+        <img :src="require(`@/assets/fund/img_zanwudingtou@2x.png`)" alt />
+        <p class="text">暂无定投计划</p>
+      </div>
+    </Scroller>
+    <div class="add-btn" @click="toAdd">
+      新增定投
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import dayjs from 'dayjs'
+import { List } from 'vant';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [List.name]: List
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      fundPlanList: [],
+      fundPlanList1: [{
+        name: '易方达财富快线货币市场基金A类快线货币市快线货币市【000647】',
+        money: '1000',
+        week: '二',
+        cutDate: '2019-02-11',
+        stoped: true
+      },
+      {
+        name: '易方达财富快线货币市场基金A类【000647】',
+        money: '1000',
+        week: '二',
+        cutDate: '2019-02-11',
+        stoped: false
+      }],
+      page: {
+        pageNum: 10, //每页数据有多少条
+        page: 1,
+        loading: false,
+        finished: false,
+      }
+    };
+  },
+  filters: {
+    overDue(data, status) {
+
+    }
+  },
+  computed: {
+    ...mapState('common', ['userInfo']),
+    startNum() {
+      return (this.page.page - 1) * this.page.pageNum + 1
+    },
+  },
+  created() {
+    console.log(this.userInfo)
+  },
+  mounted() { },
+  methods: {
+    ...mapMutations('fund', ['SELECTFUNDPLAN']),
+    toHistory() {
+      this.$router.push({ name: 'fundPlanHistory' })
+    },
+    toDetail(item) {
+      this.SELECTFUNDPLAN(item);
+      this.$router.push({ name: 'fundPlanDetail', query: { productNo: item.ProductNo } })
+    },
+    toAdd() {
+      this.$router.push({ name: 'market' })
+    },
+    getNextInvestDate(date) {
+      if (!date) return '- -'
+      return dayjs(date).format("YYYY-MM-DD")
+    },
+    getCycle(item) {
+      let cycle = '', period = item.InvestInterval, day = '', text = '';
+      if (item.InvestCycle == 0) {
+        // 月
+        cycle = '月'
+        day = item.InvestmentDay + '日'
+        if (period > 1) {
+          text = `每${period}月`
+        } else {
+          text = `每月${day}`
+        }
+      } else if (item.InvestCycle == 1) {
+        day = this.getWeek(Number(item.InvestmentDay));
+        text = `每周${day}(间隔${period}周)`
+      } else if (item.InvestCycle == 2) {
+        day = item.InvestmentDay
+        text = `每${period}天中的第${day}`
+      }
+      return text
+      // InvestCycle
+    },
+    getWeek(week) {
+      let weekTxt = '';
+      switch (week) {
+        case 1:
+          weekTxt = '周一';
+          break
+        case 2:
+          weekTxt = '周二';
+          break
+        case 3:
+          weekTxt = '周三';
+          break
+        case 4:
+          weekTxt = '周四';
+          break
+        case 5:
+          weekTxt = '周五';
+          break
+        case 6:
+          weekTxt = '周六';
+          break
+        case 7:
+          weekTxt = '周日';
+          break
+        default:
+          weekTxt = ''
+      }
+      return weekTxt
+    },
+    getData() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        CustomerIdentifyType: '1',
+        CustomerIdentify: this.userInfo.Cif.cifNo,
+        PositionString: this.startNum,
+        QueryRowsNum: this.page.pageNum,
+        EndFlag: 0,//结束定投标记 0 有效 1已终止
+      }
+      this.request("OwnerFundInverstList", params).then(res => {
+        let { CurCommisList } = res;
+        if (CurCommisList.length > 0) {
+          if (!this.fundPlanList) {
+            this.fundPlanList = res.CurCommisList
+          } else {
+            this.fundPlanList = [...this.fundPlanList, ...CurCommisList];
+          }
+          if (CurCommisList.length < this.page.pageNum) {//获取的新数据小于每页数据量，则不需再次翻页
+            this.finished = true;
+          } else {
+            this.page.page++;
+          }
+
+        } else {
+          this.page.finished = true;
+        }
+      }).catch(err => {
+        this.page.finished = true;
+      })
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+.fundPlan {
+  background: #fff;
+  .scrollerBox {
+    background: #f5f6f8;
+  }
+  .add-btn {
+    height: px2vw(118);
+    line-height: px2vw(118);
+    font-size: px2vw(34);
+    text-align: center;
+    color: #da9a78;
+    box-shadow: 0px 0px 44px 0px rgba(62, 62, 62, 0.12);
+  }
+  .fund-item {
+    background: #fff;
+    margin-top: px2vw(20);
+    padding: px2vw(43) px2vw(40) px2vw(41) px2vw(40);
+
+    .title {
+      font-size: px2vw(28);
+      color: $color-text;
+      // margin-right:px2vw(30);
+      // padding-right: px2vw(114);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      &.stoped {
+        background: url("~@/assets/fund/img_yizanting@2x.png") no-repeat right
+          center;
+        background-size: px2vw(94) px2vw(34);
+      }
+    }
+    .main {
+      margin-top: px2vw(40);
+      display: flex;
+      .item {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        div {
+          &:first-child {
+            font-size: px2vw(22);
+            color: #7d7d7d;
+            margin-bottom: px2vw(20);
+            font-weight: 300;
+            font-family: $font-family;
+          }
+          &:last-child {
+            font-size: px2vw(30);
+            font-weight: 500;
+            color: #262626;
+            font-family: $font-family;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

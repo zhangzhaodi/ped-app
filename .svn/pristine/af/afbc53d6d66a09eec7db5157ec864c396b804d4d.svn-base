@@ -1,0 +1,100 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader :backgroundColor="'none'"  :params="headerParams"  :backRouter="headerBackRouter" :title="$route.meta.title"  ></Myheader>
+    <!-- 中部展示 -->
+    <div class="content">
+     <img src="@/assets/travelTreasure/rollin/loading.gif" alt="">
+      <h5>请耐心等待申购结果(2s)</h5>
+      <h6>结果返回前请不要重复操作</h6>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Button } from "vant";
+export default {
+  components: {
+    Myheader: Header,   //头部组件
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      temp:true,
+      activeClass: 0, // 0为默认选择第一个，-1为不选择
+       headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+    };
+  },
+  created() {
+    //请求数据
+  },
+  methods: {
+     qh:function(e,t){      //控制显示滑块
+      console.log(e,t);
+      this.temp=e,
+      this.activeClass=t
+    },
+    hreftwo(){
+      this.$router.push({
+          path: '/rollin',
+          query: {
+            name: '张三',
+            id: 1,
+          }
+        })
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,h1,h2,h3,h4,h5,h6,img{
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  -webkit-scrollbar {display:none}
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  overflow: auto;
+  background:rgba(251,251,251,1);
+}
+.content h5{
+  width:px2vw(302);
+  height:px2vw(28);
+  font-size:px2vw(28);
+  font-family:PingFangSC-Regular,PingFangSC;
+  font-weight:400;
+  color:rgba(38,38,38,1);
+  line-height:px2vw(28);
+  margin-top: px2vw(40)
+}
+.content h6{
+  width:px2vw(288);
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC-Light,PingFangSC;
+  font-weight:300;
+  color:rgba(125,125,125,1);
+  line-height:px2vw(24);
+  margin-top: px2vw(20)
+}
+</style>

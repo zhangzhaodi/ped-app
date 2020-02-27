@@ -1,0 +1,44 @@
+import Vue from "vue";
+import Router from "vue-router";
+//我的银行卡
+import Index from "../pages/index";
+import RemoveLimited from "../pages/removeLimited";
+import RemoveSuccess from "../pages/removeSuccess";
+
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "选择解除受限",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/removeLimited",
+      name: "removeLimited",
+      component: RemoveLimited,
+      meta: {
+        title: "解除受限",
+        keepAlive: true
+      }
+    },
+    {
+      path: "/removeSuccess",
+      name: "removeSuccess",
+      component: RemoveSuccess,
+      meta: {
+        title: "解除成功",
+        keepAlive: true
+      }
+    }
+  ]
+});

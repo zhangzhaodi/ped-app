@@ -1,0 +1,43 @@
+<template>
+  <van-popup v-model="isShow" class="center" :close-on-click-overlay="overlay">
+    <div class="content"></div>
+    <div class="close"></div>
+  </van-popup>
+</template>
+<script>
+import { Popup } from "vant";
+export default {
+  components: {
+    [Popup.name]: Popup
+  },
+  props: {
+    show: {
+      require: true,
+      default: false
+    }
+  },
+  watch: {
+    //监听父组件中show的变化
+    show: {
+      handler(val) {
+        this.isShow = val;
+      }
+    }
+  },
+  data() {
+    return {
+      isShow: false,
+      overlay: true
+    };
+  },
+  created() {},
+  methods: {}
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  width: px2vw(590);
+  height: px2vw(730);
+}
+</style>

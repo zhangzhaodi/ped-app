@@ -1,0 +1,267 @@
+// 我的自选 及 基金超市公用样式
+.optional,
+.market {
+  background: #fff;
+
+  .customerBtn {
+    .edit {
+      font-size: px2vw(30);
+      font-family: $font-family;
+    }
+  }
+
+  //搜索栏
+  .search-bar {
+    display: flex;
+
+    .electron-search-box {
+      flex: 1;
+    }
+
+    .filter {
+      margin-right: px2vw(40);
+      margin-left: px2vw(20);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: px2vw(28);
+      color: $color-text;
+      font-weight: 400;
+      font-family: $font-family;
+
+      img {
+        margin-left: px2vw(4);
+        width: px2vw(30);
+      }
+    }
+  }
+
+  .scrollerBox {
+    background: #f5f6f8;
+  }
+
+  /deep/ .table {
+    .header-row {
+      th {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFangSC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+
+        //标题cell
+        .cell {
+          height: px2vw(90);
+          color: #262626;
+          line-height: px2vw(90);
+        }
+      }
+    }
+
+    &.el-table {
+
+      .el-table__empty-block {
+        display: none;
+      }
+
+      td,
+      th {
+        padding: 0;
+      }
+
+      .cell,
+      th div {
+        padding: 0;
+        line-height: initial;
+      }
+
+      // 第一列
+      .column1 {
+        width: px2vw(200);
+        padding-left: px2vw(40);
+        height: px2vw(110);
+      }
+
+      .el-table__body tr.hover-row>.normal-column.col-gray {
+        background-color: #F5F7FA;
+        opacity: 1;
+      }
+
+      .normal-column {
+        width: px2vw(151);
+        padding-left: px2vw(29);
+
+        &.red {
+          color: #f96159;
+        }
+
+        &.col-gray {
+          background: rgba(249, 250, 251, 1);
+          opacity: 0.81;
+        }
+      }
+
+      //排序箭头点击后效果图片
+      .ascending .sort-caret.ascending {
+        background: url("~@/assets/icon_shouqi-02.png") no-repeat left top;
+        background-size: 100% 100%;
+      }
+
+      .descending .sort-caret.descending {
+        background: url("~@/assets/icon_zhankai-02.png") no-repeat left top;
+        background-size: 100% 100%;
+      }
+
+      //排序箭头点击前效果图片
+      .sort-caret {
+        width: px2vw(12);
+        height: px2vw(7);
+        border: none;
+
+        &.ascending {
+          top: 10px;
+          background: url("~@/assets/icon_shouqi-01.png") no-repeat left top;
+          background-size: 100% 100%;
+        }
+
+        &.descending {
+          bottom: 14px;
+          background: url("~@/assets/icon_zhankai-01.png") no-repeat left top;
+          background-size: 100% 100%;
+        }
+      }
+    }
+
+    .el-table__fixed {
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .fund-name {
+      font-size: px2vw(26);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: $color-text;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      margin-bottom: px2vw(8);
+    }
+
+    .fund-num {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFangSC;
+      font-weight: 400;
+      color: rgba(125, 125, 125, 1);
+    }
+  }
+
+  .add-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: px2vw(90);
+    font-size: px2vw(28);
+    text-align: center;
+    color: #008bff;
+
+    img {
+      width: px2vw(34);
+      margin-right: px2vw(8);
+    }
+  }
+
+  .fund-item {
+    background: #fff;
+    margin-top: px2vw(20);
+    padding: px2vw(43) px2vw(40) px2vw(41) px2vw(40);
+
+    .title {
+      height: px2vw(35);
+      line-height: px2vw(35);
+      font-size: px2vw(26);
+      color: $color-text;
+      margin-right: px2vw(30);
+      padding-right: px2vw(114);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &.stoped {
+        background: url("~@/assets/fund/img_yizanting@2x.png") no-repeat right center;
+        background-size: px2vw(94) px2vw(34);
+      }
+    }
+
+    .main {
+      margin-top: px2vw(40);
+      display: flex;
+
+      .item {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+
+        div {
+          &:first-child {
+            font-size: px2vw(22);
+            color: #7d7d7d;
+            margin-bottom: px2vw(20);
+          }
+
+          &:last-child {
+            font-size: px2vw(30);
+            font-weight: 500;
+            color: #262626;
+          }
+        }
+      }
+    }
+  }
+
+  .nodata-box {
+    background: #f5f6f8;
+
+    .btn-box button.ghost {
+      border: 1px solid #DA9A78;
+      background: #f5f6f8;
+      color: #DA9A78;
+    }
+  }
+}
+
+// 基金定投 基金申购
+.fund-buy {
+  .section {
+    margin-top: px2vw(20);
+    padding: 0 px2vw(40);
+    background: #fff;
+  }
+
+  .fund-info {
+    background: #fff;
+    padding: px2vw(20) px2vw(40);
+
+    h2 {
+      color: #262626;
+      font-size: px2vw(32);
+      margin-bottom: px2vw(11);
+      font-family: $font-family;
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+
+      .iconfont {
+        margin-left: px2vw(14);
+        color: #7d7d7d;
+        font-size: px2vw(12);
+      }
+    }
+
+    .num {
+      font-size: px2vw(26);
+      font-family: $font-family;
+      font-weight: 400;
+      color: #A8A8A8;
+    }
+  }
+
+}

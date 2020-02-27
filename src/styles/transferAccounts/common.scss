@@ -1,0 +1,325 @@
+.field-section {
+  margin-top: px2vw(20);
+  background: #fff;
+
+  &.first {
+    margin-top: 0;
+  }
+
+  .field-header {
+    display: flex;
+    align-items: center;
+    height: px2vw(80);
+    font-weight: 400;
+    padding-left: px2vw(40);
+    padding-right: px2vw(40);
+
+    img {
+      width: px2vw(32);
+      height: px2vw(32);
+      margin-right: px2vw(20);
+    }
+
+    .title {
+      color: $color-text;
+      font-size: px2vw(30);
+    }
+  }
+
+  .filed_cell {
+    margin-left: px2vw(40);
+    margin-right: px2vw(40);
+    border-bottom: $border-bottom;
+
+    &:last-child {
+      border: none;
+    }
+  }
+
+}
+
+.field-section .debit-card .filed_cell {
+  border: none;
+}
+
+.picker-arrow {
+  font-size: px2vw(28);
+  text-align: left;
+  width: px2vw(40);
+  color: #999CA0;
+  display: inline-block;
+}
+
+.filed_cell {
+  display: flex;
+  align-items: center;
+  color: $color-text;
+  font-size: px2vw(30);
+  font-family: $font-family;
+  height: px2vw(110);
+  line-height: px2vw(110);
+  // &:active {
+  //   background-color: #f2f3f5;
+  // }
+
+  // 收款人手机号
+  &.notify_payee-filed {
+    .label {
+      width: px2vw(185);
+    }
+  }
+
+  .label {
+    line-height: px2vw(110);
+    height: 100%;
+    width: px2vw(125);
+    margin-right: px2vw(40);
+  }
+
+  .filed {
+    flex: 1;
+    display: flex;
+    width: 100%;
+    line-height: px2vw(110);
+
+    div:first-child {
+      //处理mand-input 撑不满的问题
+      flex: 1;
+    }
+  }
+
+  /deep/ .van-cell {
+    padding: 0;
+    align-items: center;
+    height: px2vw(110);
+    justify-content: center;
+
+    .van-cell__title {
+      line-height: inherit;
+      flex-shrink: 0;
+      width: px2vw(125);
+      height: 100%;
+      display: flex;
+      flex: initial;
+      align-items: center;
+      font-family: $font-family;
+      font-weight: 400;
+      margin-right: px2vw(40);
+      .custom-title{
+        display:flex;
+        flex-shrink: 0;
+        width: auto;
+      }
+    }
+
+    .van-cell__value {
+      text-align: left;
+      display: flex;
+      height: 100%;
+      flex: 1;
+      align-items: center;
+      font-size: px2vw(30);
+
+    }
+
+    &.van-switch-cell {
+      .van-cell__title {
+        width: auto;
+      }
+
+      .van-cell__value {
+        // height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+    }
+  }
+
+  &.picker {
+    color: green;
+
+    .van-cell__title {
+      margin-right: px2vw(40);
+      flex: initial;
+    }
+
+    .van-cell__value {
+      text-align: left;
+      display: flex;
+      align-items: center;
+      // justify-content: flex-start;
+
+      div {
+        font-size: px2vw(30);
+        width: 100%;
+        text-align: left;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .van-icon-arrow:before{
+        font-size:px2vw(22);
+      }
+      .placeholder {
+        color: #A8A8A8;
+      }
+    }
+
+    &.van-hairline--top-bottom::after {
+      border-width: 0;
+    }
+  }
+
+  .right-icon {
+    line-height: initial;
+    display: flex;
+    width: px2vw(40);
+    height: px2vw(40);
+    margin-left:px2vw(20);
+  }
+}
+
+
+
+// 预约转账
+.yuyue {
+  .add-order {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: px2vw(120);
+    font-size: px2vw(34);
+    color: $color-text;
+    background: #fff;
+
+    img {
+      width: px2vw(30);
+      height: px2vw(30);
+      margin-right: px2vw(4);
+    }
+  }
+}
+
+
+.ibps-list {
+  .van-action-sheet__item {
+    height: px2vw(110);
+  }
+
+  .van-action-sheet__name {
+    font-size: px2vw(30);
+  }
+
+  .van-action-sheet__cancel {
+    font-size: px2vw(30);
+  }
+}
+
+.input-error {
+  height: px2vw(50);
+  font-size: px2vw(22);
+  line-height: px2vw(50);
+  padding-left: px2vw(160);
+  text-align: left;
+  color: #ff4040;
+}
+
+
+//转账金额
+.tranfer-amount {
+  position: relative;
+  margin: 0 px2vw(40);
+  .currency{
+    color:#262626;
+    font-size:px2vw(40);
+    font-family: $font-family;
+  }
+
+  .comUnits {
+    height: px2vw(30);
+    display: block;
+    color: #ffb52b;
+    font-size: px2vw(24);
+    font-weight: 400;
+    margin-bottom: px2vw(8);
+  }
+  /deep/ .md-input-item.is-amount .md-input-item-input{
+    font-family: $font-family;
+    font-weight: 400;
+
+  }
+  /deep/ .md-field-item-content {
+    font-size: px2vw(40);
+    font-weight: 500;
+    width:100%;
+    min-height: inherit;
+    &:before{
+      border:none;
+    }
+    .md-input-item-input{
+      font-size:px2vw(50);
+      font-family: $font-family;
+      height: px2vw(54);
+      line-height:px2vw(54);
+      &::-webkit-input-placeholder {
+        /* WebKit, Blink, Edge */
+        font-size: px2vw(40);
+        font-family: $font-family;
+        font-weight: 300;
+      }
+      &::placeholder{
+        font-size: px2vw(40);
+        font-family: $font-family;
+        font-weight: 300;
+      }
+      &::-ms-input-placeholder {
+        /* Microsoft Edge */
+        font-size: px2vw(40);
+        font-family: $font-family;
+        font-weight: 300;
+      }
+    }
+   
+  }
+
+  .wrong {
+    font-size: px2vw(24);
+    color: #ff4040;
+    display: flex;
+    align-items: center;
+    height:px2vw(30);
+    border-bottom: $border-bottom;
+    img {
+      width: px2vw(22);
+      height: px2vw(22);
+      margin-right: px2vw(10);
+    }
+  }
+}
+//转账金额结束
+
+// 到账时间
+.accounting-date {
+  display: flex;
+  height: px2vw(60);
+  margin: 0 px2vw(40);
+  align-items: center;
+  font-size: px2vw(24);
+  color: #7d7d7d;
+  .tip {
+    width: px2vw(24);
+    height: px2vw(24);
+    margin-left: px2vw(10);
+    margin-right: px2vw(38);
+  }
+  .time {
+    flex: 1;
+  }
+  .btn {
+    padding: px2vw(5);
+    color: #008bff;
+    text-align: right;
+  }
+}
+// 到账时间结束

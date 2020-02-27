@@ -1,0 +1,117 @@
+<template>
+  <div class="viewport">
+    <nav class="nav">
+      <span class="iconfont iconic_back"
+            @click="$router.go(-1)"></span>
+      <p class="title">利率表</p>
+      <span class="tips"></span>
+    </nav>
+    <div class="list">
+      <van-row class="title">
+        <van-col span="10">贷款类型</van-col>
+        <van-col span="4">利率</van-col>
+        <van-col span="10">贷款期限</van-col>
+      </van-row>
+      <div class="content">
+        <van-row class="row"
+                 v-for="(row,index) in list"
+                 :key="index">
+          <van-col class="cell"
+                   span="10">{{row.activity}}</van-col>
+          <van-col class="cell"
+                   span="4">{{row.benchmark_rate}}%</van-col>
+          <van-col class="cell"
+                   span="10">{{row.type}}</van-col>
+        </van-row>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Row, Col } from 'vant';
+export default {
+  data () {
+    return {
+      list: []
+    }
+  },
+  mounted () {
+    this.initRate()
+  },
+  components: {
+    [Row.name]: Row,
+    [Col.name]: Col
+  },
+  methods: {
+    initRate () {
+      this.request("LoanRateQry", {
+        BankId: '9999',
+        BranchId: '1699',
+        ChnlId: '39'
+      }, true).then(response => {
+        this.list = response.loanRate
+      })
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.viewport {
+  height: 100vh;
+  font-family: PingFangSC-Regular, PingFang SC;
+  .nav {
+    margin-bottom: px2vw(20);
+    height: px2vw(88);
+    padding: 0 px2vw(20);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .iconfont {
+      padding: px2vw(20);
+      font-size: px2vw(30);
+    }
+    .title {
+      font-size: px2vw(36);
+      font-weight: 500;
+    }
+    .tips {
+      padding: px2vw(20);
+      font-size: px2vw(30);
+      color: #008bff;
+    }
+  }
+  .list {
+    margin: px2vw(40);
+    .title {
+      line-height: px2vw(80);
+      text-align: center;
+      font-size: px2vw(26);
+      font-weight: 500;
+      color: #fff;
+      background: linear-gradient(
+        270deg,
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+    }
+    .content {
+      box-sizing: border-box;
+      border-right: 1px solid #6c90fa;
+      border-bottom: 1px solid #6c90fa;
+      .row {
+        line-height: px2vw(80);
+        text-align: center;
+        font-size: px2vw(26);
+        font-weight: 400;
+        color: #262626;
+        .cell {
+          border-left: 1px solid #6c90fa;
+          border-top: 1px solid #6c90fa;
+        }
+      }
+    }
+  }
+}
+</style>

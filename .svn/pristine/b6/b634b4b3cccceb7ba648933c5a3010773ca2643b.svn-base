@@ -1,0 +1,207 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <Scroller>
+      <div class="header">
+        <div class="way">
+          <div class="img-box">
+            <img src="@/assets/incomeExpendDetail/icon_zhuanzhang@2x.png" alt />
+          </div>
+          <p v-if="info.TranTypCd == '1' || info.PayeeAcctNbr == ''">
+            {{ info.Dscrtx }}
+          </p>
+          <p v-else>
+            {{ info.Dscrtx }}-{{ info.PayeeAcctName }}({{
+              info.PayeeAcctNbr | CardNoFour
+            }})
+          </p>
+        </div>
+        <div
+          v-show="info.InAndOut == '收入' && info.TransAmt - 0 >= 0"
+          class="money"
+        >
+          +{{ info.TransAmt | Money }}
+        </div>
+        <div
+          v-show="info.InAndOut == '收入' && info.TransAmt - 0 < 0"
+          class="money"
+        >
+          {{ info.TransAmt | Money }}
+        </div>
+        <div
+          v-show="info.InAndOut == '支出' && info.TransAmt - 0 >= 0"
+          class="money"
+        >
+          -{{ info.TransAmt | Money }}
+        </div>
+        <div
+          v-show="info.InAndOut == '支出' && info.TransAmt - 0 < 0"
+          class="money"
+        >
+          {{ info.TransAmt | Money }}
+        </div>
+        <p>交易成功</p>
+      </div>
+      <div class="cell-top">
+        <div class="cell">
+          <p>{{ info.InAndOut == "支出" ? "付款账户" : "收款账户" }}</p>
+          <span>焦作中旅银行({{ info.AcctNo | CardNoFour }})</span>
+        </div>
+        <div
+          v-if="info.TranTypCd == '现金' || info.PayeeAcctNbr == ''"
+          class="cell"
+        >
+          <p>交易说明</p>
+          <span>{{ info.Dscrtx }}</span>
+        </div>
+        <section v-else>
+          <div class="cell">
+            <p>转账备注</p>
+            <span>{{ info.Dscrtx }}</span>
+          </div>
+          <div class="cell">
+            <p>对方账户</p>
+            <span
+              >{{ info.PayeeAcctName }}({{
+                info.PayeeAcctNbr | CardNoFour
+              }})</span
+            >
+          </div>
+        </section>
+        <div class="cell">
+          <p>交易方式</p>
+          <span>{{ info.TranTypCd == "1" ? "现金" : "转账" }}</span>
+        </div>
+      </div>
+      <div class="cell-bottom">
+        <div class="cell">
+          <p>创建时间</p>
+          <span> {{ info.TransTime | DateChangetime }}</span>
+        </div>
+        <div class="cell">
+          <p>订单号</p>
+          <span>{{ info.Transq }}</span>
+        </div>
+      </div>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import PopupRound from "@/components/PopupRound";
+import Scroller from "@/components/Scroller.vue";
+
+export default {
+  components: {
+    Myheader: Header,
+    Scroller
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      info: {
+        // AvailBal: "898990000.00",
+        // Currency: "01",
+        // Dscrtx: "活期转定期",
+        // InAndOut: "2",
+        // PartnerAcName: "",
+        // PartnerBankName: "",
+        // PayeeAcctNbr: "",
+        // Remark: "",
+        // Servtp: "本行新手机银行",
+        // TellerId: "999088",
+        // TranTypCd: "2",
+        // TransAmt: "10000.00",
+        // TransDate: "20450208",
+        // TransTime: "191026",
+        // Transq: "262165"
+      },
+      imgText: "",
+      cardNum: ""
+    };
+  },
+  created() {
+    this.info = JSON.parse(this.$route.query.params);
+    this.cardNum = this.$route.query.cardNum;
+    console.log(this.info);
+  },
+  methods: {},
+  filters: {
+    TransTime: function(value) {
+      if (!value) return "";
+      value = value.toString();
+      return value.substring(0, 2) + ":" + value.substring(2, 4);
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.scrollerBox {
+  margin-top: px2vw(40);
+  padding: 0 px2vw(40);
+  background: #fff;
+  .header {
+    .way {
+      display: flex;
+      justify-content: center;
+      .img-box {
+        width: px2vw(32);
+        margin-right: px2vw(10);
+        img {
+          width: 100%;
+        }
+      }
+
+      p {
+        padding-top: px2vw(3);
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+      }
+    }
+    .money {
+      padding-top: px2vw(30);
+      padding-bottom: px2vw(24);
+      text-align: center;
+      font-size: px2vw(70);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+    }
+    p {
+      font-size: px2vw(26);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(125, 125, 125, 1);
+      text-align: center;
+    }
+  }
+  .cell-top {
+    padding-bottom: px2vw(20);
+    border-bottom: 1px solid #eff0f1;
+    margin-top: px2vw(60);
+  }
+  .cell-bottom {
+    margin-top: px2vw(20);
+  }
+  .cell {
+    height: px2vw(80);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: px2vw(26);
+    font-family: PingFangSC-Light, PingFang SC;
+    p {
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+    }
+    span {
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+}
+</style>

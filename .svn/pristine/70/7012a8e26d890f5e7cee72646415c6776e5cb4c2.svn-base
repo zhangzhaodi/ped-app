@@ -1,0 +1,30 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+//路由懒加载
+const Index = () => import("../pages/index.vue")
+const RateList = () => import('../pages/rateList')
+Vue.use(Router);
+
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/index"
+    },
+    {
+      path: "/index",
+      name: "index",
+      meta: {
+        title: "贷款计算器",
+        keepAlive: true
+      },
+      component: Index
+    },
+    {
+      path: "/rateList",
+      name: "rateList",
+      component: RateList
+    }
+  ]
+});

@@ -1,0 +1,370 @@
+<template>
+  <div class="fund">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller>
+      <div class="swipe-wrapper">
+        <van-swipe :autoplay="3000" indicator-color="white">
+          <van-swipe-item v-for="(image, index) in images" :key="index" class="swipe">
+            <img :src="image" />
+          </van-swipe-item>
+        </van-swipe>
+      </div>
+
+      <section class="section">
+        <h3 class="title">推荐基金</h3>
+        <div class="swipe-wrapper1">
+          <van-swipe :autoplay="300000" indicator-color="white" :width="swipeWidth">
+            <van-swipe-item v-for="(item, index) in referData" :key="index" class="swipe" @click="toFundDetail(item)">
+              <div class="fund-box" :class="(index%2 == 0) ? 'backgroundImg1' :'backgroundImg2'">
+                <header>
+                  <div class="img-box">
+                    <img src="@/assets/fund/icon_tuijian@2x.png" />
+                  </div>
+                  {{item.productName}}
+                </header>
+                <p class="slogan">{{item.slogan || "定投六个月，躺着数大钱"}}</p>
+                <footer>
+                  <div class="left">
+                    <p class="yield">{{item.expectProfRate}}</p>
+                    <!-- <p>近6个月收益</p> -->
+                    <p class="desc">预期收益率</p>
+                  </div>
+                  <div class="right">
+                    <p>{{item.riskGradeName}}</p>
+                    <p>{{getProcudtType(item.procudtAtrrib)}}</p>
+                  </div>
+                </footer>
+
+              </div>
+            </van-swipe-item>
+          </van-swipe>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="title">热销基金</h3>
+        <ul class="fund-list">
+          <li class="fund-item" v-for="(item,index) in hotData" :key="index"  @click="toFundDetail(item)">
+            <div class="left">
+              <p class="yield">{{item.expectProfRateNum}}%</p>
+              <p class="desc">预期最高收益率</p>
+
+            </div>
+            <div class="right">
+              <p class="name">{{item.productName }}</p>
+              <div class="tags">
+                <div class="tag">{{item.riskGradeName}} </div>
+                <div class="tag">{{getProcudtType(item.procudtAtrrib)}} </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </Scroller>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions, mapState , mapMutations } from "vuex";
+import { Swipe, SwipeItem } from 'vant';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Swipe.name]: Swipe,
+    [SwipeItem.name]: SwipeItem,
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      activeNames: [],
+      active: 0,
+      swipeWidth: 300,
+      images: [
+        require('@/assets/fund/img_banner@2x.png'),
+      ],
+      referData: [],
+      hotloading:true,
+      hotData: [],
+    };
+  },
+  computed: {},
+  created() {
+    let clientWidth = document.body.clientWidth;
+    this.swipeWidth = (305 / 375) * clientWidth;
+    // this.initData();
+    this.getUserInfo();
+    this.getReferData();
+    this.getHotData();
+  },
+  mounted() { 
+  },
+  methods: {
+    ...mapActions('common', ['getUserInfo']),
+    ...mapMutations('fund', ['SELECTFUND']),
+    getReferData() {
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        StartPageNum: '1',
+        EndPageNum: '10',
+        ProLable: '0',
+      }
+      this.request('FinancialProductListQry', params).then(res => {
+        console.log("获得推荐基金列表", res)
+        this.referData = res.ProductInfo;
+      })
+    },
+    getHotData() {
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductType: '0',
+        StartPageNum: '1',
+        EndPageNum: '10',
+        ProLable: '1',
+      }
+      this.request('FinancialProductListQry', params).then(res => {
+        console.log("获取热销基金列表", res)
+        this.hotData = res.ProductInfo;
+      })
+    },
+    getProcudtType(type) {
+      let text = '';
+      switch (status) {
+        // 0普通型，1股票型，2债券型，3混合型，4货币型，9组合型
+        case "0":
+          text = '普通型';
+          break;
+        case "1":
+          text = '股票型';
+          break
+        case "2":
+          text = '债券型';
+          break
+        case "3":
+          text = '混合型';
+          break
+        case "4":
+          text = '货币型';
+          break
+        case "9":
+          text = '组合型';
+          break
+        default:
+          text = "普通型"
+      }
+      return text
+    },
+    toFundDetail(item) {
+      this.SELECTFUND(item);
+      this.$router.push({ name: 'fundDetail'})
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  background: #fff;
+  .swipe-wrapper {
+    padding: px2vw(40);
+    .swipe {
+      img {
+        width: 100%;
+        height: px2vw(266);
+      }
+    }
+  }
+  .swipe-wrapper1 {
+    /deep/ .van-swipe {
+      padding-bottom: px2vw(88);
+      //   margin-bottom: px2vw(40);
+      .van-swipe__indicators {
+        bottom: px2vw(60);
+        .van-swipe__indicator {
+          background: #000;
+          opacity: 0.1;
+          &.van-swipe__indicator {
+            width: px2vw(8);
+            height: px2vw(8);
+          }
+          &.van-swipe__indicator--active {
+            background: #3e8fff !important;
+            opacity: 1;
+            width: px2vw(20);
+            height: px2vw(8);
+            border-radius: 4px;
+          }
+        }
+      }
+    }
+    .swipe {
+      .fund-box {
+        &.backgroundImg1 {
+          background: url("~@/assets/fund/img_tuijianjijin@2x.png") no-repeat
+            center;
+          background-size: cover;
+        }
+        &.backgroundImg2 {
+          background: url("~@/assets/fund/img_tuijianjijin1@2x.png") no-repeat
+            center;
+          background-size: cover;
+        }
+        height: px2vw(290);
+        margin-left: px2vw(40);
+        margin-bottom: px2v(20);
+        padding: 0 px2vw(30);
+        box-shadow: 0px px2vw(18) px2vw(40) 0px rgba(0, 0, 0, 0.05);
+        // border-radius: 16px;
+        // padding: px2vw(30) px2vw(40);
+        justify-content: center;
+        header {
+          padding-top: px2vw(40);
+          padding-bottom: px2vw(30);
+          font-size: px2vw(26);
+          height: px2vw(40);
+          line-height: px2vw(40);
+          font-family: $font-family;
+          color: #7d7d7d;
+          .img-box {
+            float: left;
+            height: px2vw(40);
+            width: px2vw(40);
+            margin-right: px2vw(10);
+            img {
+              width: 100%;
+            }
+          }
+        }
+        .slogan {
+          font-size: px2vw(36);
+          line-height: px2vw(36);
+          font-family: $font-family;
+          font-weight:500;
+          color: #262626;
+          margin-bottom: px2vw(26);
+        }
+        footer {
+          display: flex;
+          flex: 1;
+          align-items: center;
+          .left {
+            .yield {
+              font-size: px2vw(50);
+              line-height: px2vw(50);
+              color: #f96159;
+              font-weight:500;
+              margin-bottom: px2vw(8);
+              font-family: $font-family;
+            }
+            .desc{
+              color: #a8a8a8;
+              font-size: px2vw(22);
+              font-family: $font-family;
+            }
+          }
+          .right {
+            height: px2vw(70);
+            color: #a8a8a8;
+            font-size: px2vw(24);
+            padding-left: px2vw(30);
+            margin-left: px2vw(30);
+            border-left: 1px solid #dbdbdb;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            p {
+              line-height: px2vw(24);
+              &:first-child {
+                margin-bottom: px2vw(10);
+              }
+            }
+          }
+        }
+
+        .go-detail {
+          width: px2vw(44);
+          height: px2vw(44);
+          float: right;
+        }
+      }
+    }
+  }
+
+  .section {
+    .title {
+      padding: px2vw(20) px2vw(40);
+      margin: 0;
+      font-size: px2vw(32);
+      line-height: px2vw(32);
+      font-family: $font-family;
+      font-weight: 500;
+    }
+  }
+  .fund-list {
+    margin: 0 px2vw(40) px2vw(60) px2vw(40);
+    // box-shadow: 0px px2vw(5) px2vw(20) 0px rgba(0, 0, 0, 0.05);
+    // border-radius: 16px;
+    padding: 0 px2vw(2);
+    // min-height: px2vw(200);
+    .fund-item {
+      padding: px2vw(40) 0;
+      border-bottom: $border-bottom;
+      display: flex;
+      flex-direction: row;
+      // &:last-child {
+      //   border-bottom: none;
+      // }
+      .left {
+        margin-right: px2vw(92);
+        .yield {
+          font-size: px2vw(54);
+          line-height: px2vw(54);
+          color: #f96159;
+          font-family: $font-family;
+          margin-bottom: px2vw(14);
+        }
+        .desc {
+          color: #a8a8a8;
+          font-size: px2vw(24);
+          font-weight:400;
+          font-family: $font-family;
+        }
+      }
+      .right {
+        .name {
+          color: #262626;
+          font-family: $font-family;
+          font-size: px2vw(32);
+          padding: px2vw(7) 0;
+          margin-bottom: px2vw(15);
+          font-weight:400;
+        }
+        .tags{
+          .tag{
+            display:inline-block;
+            color:#E39E5C;
+            font-size:px2vw(24);
+            font-family: $font-family;
+            font-weight:400;
+            padding:px2vw(4) px2vw(8);
+            background:linear-gradient(212deg,rgba(255,251,246,1) 0%,rgba(255,244,233,1) 100%);
+            border-radius: 4px;
+            &:first-child{
+              margin-right:px2vw(20);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+</style>

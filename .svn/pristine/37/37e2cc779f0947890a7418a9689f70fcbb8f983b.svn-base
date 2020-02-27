@@ -1,0 +1,25 @@
+<template>
+  <div class="notice">
+    <p>温馨提示</p>
+    <p>理财是投资，投资有风险，选择需谨慎</p>
+  </div>
+</template>
+
+<script>
+export default {};
+</script>
+<style lang="scss" scoped>
+.notice {
+  margin-top: px2vw(40);
+  margin-bottom: px2vw(79);
+  font-size: px2vw(22);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: #7D7D7D;
+  line-height: px2vw(30);
+  padding: 0 px2vw(40);
+  p{
+    margin-top: px2vw(6);
+  }
+}
+</style>

@@ -1,0 +1,551 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader :title="$route.meta.title" :params="headerParams"  :backRouter="headerBackRouter" :backgroundColor="'none'" :isWhite="true"   ></Myheader>
+      <!-- 中部展示 -->
+      <div class="content">
+        <img src="@/assets/farmersTreasure/index/bg_xinnongbao_title@2x.png" class="youxiaobao" />
+        <h5 class="content_advertising">靠档计息 安心理财</h5>
+        <!-- 控制显示 -->
+        <div class="earnings">
+          <div class="temp" >
+            <h4 class="title">鑫农宝</h4>
+            <p class="earnings_p">5年期满利率</p>
+            <h3 class="earnings_h3">{{ DaTa.Rate || "5.00" | toFixedNum }}%</h3>
+          </div>
+          <div class="earnings_data">
+            <div><li>理财期限</li><p>灵活存取</p></div>
+            <div></div>
+            <div>计息模式<p>靠档计息</p></div>
+            <div></div>
+            <div>付息模式<p>按月付息</p></div>
+          </div>
+            <div class="echart">
+              <md-chart
+                :size="['6rem', '4rem']"
+                :max="5"
+                :min="0"
+                :lines="5"
+                :format="format"
+                :labels="datalabel"
+                :datasets="datasets"
+              />
+          </div>
+          <!-- <Echarts></Echarts> -->
+          <button class="earnings_but"  @click="hreftwo" ><span>立即存入</span></button>
+        </div>
+        <!-- 另一块 -->
+          <!-- <div v-for="(item,i) in dataInfo"  :key='i'  class="earnings other"> -->
+          <!-- 控制显示 -->
+          <!-- <div class="temp" >
+              <h4 class="title">{{item.PrdName}}</h4>
+              <P v-if="item.TermType == 'D'" class="earnings_p">{{item.TermCode}}天利率</p>
+              <P v-if="item.TermType == 'M'" class="earnings_p">{{item.TermCode}}月利率</p>
+              <P v-if="item.TermType == 'Y'" class="earnings_p">{{item.TermCode}}年利率</p>
+              <h3 class="earnings_h3"> {{ item.Rate | toFixedNum}}%</h3>
+            </div>
+            <div class="earnings_data">
+              <div><li>理财期限</li><p>灵活存取</p></div>
+              <div></div>
+              <div>计息模式<p>靠档计息</p></div>
+              <div></div>
+              <div>付息模式<p>按月付息</p></div>
+            </div>
+          <button class="earnings_but"  @click="hreftwo(item)" ><span>立即存入</span></button>
+        </div> -->
+          <!-- 底部 -->
+      <div class="foot">
+          <div>
+            <img src="@/assets/farmersTreasure/index/img_zhuangshi@2x.png" alt="">
+            </div>
+          <h4>一分钟了解鑫农宝</h4>
+          <div class="last">
+            <span>鑫农宝是什么？</span>
+            <span>鑫农宝是一款定期存款组合产品，支持提前销户，提前销户时根据实际存期以靠近最高档次的通知存款或定期存款利率计息。</span>
+          </div>
+      </div>
+
+      </div>
+          <!-- 提示 -->
+        <MyDialog
+          :showCancel="showCancel"
+          @cancel="cancel"
+          title="提示"
+          :show="alertShow"
+          :isClose="false"
+          @con="config"
+        >
+          <p slot="content" class="dialog-content">{{dialogText}}</p>
+        </MyDialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+// import Echarts from "../../components/farmersTreasurecomponents/echarts"
+import { Button } from "vant";
+import { Chart } from 'mand-mobile'
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+export default {
+  components: {
+    Myheader: Header,   //头部组件
+    [Button.name]: Button,
+    MyDialog: Dialog,
+    [Chart.name]: Chart,
+    // Echarts:Echarts
+  },
+  data() {
+    return {
+      activeClass: 0, // 0为默认选择第一个，-1为不选择
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+    title:'',
+    dataInfo:[],
+    datasets:[],
+    datalabel:[],
+    DaTa:'5',
+    isLogin:'',//登陆显示
+    alertShow: false, //是否显示
+    showCancel: false, //弹框显示
+    isLogin: false, //判断登陆
+    dialogText: "请先登录手机银行"
+    };
+  },
+  created() {
+    //请求数据
+    this.title=this.$route.meta.title
+    console.log(this.Setuserinfo,this.userInfo)
+  },
+  beforeMount() {
+    // this.initData();
+    if (process.env.NODE_ENV == "production") {
+      this.getdatainfo();
+      window.NativeCall.getUserInfo(params => {
+        let par = JSON.parse(params);
+        if (par.queryNoLogin == "1") {
+          this.isLogin = false;
+        } else {
+          this.isLogin = true;
+        }
+      });
+    } else {
+      this.getdatainfo();
+    }
+  },
+  mounted(){
+  },
+  computed:{
+    ...mapGetters('deposit',['Setuserinfo']),
+    ...mapState("common", ["userInfo"]),
+  },
+  methods: {
+    ...mapActions("deposit",['setuserinfo']),
+    ...mapActions("common", ["getUserInfo"]),
+    //折线图
+    format(val) {
+      return Math.round(val*100)/100 + "%";
+    },
+    //获取数据
+    getdatainfo(){
+                this.request("ProdInfoQry", {
+          BankId: "9999",
+          BranchId: "62",
+          ChnlId:"62",
+          Type:'1',
+          ChannelType:"0310",
+          BusinessType:"PHNE"
+        })
+          .then(res => {
+            console.log(res);
+        var data=[]
+        var Newday=[]
+        var Newyear=[]
+        var NewdayRate=[]
+        var NewyearRate=[]
+        var NewData=[]
+        if(res.List.length>0){
+          for(var i=0;i<res.List.length;i++){
+            if(res.List[i].PrdName.indexOf('鑫农宝') !== -1){
+                data.push(res.List[i])
+            }
+          }
+          this.dataInfo = data
+          console.log(data)
+          if(data.length>0){
+              for(let j of data){
+                  if(j.TermType == 'D' ){
+                      Newday.push(j.TermCode+"天");
+                      NewdayRate.push(j.Rate);
+                    }else if(j.TermType == 'Y' ){
+                      Newyear.push(j.TermCode+"年");
+                      NewyearRate.push(j.Rate);
+                      if(j.TermCode == '5'){
+                        NewData.push(j)
+                      }
+                    }
+                  }
+              var Arr = [...new Set(Newyear)]
+              var ARR = [...new Set(NewyearRate)]
+              this.datalabel= [...Newday,...Arr]
+              this.DaTa = NewData[0]
+              var Slist = [...NewdayRate,...ARR]
+              var numArray = Slist.map((value)=>{
+                    return  Number(value);
+                })
+                }
+            this.datasets=[
+                  {
+                    color: '#3A8AFFFF',
+                    width: 1,
+                    theme: 'region',
+                    values: numArray
+                  }
+                ]
+        }
+          })
+          .catch(error => {
+            console.log(error);
+          })
+    },
+    //跨模块跳转
+    hreftwo(){
+      console.log(this.DaTa)
+    if (this.isLogin == true) {
+      let params = {
+        package: "deposit",
+        router: "farmersTreasurerollin",
+        routerDic: this.DaTa
+      };
+      window.NativeCall.goToPackage(params);
+      } else {
+        this.alertShow = true;
+      }
+    },
+    //隐藏dialog
+    cancel() {
+      this.alertShow = false;
+    },
+    //未登录跳转登陆
+    config(){
+      this.alertShow = false;
+      window.NativeCall.goToNativePage({
+        ios: "DLoginVController",
+        ClassName:"com.example.zlv_master.activity.login.login.LoginActivity"
+      });
+    },
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,h1,h2,h3,h4,h5,img{
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  background: url("~@/assets/farmersTreasure/index/bg_xinnongbao_lan@2x.png") no-repeat;
+  background-size:  100% 100%;
+  -webkit-scrollbar {display:none}
+}
+// 内部样式
+.content {
+  // display: flex;
+  // flex-direction: column;
+  // align-items: center;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 px2vw(30) 0;
+}
+.youxiaobao {
+  width: 100%;
+  height: px2vw(366);
+}
+.content_advertising {
+  height: px2vw(28);
+  font-size: px2vw(28);
+  font-family: PingFangSC;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  line-height: px2vw(28);
+  margin-top: px2vw(-44);
+  text-align: center;
+}
+// 显示设置
+.earnings {
+  // height: px2vw(700);
+  width: px2vw(690);
+  background: linear-gradient(
+    170deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  border-radius: px2vw(16);
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  margin-top:px2vw(60);
+  padding-bottom: px2vw(40);
+  .title{
+    width: px2vw(390);
+    height:px2vw(45);
+    font-size:px2vw(32);
+    text-align: center;
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(58,140,255,1);
+    line-height:px2vw(45);
+    margin-top: px2vw(-11);
+    background: url("~@/assets/farmersTreasure/index/img_title@2x.png") no-repeat ;
+    background-size:  px2vw(390) px2vw(84);
+  }
+}
+.other{
+  margin-top: px2vw(90);
+}
+//echarts
+.echart {
+  height: px2vw(520);
+  width: 100%;
+  padding: 0 px2vw(20) 0;
+}
+svg {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  height: px2vw(467);
+}
+/deep/ .md-chart line{
+    stroke-width: 0.2;
+}
+/deep/ .md-chart-axis-y text{
+  font-size:px2vw(6);
+}
+/deep/ .md-chart-axis-x text{
+  font-size:px2vw(6);
+  margin-top: px2vw(6);
+}
+//数据展示
+.earnings_data{
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  padding:0 px2vw(81) 0 px2vw(89);
+  margin-top:px2vw(55);
+  margin-bottom:px2vw(55);
+}
+.earnings_data div{
+  // width:px2vw(96);
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC;
+  font-weight:300;
+  color:rgba(125,125,125,1);
+  line-height:px2vw(24);
+}
+.earnings_data div p{
+  // width:px2vw(102);
+  height:px2vw(24);
+  font-size:px2vw(24);
+  font-family:PingFangSC;
+  font-weight:400;
+  color:rgba(38,38,38,1);
+  line-height:px2vw(24);
+  margin-top:px2vw(19);
+}
+.earnings_data div li{
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+}
+.earnings_data div  .little_mark{
+  font-size: px2vw(18);
+  font-weight:100;
+  color:#BDBDBD;
+  display: inline;
+}
+.earnings_data div:nth-of-type(2){
+  width:px2vw(1);
+  height:px2vw(41);
+  border-left:px2vw(1) solid rgba(151,151,151,1);
+  margin-top: px2vw(30)
+}
+.earnings_data div:nth-of-type(4){
+  width:px2vw(1);
+  height:px2vw(41);
+  border-left:px2vw(1) solid rgba(151,151,151,1);
+  margin-top: px2vw(30)
+}
+.temp{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.earnings_but {
+  width: px2vw(609);
+  height: px2vw(90);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 190, 78, 1) 0%,
+    rgba(255, 159, 8, 1) 100%
+  );
+  border-radius: px2vw(45);
+  margin-top:px2vw(50);
+}
+.earnings_but  span {
+  width:px2vw(68);
+  height:px2vw(34);
+  font-size:px2vw(34);
+  font-family:PingFangSC;
+  font-weight:400;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(34);
+  text-align:center;
+}
+.earnings_p {
+  width: px2vw(252);
+  height: px2vw(36);
+  font-size: px2vw(36);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(36);
+  margin-top:px2vw(90);
+  text-align:center;
+}
+.earnings_h3 {
+  width: px2vw(427);
+  height: px2vw(100);
+  font-size: px2vw(100);
+  font-family: PingFangSC;
+  font-weight: 500;
+  text-align:center;
+  color: rgba(254, 110, 3, 1);
+  line-height: px2vw(100);
+  margin-top:px2vw(36);
+}
+.earnings_h5 {
+    height: px2vw(26);
+  font-size: px2vw(26);
+  font-family: PingFangSC;
+  font-weight: 400;
+  color: rgba(125, 125, 125, 1);
+  line-height: px2vw(26);
+  margin-top:px2vw(46);
+}
+.earnings_p1 {
+  width: 100%;
+  height: px2vw(33);
+  font-size: px2vw(24);
+  font-family: PingFangSC;
+  font-weight: 300;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(33);
+  margin-top:px2vw(70);
+  text-align:center;
+}
+.earnings_p1 span{
+  margin: 0 px2vw(40) 0;
+}
+
+//中部显示
+.paragraph{
+  width:100%;
+  height:px2vw(45);
+  font-size:px2vw(32);
+  font-family:PingFangSC;
+  font-weight:500;
+  color:rgba(255,255,255,1);
+  line-height:px2vw(45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top:px2vw(100);
+}
+.paragraph_other{
+  width:px2vw(460);
+  display: flex;
+  flex-direction:row;
+  align-items: center;
+  line-height:px2vw(45);
+  justify-content:space-around;
+}
+.paragraph .paragraph_imgleft{
+  width:px2vw(120);
+  height:px2vw(6);
+  display: inline-block;
+}
+.paragraph .paragraph_imgright{
+  transform: rotate(180deg);
+  width:px2vw(120);
+  height:px2vw(6);
+  display:inline-block;
+}
+// 底部样式
+.foot{
+  display: flex;
+  flex-direction: column;
+  // text-align: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 px2vw(40) px2vw(40) ;
+  div:nth-of-type(1){
+    width: px2vw(690);
+    height: px2vw(6);
+    img{
+    width:88%;
+    height:100%;
+   }
+  }
+  h4{
+    text-align: center;
+    box-sizing: border-box;
+    width: 100%;
+    height:px2vw(45);
+    font-size:px2vw(32);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(255,255,255,1);
+    line-height:px2vw(45);
+  }
+  .last{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  span:nth-of-type(1){
+    height:px2vw(33);
+    font-size:px2vw(24);
+    font-family:PingFangSC-Medium,PingFangSC;
+    font-weight:500;
+    color:rgba(255,255,255,1);
+    line-height:px2vw(33);
+    margin-top: px2vw(40)
+  }
+  span:nth-of-type(2){
+    height:px2vw(136);
+    font-size:px2vw(22);
+    font-family:PingFangSC-Regular,PingFangSC;
+    font-weight:400;
+    color:rgba(255,255,255,1);
+    line-height:px2vw(34);
+    margin-top: px2vw(10)
+  }
+  }
+}
+
+
+</style>

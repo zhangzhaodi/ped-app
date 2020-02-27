@@ -1,0 +1,83 @@
+<template>
+  <van-dialog @confirm="goHomePage" v-model="show" :title="titleDialog" :message="messageDialog" :confirm-button-text="confirm"></van-dialog>
+</template>
+<script>
+import { Button, Dialog } from "vant";
+
+export default {
+  components: {
+    [Button.name]: Button,
+    [Dialog.name]: Dialog
+  },
+  props: {
+    showDialog: {
+      type: Boolean,
+      default: true
+    },
+    title: {
+      type: String,
+      default: ""
+    },
+    message: {
+      type: String,
+      default: ""
+    },
+    confirmDialog: {
+      type: String,
+      default: "确定"
+    }
+  },
+  data() {
+    return {
+      show: this.showDialog,
+      titleDialog:this.title,
+      messageDialog:this.message,
+      confirm:this.confirmDialog
+    };
+  },
+  created() {},
+  methods: {
+    goHomePage(){
+      // console.log(1)
+      // this.$router.push("/index");
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.van-dialog {
+  width: px2vw(540);
+  border-radius: px2vw(20);
+}
+/deep/ .van-dialog__header {
+  font-size: px2vw(34);
+  font-family: PingFangSC-Medium;
+  font-weight: 500;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(34);
+  padding: px2vw(50) px2vw(200) 0;
+}
+/deep/ .van-dialog__message {
+  font-size: px2vw(26);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(32);
+  border-bottom: 1px solid #d9d9dc;
+  padding-top: px2vw(22);
+}
+/deep/ .van-dialog__footer {
+  height: px2vw(88);
+}
+/deep/ .van-dialog__footer .van-button {
+  // margin-top: -3px;
+  height: px2vw(88);
+}
+/deep/ .van-button__text {
+  font-size: px2vw(34);
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(16, 122, 238, 1);
+  line-height: px2vw(34);
+}
+</style>

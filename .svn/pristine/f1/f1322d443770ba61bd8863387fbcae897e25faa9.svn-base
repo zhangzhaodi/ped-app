@@ -1,0 +1,281 @@
+<template>
+  <div class="item">
+    <!-- 预期收益  -->
+    <div v-if="data.ModulCode=='1102'">
+      <div class="top">
+        <div class="left">
+          <div class="name">{{data.ProductName?data.ProductName:data.PrdName}}</div>
+        </div>
+      </div>
+      <div class="bottom">
+        <div class="left">
+          <p class="text">持有金额(元)</p>
+          <p class="money" v-if="tabIndex=='0'">{{data.AMT|Money}}</p>
+          <p class="money" v-else>{{data.FinanProPortAMT|Money}}</p>
+        </div>
+        <div class="center">
+          <p class="text">预期收益率</p>
+          <p
+            :class="['rate',{'textOver':data.ExpectProfRate.length>6&&data.ExpectProfRate.length<12},{'textOver1':data.ExpectProfRate.length>12}]"
+          >{{data.ExpectProfRate.indexOf('%')==-1?data.ExpectProfRate+'%':data.ExpectProfRate}}</p>
+        </div>
+        <div class="right" v-if="tabIndex=='0'">
+          <p class="text">预计起息日</p>
+          <!-- 测试 -->
+          <p class="rate">{{data.ProdStartDate|timeFormat1}}</p>
+        </div>
+        <div class="right" v-if="tabIndex=='1'">
+          <p class="text">预计到期日</p>
+          <p class="rate">{{data.EndDate|timeFormat1}}</p>
+        </div>
+      </div>
+    </div>
+    <!-- 净值封闭 -->
+    <div v-if="data.ModulCode=='1303'">
+      <div class="top">
+        <div class="left">
+          <div class="name">{{data.ProductName?data.ProductName:data.PrdName}}</div>
+          <!-- <div class="netWorth">{{"当前净值:"+data.ProdValue}}</div> -->
+          <div class="netWorth">当前净值:{{data.NetValue?data.NetValue:data.ProdValue}}</div>
+        </div>
+      </div>
+      <div class="bottom">
+        <div class="left">
+          <p class="text">持有金额(元)</p>
+          <p class="money" v-if="tabIndex=='0'">{{data.AMT|Money}}</p>
+          <p class="money" v-else>{{data.FinanProPortAMT|Money}}</p>
+        </div>
+        <div class="center">
+          <p class="text">业绩比较基准</p>
+          <p :class="['rate',{'textOver':data.Benchmark.length>6&&data.Benchmark.length<12},{'textOver1':data.Benchmark.length>12}]">{{data.Benchmark|parseFloatTwo}}</p>
+        </div>
+        <div class="right" v-if="tabIndex=='0'">
+          <p class="text">预计起息日</p>
+          <p class="rate">{{data.ProdStartDate|timeFormat1}}</p>
+        </div>
+        <div class="right" v-if="tabIndex=='1'">
+          <p class="text">预计到期日</p>
+          <p class="rate">{{data.EndDate|timeFormat1}}</p>
+        </div>
+      </div>
+    </div>
+    <!-- 周期净值 -->
+    <div v-if="data.ModulCode=='1306'||data.ModulCode=='0.0'">
+      <div class="top">
+        <div class="left">
+          <div class="name">{{data.ProductName?data.ProductName:data.PrdName}}</div>
+          <!-- <div class="netWorth">{{"当前净值:"+data.ProdValue?data.ProdValue:'0'}}</div> -->
+          <div class="netWorth">当前净值:{{data.ProdValue?data.ProdValue:data.netWorth}}</div>
+        </div>
+        <p class="method" v-if="tabIndex=='1'">{{data.IsTransfer=='1'?'周期续作':'周期兑付'}}</p>
+      </div>
+      <div class="bottom">
+        <div class="left">
+          <p class="text" v-if="tabIndex=='0'">持有金额(元)</p>
+          <p class="text" v-else>持有份额(元)</p>
+          <p class="money" v-if="tabIndex=='0'">{{data.AMT|Money}}</p>
+          <p class="money" v-else>{{data.Vol|Money}}</p>
+        </div>
+        <div class="center">
+          <p class="text">业绩比较基准</p>
+          <p :class="['rate',{'textOver':data.Benchmark.length>6&&data.Benchmark.length<12},{'textOver1':data.Benchmark.length>12}]">{{data.Benchmark|parseFloatTwo}}</p>
+        </div>
+        <div class="right" v-if="tabIndex=='0'">
+          <p class="text">预计起息日</p>
+          <!-- 测试 -->
+          <p class="rate">{{data.NextDate!=0?data.NextDate:data.ProdStartDate|timeFormat1}}</p>
+        </div>
+        <div class="right" v-if="tabIndex=='1'">
+          <p class="text">周期到期日</p>
+          <p class="rate">{{data.EndDate|timeFormat1}}</p>
+        </div>
+      </div>
+    </div>
+    <!-- 货币 -->
+    <div v-if="data.ModulCode=='1307'">
+      <div class="top">
+        <div class="left">
+          <div class="name">{{data.ProductName?data.ProductName:data.PrdName}}</div>
+          <div class="netWorth">当前净值:{{data.ProdValue?data.ProdValue:data.netWorth}}</div>
+        </div>
+      </div>
+      <div class="bottom">
+        <div class="left">
+          <p class="text">持有份额(元)</p>
+          <p class="money" v-if="tabIndex=='1'">{{data.FinanProPortAMT|Money}}</p>
+          <p class="money" v-else>{{data.AMT|Money}}</p>
+          <!-- <p class="text">持有金额(元)</p>
+          <p class="money">{{data.AMT|Money}}</p>-->
+        </div>
+        <div class="center">
+          <p class="text">7日年化</p>
+          <p :class="['rate',{'textOver':data.Yield.length>6&&data.Yield.length<12},{'textOver1':data.Yield.length>12}]">{{data.Yield|parseFloatTwo}}</p>
+          <!-- <p class="rate">{{parseFloat(data.expectProfRate)*100?parseFloat(data.expectProfRate)*100:'0'}}%</p> -->
+        </div>
+        <div class="right" v-if="tabIndex=='0'">
+          <p class="text">预计起息日</p>
+          <p class="rate">{{data.ProdStartDate|timeFormat1}}</p>
+        </div>
+        <div class="right" v-if="tabIndex=='1'">
+          <p class="text">收益分配日</p>
+          <!-- 测试 -->
+          <!-- <p class="rate">{{data.ProdEndDate|timeFormat1}}</p> -->
+          <p class="rate">{{data.prodEndDate|timeFormat1}}</p>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="right" >
+          <p class="text" v-if="data.ModulCode=='1102'">预计到期日</p>
+          <p class="text" v-else-if="data.ModulCode=='1303'">收益分配日</p>
+          <p class="text" v-else>周期到期日</p>
+          <p class="text">{{data.ModulCode=="1102"?'预计到期日':data.ModulCode=="1306"?'周期到期日':data.ModulCode=="1307"?'收益分配日':'预计到期日'}}</p>
+          <p class="rate">{{data.ModulCode=="1102"?data.BenefitMaturiteDate:data.ModulCode=="1306"?data.NextDate:data.IncomeEndDate |timeFormat1}}</p>
+          <p class="rate" v-if="data.ModulCode=='1102'">{{data.BenefitMaturiteDate}}</p>
+          <p class="rate" v-else-if="data.ModulCode=='1303'">{{data.IncomeEndDate}}</p>
+          <p class="rate" v-else>{{data.NextDate}}</p>
+        </div>
+        <div class="right" v-if="tabIndex=='2'">
+          <p class="text" v-if="data.ModulCode=='1102'">预计到期日</p>
+          <p class="text" v-else-if="data.ModulCode=='1303'">收益分配日</p>
+          <p class="text" v-else>周期到期日</p>
+          <p class="text">{{data.ModulCode=="1102"?'预计到期日':data.ModulCode=="1306"?'周期到期日':data.ModulCode=="1307"?'收益分配日':'预计到期日'}}</p>
+          <p class="rate">{{data.ModulCode=="1102"?data.BenefitMaturiteDate:data.ModulCode=="1306"?data.NextDate:data.IncomeEndDate |timeFormat1}}</p>
+          <p class="rate" v-if="data.ModulCode=='1102'">{{data.BenefitMaturiteDate}}</p>
+          <p class="rate" v-else-if="data.ModulCode=='1303'">{{data.IncomeEndDate}}</p>
+          <p class="rate" v-else>{{data.NextDate}}</p>
+    </div>-->
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    data: {
+      require: true
+    },
+    tabIndex: {
+      require: true
+    }
+  },
+  methods: {},
+  filters: {
+    timeFormat1(value) {
+      if (value) {
+        let arr = [];
+        arr.push(value.slice(0, 4));
+        arr.push(value.slice(4, 6));
+        arr.push(value.slice(6));
+        return arr.join("-");
+      } else {
+        return "";
+      }
+    }
+  },
+  created() {
+    // console.log(this.data)
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.item {
+  background: #fff;
+  // height: px2vw(218);
+  width: px2vw(670);
+  margin: 0 auto;
+  padding: px2vw(30) px2vw(40);
+  box-sizing: border-box;
+  border-radius: px2vw(16);
+  .top {
+    // height: px2vw(68);
+    display: flex;
+    flex-direction: row;
+    // justify-content: space-between;
+    // align-items: center;
+    .left {
+      // flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+
+      .name {
+        max-width: px2vw(526);
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: px2vw(26);
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+      }
+      .netWorth {
+        font-size: px2vw(22);
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+        margin-top: px2vw(18);
+      }
+    }
+
+    .method {
+      background: #ebf3ff;
+      text-align: center;
+      border: px2vw(4);
+      height: px2vw(36);
+      line-height: px2vw(36);
+      text-align: center;
+      margin-top: px2vw(-3);
+      font-size: px2vw(22);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(62, 143, 255, 1);
+      //   flex: 1;
+      padding: 0 px2vw(8);
+      margin-left: px2vw(10);
+    }
+  }
+  .bottom {
+    margin-top: px2vw(40);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    .text {
+      font-size: px2vw(22);
+      font-weight: 300;
+      color: rgba(125, 125, 125, 1);
+    }
+    .money,
+    .rate,
+    .date {
+      margin-top: px2vw(20);
+      color: #f75a50;
+      font-weight: 500;
+      font-size: px2vw(30);
+    }
+    .date {
+      color: #262626;
+    }
+    .right {
+      .rate {
+        font-size: px2vw(30);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(38, 38, 38, 1);
+      }
+    }
+    .center {
+      .text,
+      .rate {
+        text-align: center;
+      }
+      .textOver1{
+        font-size: px2vw(24);
+        max-width: px2vw(250);
+      }
+    }
+    .right {
+      .text {
+        text-align: right;
+      }
+    }
+  }
+}
+</style>

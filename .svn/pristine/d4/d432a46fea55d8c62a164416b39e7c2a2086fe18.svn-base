@@ -1,0 +1,58 @@
+<template>
+  <div class="outer">
+    <Success :datainfo="datainfo"></Success>
+    <!-- <Fail :data="data" v-if="data.type==2"></Fail> -->
+  </div>
+</template>
+
+<script>
+import successResult from "../../components/farmersTreasurecomponents/successResult";
+// import failResult from "../components/failResult";
+export default {
+  components: {
+    Success: successResult,
+    // Fail: failResult
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      datainfo:null
+    };
+  },
+    beforeRouteEnter(to, from, next) {
+    // next(vm => {
+      //因为当钩子执行前，组件实例还没被创建
+      // vm 就是当前组件的实例相当于上面的 this，所以在 next 方法里你就可以把 vm 当 this 来用了。
+      console.log(vm);//当前组件的实例
+       if (from.name == "mydeposit") {
+        console.log('ok')
+        to.meta.keepAlive = true;
+        next({path:"/index"})
+        }else if(from.name == "depositdetail" ){
+          console.log('ok')
+          // to.meta.keepAlive = true;
+        next({path:"/mydeposit"})
+        }else{
+          next()
+        }
+    // });
+  },
+  created(){
+    // this.$store.state.params.type = 1
+    this.datainfo = {...this.$store.state.params,...this.$route.query}
+    console.log(this.datainfo);
+    // console.log(this.$store.state.params)
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer{
+  background-color: #fff;
+  box-sizing: border-box;
+  height: 100vh;
+}
+</style>

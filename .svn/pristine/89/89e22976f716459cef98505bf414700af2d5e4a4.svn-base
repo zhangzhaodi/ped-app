@@ -1,0 +1,17 @@
+.assetsLiabilities {
+  .outer {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #fff;
+    .scrollerBox {
+      background: rgba(235, 238, 240, 1);
+    }
+    .content {
+      flex: 1;
+      overflow: auto;
+      // border-top: 1px solid rgba(235, 238, 240, 1);
+    }
+  }
+}

@@ -1,0 +1,42 @@
+<template>
+  <div class="outer">
+    <Success :data="data"></Success>
+    <!-- <Fail :data="data" v-if="data.type==2"></Fail> -->
+  </div>
+</template>
+
+<script>
+import successResult from "../components/successResult";
+// import failResult from "../components/failResult";
+export default {
+  components: {
+    Success: successResult,
+    // Fail: failResult
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: false
+      },
+      data:null
+    };
+  },
+  created() {
+
+
+
+    // this.$store.state.params.type = 1
+    this.data = this.$store.state.params
+    // console.log(this.$store.state.params)
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.outer{
+  background-color: #fff;
+  box-sizing: border-box;
+  height: 100vh;
+}
+</style>

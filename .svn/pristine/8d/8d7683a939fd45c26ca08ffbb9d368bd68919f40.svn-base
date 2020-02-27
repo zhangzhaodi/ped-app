@@ -1,0 +1,265 @@
+<template>
+  <div class="outer canvas" ref="canvas">
+    <Myheader
+      :title="$route.meta.title"
+      :params="params"
+      :isWhite="isWhite"
+      :backgroundColor="color"
+    ></Myheader>
+    <div class="content">
+      <div class="top">
+        <div class="time">
+          <span>{{data.date.getFullYear()}}年</span>
+          <span>{{data.date.getMonth()+1}}月</span>
+        </div>
+        <div class="money">{{data.money|Money}}</div>
+        <p class="text">实发金额(元)</p>
+      </div>
+      <div class="detail" >
+        <p class="title">基本工资</p>
+        <p class="base label">
+          <span>职务工资</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="base label">
+          <span>津贴补贴(元)</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="title">津贴补贴(元)</p>
+        <p class="subsidy label">
+          <span>国家津贴</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="subsidy label">
+          <span>工作津贴</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="subsidy label">
+          <span>生活补贴</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="subsidy label">
+          <span>交通补贴</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="subsidy label">
+          <span>物业补贴</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="subsidy label">
+          <span>通讯补贴</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="title">代扣代缴(元)</p>
+        <p class="withhold label">
+          <span>补发工资</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="withhold label">
+          <span>扣发工资</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="withhold label">
+          <span>公积金</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="withhold label">
+          <span>其他补扣</span>
+          <span>{{money}}</span>
+        </p>
+        <p class="withhold label">
+          <span>单位补扣</span>
+          <span>{{money}}</span>
+        </p>
+      </div>
+      <div class="btn">
+        <van-button type="default" @click="savecanvas">导出为图片</van-button>
+      </div>
+      <img src="@/assets/assistant/payrollDetail/img_gaokao@2x.png" class="ad">
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import html2canvas from "html2canvas";
+import { Button } from "vant";
+export default {
+  data() {
+    return {
+      data: null,
+      params: {
+        leftShow: false
+      },
+      isWhite: true,
+      money: "1220.00",
+      color: "transparent"
+    };
+  },
+  components: {
+    Myheader: Header,
+    [Button.name]: Button
+  },
+  created() {
+    this.data = this.$route.params;
+    console.log(this.data);
+  },
+  methods: {
+    savecanvas() {
+      window.scrollTo(0,0)
+      let canvas = document.querySelector(".canvas");
+      let that = this;
+      html2canvas(canvas, { scale: 2, logging: false, useCORS: true }).then(
+        function(canvas) {
+          let type = "png";
+          let imgData = canvas.toDataURL(type); // 照片格式处理
+          let _fixType = function(type) {
+            type = type.toLowerCase().replace(/jpg/i, "jpeg");
+            let r = type.match(/png|jpeg|bmp|gif/)[0];
+            return "image/" + r;
+          };
+          imgData = imgData.replace(_fixType(type), "image/octet-stream");
+          let filename = "ZL" + new Date().getTime() + type;
+          that.saveFile(imgData, filename);
+        }
+      );
+    },
+    saveFile(data, filename) {
+      let save_link = document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        "a"
+      );
+      save_link.href = data;
+      save_link.download = filename;
+      let event = document.createEvent("MouseEvents");
+      event.initMouseEvent(
+        "click",
+        true,
+        false,
+        window,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
+        false,
+        false,
+        false,
+        0,
+        null
+      );
+      save_link.dispatchEvent(event);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.headerBox {
+  position: absolute;
+}
+.outer {
+  background: #f5f6f8;
+  .content {
+    .top {
+      height: px2vw(368);
+      background: url("~@/assets/assistant/payrollDetail/img_bg@2x.png")
+        no-repeat;
+      background-size: 100% 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      .time {
+        font-size: px2vw(26);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 1);
+        margin-top: px2vw(128);
+      }
+      .money {
+        font-size: px2vw(54);
+        font-family: PingFangSC-Medium, PingFang SC;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 1);
+        text-shadow: 0px p2vw(2) px2vw(12) rgba(197, 154, 129, 0.4);
+        margin-top: px2vw(20);
+      }
+      .text {
+        font-size: px2vw(22);
+        font-family: PingFangSC-Light, PingFang SC;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 1);
+        margin-top: px2vw(14);
+      }
+    }
+    .detail {
+      .title {
+        height: px2vw(74);
+        line-height: px2vw(74);
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(62, 143, 255, 1);
+        padding: 0 px2vw(40);
+      }
+      .label {
+        height: px2vw(80);
+        background: #fff;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 px2vw(40);
+        span {
+          font-size: px2vw(26);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+        }
+      }
+      .subsidy:nth-of-type(even) {
+        background: linear-gradient(
+          rgba(181, 213, 255, 0.3),
+          rgba(182, 197, 252, 0.09)
+        );
+      }
+      .base:nth-of-type(odd) {
+        background: linear-gradient(
+          rgba(181, 213, 255, 0.3),
+          rgba(182, 197, 252, 0.09)
+        );
+      }
+      .withhold:nth-of-type(odd) {
+        background: linear-gradient(
+          rgba(181, 213, 255, 0.3),
+          rgba(182, 197, 252, 0.09)
+        );
+      }
+    }
+    .btn {
+      margin-top: px2vw(61);
+      padding: 0 px2vw(40);
+      .van-button {
+        width: 100%;
+        height: px2vw(90);
+        border-radius: px2vw(45);
+        background: linear-gradient(#6babff, #6c8af9);
+      }
+      .van-button__text {
+        font-size: px2vw(34);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 1);
+      }
+    }
+    .ad{
+      width: px2vw(670);
+      margin-left: px2vw(40);
+      margin-top: px2vw(59);
+      padding-bottom: px2vw(74);
+    }
+  }
+}
+</style>

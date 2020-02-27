@@ -1,0 +1,305 @@
+import Vue from "vue";
+import Router from "vue-router";
+const Index =()=> import( '../pages/index');
+const Fund =()=> import( '../pages/fund/index');
+const Market =()=> import( '../pages/market/index');
+const Position =()=> import( '../pages/position/index');
+const Optional =()=> import( '../pages/optional/index');
+
+const FundDetail =()=> import( '../pages/fund/detail');
+const Subscribe =()=> import( '../pages/fund/subscribe');
+const SubscribeResult =()=> import( '../pages/fund/result');
+const DetailHistory =()=>import('../pages/fund/detailHistory')
+const TradingRules =()=>import('../pages/fund/tradingRules')
+
+const FundPlan =()=> import( '../pages/fundPlan/index');
+const FundPlanHistory =()=> import( '../pages/fundPlan/history');
+const FundPlanDetail =()=> import( '../pages/fundPlan/detail');
+const FundPlanAdd =()=> import( '../pages/fundPlan/add');
+const FundPlanResult =()=> import( '../pages/fundPlan/result');
+const FundPlanCancelResult =()=> import( '../pages/fundPlan/cancelResult');
+const FundPlanEdit =()=> import( '../pages/fundPlan/edit');
+
+
+
+const Earnings =()=> import( '../pages/position/earnings');
+
+
+const YesEarnings =()=> import( '../pages/position/yesEarnings');
+const Redeem =()=> import( '../pages/position/redeem');
+const RedeemResult =()=> import( '../pages/position/redeemResult');
+const EntrustDetail =()=> import( '../pages/position/entrustDetail');
+const CancelResult =()=> import( '../pages/position/cancelResult');
+const PositionDetail =()=> import( '../pages/position/detail');
+const PositionHistory =()=> import( '../pages/position/history');
+const PositionHistoryDetail =()=> import( '../pages/position/historyDetail');
+
+const RiskIndex = () => import("../pages/sign/riskIndex");
+const Assessment = () => import("../pages/sign/assessment");
+const RiskResult = () => import("../pages/sign/riskResult");
+const SignInfo = () => import('../pages/sign/signInfo');
+const SignResult = () => import('../pages/sign/signResult');
+Vue.use(Router);
+export default new Router({
+  routes: [
+    {
+      path: "",
+      redirect: "/fund/index"
+    },
+    {
+      path: "/fund",
+      name: "index",
+      component: Index,
+      meta: {
+        title: "基金",
+        keepAlive: false
+      },
+      children:[{
+        path:"/fund/index",
+        name: 'fund',
+        component: Fund,
+        meta:{
+          title: '基金',
+          activeIndex: 0,
+          goToNative: true
+        }
+      },{
+        path:"/market/index",
+        name: 'market',
+        component: Market,
+        meta:{
+          title: '基金超市',
+          activeIndex: 1
+        }
+      },{
+        path:"/optional/index",
+        name: 'optional',
+        component: Optional,
+        meta:{
+          title: '我的自选',
+          activeIndex: 2
+        }
+      },{
+        path:"/position/index",
+        name: 'position',
+        component: Position,
+        meta:{
+          title: '我的持仓',
+          activeIndex: 3
+        }
+      }]
+    },{
+      path:'/fund/detail',
+      name: 'fundDetail',
+      component: FundDetail,
+      meta:{
+        title: '基金详情'
+      }
+    },{
+      path:'/fund/subscribe',
+      name: 'subscribe',
+      component: Subscribe,
+      meta:{
+        title: '基金申购'
+      }
+    },
+    {
+      path:'/fund/result',
+      name: 'subscribeResult',
+      component: SubscribeResult,
+      meta:{
+        title: '基金申购'
+      }
+    },
+    {
+      path:'/fundPlan/add',
+      name: 'fundPlanAdd',
+      component: FundPlanAdd,
+      meta:{
+        title: '基金定投'
+      }
+    },
+    {
+      path:'/fundPlan/edit',
+      name: 'fundPlanEdit',
+      component: FundPlanEdit,
+      meta:{
+        title: '修改定投计划'
+      }
+    },
+    {
+      path:'/fundPlan/index',
+      name: 'fundPlan',
+      component: FundPlan,
+      meta:{
+        title: '我的定投'
+      }
+    },{
+      path:'/fundPlan/detail',
+      name: 'fundPlanDetail',
+      component: FundPlanDetail,
+      meta:{
+        title: '定投详情'
+      }
+    },
+    {
+      path:'/position/entrustDetail',
+      name: 'entrustDetail',
+      component: EntrustDetail,
+      meta:{
+        title: '委托详情'
+      }
+    },
+    {
+      path:'/position/cancelResult',
+      name: 'cancelResult',
+      component: CancelResult,
+      meta:{
+        title: '撤单结果'
+      }
+    },
+    {
+      path:'/position/detail',
+      name: 'positionDetail',
+      component: PositionDetail,
+      meta:{
+        title: '持仓详情'
+      }
+    },
+    {
+      path:'/fundPlan/history',
+      name: 'fundPlanHistory',
+      component: FundPlanHistory,
+      meta:{
+        title: '历史定投'
+      }
+    },
+    {
+      path:'/fund/positionHistoryDetail',
+      name: 'positionHistoryDetail',
+      component: PositionHistoryDetail,
+      meta:{
+        title: '交易历史'
+      }
+    },
+    {
+      path:'/fundPlan/result',
+      name: 'fundPlanResult',
+      component: FundPlanResult,
+      meta:{
+        title: '基金定投'
+      }
+    },
+    {
+      path:'/fundPlan/cancelResult',
+      name: 'fundPlanCancelResult',
+      component: FundPlanCancelResult,
+      meta:{
+        title: '基金定投'
+      }
+    },
+    {
+      path:'/position/earnings',
+      name: 'earnings',
+      component: Earnings,
+      meta:{
+        title: '收益明细'
+      }
+    },
+    {
+      path:'/position/history',
+      name: 'positionHistory',
+      component: PositionHistory,
+      meta:{
+        title: '交易历史'
+      }
+    },
+    {
+      path:'/position/yesEarnings',
+      name: 'yesEarnings',
+      component: YesEarnings,
+      meta:{
+        title: '收益明细'
+      }
+    },
+    {
+      path:'/fund/detailHistory',
+      name: 'detailHistory',
+      component: DetailHistory,
+      meta:{
+        title: '基金详情'
+      }
+    },
+    {
+      path:'/fund/tradingRules',
+      name: 'tradingRules',
+      component: TradingRules,
+      meta:{
+        title: '产品信息'
+      }
+    },
+    {
+      path:'/fund/redeem',
+      name: 'redeem',
+      component: Redeem,
+      meta:{
+        title: '基金赎回'
+      }
+    },
+    {
+      path:'/fund/redeemResult',
+      name: 'redeemResult',
+      component: RedeemResult,
+      meta:{
+        title: '基金赎回'
+      }
+    },
+    {
+      path: "/signInfo",
+      name: "signInfo",
+      component: SignInfo,
+      meta: {
+        title: "签约信息",
+        keepAlive: true,
+        goToNative: false
+      }
+    },
+    {
+      path: "/signResult",
+      name: "signResult",
+      component: SignResult,
+      meta: {
+        title: "签约结果",
+        keepAlive: false,
+        goToNative: false
+      }
+    },
+    {
+      path: "/risk/index",
+      name: "riskIndex",
+      component: RiskIndex,
+      meta: {
+        title: "风险评估",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/risk/assessment",
+      name: "assessment",
+      component: Assessment,
+      meta: {
+        title: "问卷",
+        keepAlive: false
+      }
+    },
+    {
+      path: "/risk/result",
+      name: "riskResult",
+      component: RiskResult,
+      meta: {
+        title: "风险评估",
+        keepAlive: false
+      }
+    },
+  ]
+});

@@ -1,0 +1,66 @@
+.electronicAccounts {
+  .outer {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  // 对齐input框右侧清除按钮
+  .sel-item .v-input .v-input__suffix {
+    right: px2vw(4);
+  }
+  .sel-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: px2vw(120);
+    margin: 0 px2vw(60);
+    border-bottom: 1px solid #eff0f1;
+    font-family: PingFangSC-Light;
+    font-weight: 300;
+    .sel-m img {
+      height: px2vw(40);
+      width: px2vw(40);
+    }
+
+    .sel-m {
+      flex: 1;
+      font-size: px2vw(32);
+      color: rgba(38, 38, 38, 1);
+      display: flex;
+      justify-content: space-between;
+      .verify {
+        font-size: px2vw(28);
+        width: px2vw(150);
+        font-family: PingFangSC-Regular;
+        font-weight: 400;
+        line-height: 1.4;
+        color: rgba(249, 97, 89, 1);
+      }
+    }
+  }
+
+  .sel-left {
+    width: px2vw(580);
+  }
+
+  .sel-l {
+    height: px2vw(32);
+    width: 100%;
+    line-height: px2vw(32);
+    font-size: px2vw(32);
+    padding: px2vw(43) 0;
+    color: rgba(38, 38, 38, 1);
+    border-bottom: 1px solid #eff0f1;
+  }
+
+  .footer-box {
+    margin-top: px2vw(100);
+  }
+
+  .van-button--disabled {
+    opacity: 0.4;
+  }
+}
+
+

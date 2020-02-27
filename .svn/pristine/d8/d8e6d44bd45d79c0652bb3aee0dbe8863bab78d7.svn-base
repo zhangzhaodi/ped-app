@@ -1,0 +1,474 @@
+<template>
+  <div class="outer fund-buy">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <div class="main">
+      <header class="fund-info">
+        <h2>{{selectFund.productName}}<span class="iconfont">&#xe649;</span></h2>
+        <div class="num">{{selectFund.productNo}}</div>
+      </header>
+      <section class="section">
+        <payer-card :label="`付款卡`" @select="selectPayerCard"></payer-card>
+      </section>
+      <section class="field-section">
+        <header class='field-header'>
+          <span class="title">定投金额</span>
+        </header>
+        <transAmt v-model="transAmt" :balance="payerCard.balance" :placeholder="placeholder" @blur="amtBlur">
+        </transAmt>
+      </section>
+      <section class="field-section">
+        <div class="filed_cell picker">
+          <van-cell is-link @click="periodPicker = true">
+            <template slot="title" class="label">
+              <span class="custom-title">定投周期</span>
+            </template>
+            <template>
+              <div style="color:#262626;" v-if="form.period">{{form.periodTxt}}</div>
+              <div class="placeholder" v-else>请选择定投周期</div>
+            </template>
+          </van-cell>
+        </div>
+        <div class="filed_cell">
+          <div class="label">投资间隔</div>
+          <div class="filed">
+            <m-input type="digit" :maxlength="5" v-model="form.interval" :value="form.interval" placeholder="请输入投资间隔">
+            </m-input>
+          </div>
+        </div>
+        <div class="filed_cell picker" v-if="form.period && (form.period == 0 || form.period == 1)">
+          <van-cell is-link @click="openDayPicker">
+            <template slot="title" class="label">
+              <span class="custom-title">定投日</span>
+            </template>
+            <template>
+              <div style="color:#262626;" v-if="form.periodVal">
+                {{form.periodValTxt}}
+              </div>
+              <div class="placeholder" v-else>请选择定投日</div>
+            </template>
+          </van-cell>
+        </div>
+        <div class="filed_cell" v-else>
+          <div class="label">定投日</div>
+          <div class="filed">
+            <m-input type="digit" :maxlength="5" v-model="form.periodVal" :value="form.periodVal" placeholder="请输入定投日">
+            </m-input>
+          </div>
+        </div>
+        <div class="filed_cell picker start-date">
+          <van-cell @click="datePicker = true">
+            <template slot="title" class="label">
+              <span class="custom-title">定投初始日期</span>
+            </template>
+            <template>
+              <div style="color:#262626;">{{form.createDate}}</div>
+            </template>
+          </van-cell>
+        </div>
+      </section>
+
+      <section class="field-section">
+        <div class="filed_cell picker">
+          <van-cell is-link @click="overFlagPicker = true">
+            <template slot="title" class="label">
+              <span class="custom-title">结束方式</span>
+            </template>
+            <template>
+              <div style="color:#262626;" v-if="form.overFlag">{{form.overFlagTxt}}</div>
+              <div class="placeholder" v-else>请选择结束方式</div>
+            </template>
+          </van-cell>
+        </div>
+
+        <div class="filed_cell" v-if="form.overFlag == 0 || form.overFlag == 2">
+          <div class="label">投资期数</div>
+          <div class="filed">
+            <m-input :maxlength="5" v-model="form.periods" :value="form.periods" placeholder="请输入期数">
+            </m-input>
+          </div>
+        </div>
+
+        <div class="filed_cell picker " v-if="form.overFlag == 1">
+          <van-cell @click="endDatePicker = true">
+            <template slot="title" class="label">
+              <span class="custom-title">结束日期</span>
+            </template>
+            <template>
+              <div style="color:#262626;" v-if="form.endDate">{{form.endDate}}</div>
+              <div class="placeholder" v-else>请选择结束日期</div>
+            </template>
+          </van-cell>
+        </div>
+      </section>
+
+      <!-- <div class="filed_cell section">
+        <div class="label">推荐人</div>
+        <div class="filed">
+          <m-input v-model="form.refereeNo" :value="form.refereeNo" placeholder="请输入推荐人工号">
+          </m-input>
+        </div>
+      </div> -->
+
+      <div class="terms">
+        <van-checkbox v-model="checked">
+          本人已阅读并同意<a>权益须知</a>，已充分了解并知晓本产品风险，愿意承担相关风险。
+          <img slot="icon" slot-scope="props" :src="props.checked ? icon.active : icon.inactive">
+        </van-checkbox>
+      </div>
+
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button class="marginLR40" :disabled="disabled" @click="next">确认</van-button>
+        </div>
+      </div>
+      <!-- 选择定投期 -->
+      <van-popup class="popup-round" v-model="periodPicker" round position="bottom">
+        <van-picker show-toolbar title="定投周期" confirm-button-text="完成" :columns="periodList" @cancel="periodPicker = false" @confirm="selectPeriod" />
+      </van-popup>
+      <!-- 定投期为每周时选择 -->
+      <van-popup class="popup-round" v-model="weekPicker" round position="bottom">
+        <van-picker show-toolbar title="定投日" confirm-button-text="完成" :columns="weekList" @cancel="weekPicker = false" @confirm="selectWeek" />
+      </van-popup>
+      <!-- 定投期为每月时选择 -->
+      <van-popup class="popup-round" v-model="dayPicker" round position="bottom">
+        <van-picker show-toolbar title="定投日" confirm-button-text="完成" :columns="daysList" @cancel="dayPicker = false" @confirm="selectDay" />
+      </van-popup>
+      <!-- 结束方式 -->
+      <van-popup class="popup-round" v-model="overFlagPicker" round position="bottom">
+        <van-picker show-toolbar title="结束方式" confirm-button-text="完成" :columns="overFlagList" @cancel="overFlagPicker = false" @confirm="selectOverFlag" />
+      </van-popup>
+      <!-- 选择定投初始日期 -->
+      <van-popup class="popup-round" v-model="datePicker" round position="bottom">
+        <!-- <van-picker show-toolbar title="选择时间" confirm-button-text="完成" :columns="dayList" @cancel="dayPicker = false" @confirm="handleSelect" /> -->
+        <van-datetime-picker title="选择时间" v-model="createDate" type="date" :formatter="formatter" :min-date="minDate" @cancel="datePicker = false" @confirm="selectCreateDate" />
+      </van-popup>
+
+      <!-- 选择结束日期 -->
+      <van-popup class="popup-round" v-model="endDatePicker" round position="bottom">
+        <!-- <van-picker show-toolbar title="选择时间" confirm-button-text="完成" :columns="dayList" @cancel="dayPicker = false" @confirm="handleSelect" /> -->
+        <van-datetime-picker title="选择时间" v-model="endDate" type="date" :formatter="formatter" :min-date="minDate" @cancel="endDatePicker = false" @confirm="selectEndDate" />
+      </van-popup>
+
+      <!-- 选择安全工具弹窗 -->
+      <security :visible.sync="securityShow" :form='confirmForm' @confirm="handleConfirm"></security>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import mInput from "@/components/Input/bankCardNum.vue";
+import PopupRound from "@/components/PopupRound";
+import PayerCard from '@/components/Popup/PayerCard';
+import TransAmt from "@/components/Input/transAmt.vue"
+import { DatetimePicker } from "vant";
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import dayjs from 'dayjs';
+import Security from '../components/security';
+// import 
+export default {
+  components: {
+    Myheader: Header,
+    mInput,
+    PopupRound,
+    PayerCard,
+    TransAmt,
+    [DatetimePicker.name]: DatetimePicker,
+    Security
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      form: {
+        periodTxt: '',
+        period: '',
+        periodVal: '',
+        periodValTxt: '',
+        interval: '',
+        createDate: dayjs().format('YYYY-MM-DD'),
+        overFlag: '',
+        overFlagTxt: '',
+        endDate: '',
+        refereeNo: '',
+      },
+      icon: {
+        active: require("@/assets/checked.png"),
+        inactive: require("@/assets/unchecked.png"),
+      },
+      upperMoney: null,
+      transAmt: null,
+      checked: false,
+      periodPicker: false,
+      periodList: [{ text: "日", value: "2" }, { text: "周", value: "1" }, { text: "月", value: '0' }],
+      weekPicker: false,
+      weekList: [{ text: '周一', value: "1" }, { text: '周二', value: "2" }, { text: '周三', value: "3" }, { text: '周四', value: "4" }, { text: '周五', value: "5" }],
+      dayPicker: false,
+      overFlagPicker: false,
+      overFlagList: [{ text: '投资期数', value: "0" }, { text: '结束日期', value: "1" }, { text: '成功期数', value: "2" }],
+      payerCard: {},
+      datePicker: false,
+      createDate: dayjs().format('YYYY-MM-DD'),
+      endDate: '',
+      endDatePicker: false,
+      minDate: new Date(dayjs()),
+      confirmForm: {
+        bankCard: '',
+        transAmt: 0,
+        productName: '',
+        bankName: '焦作中旅银行'
+      },
+      params: {},//基金定投所用参数
+      securityShow: false,
+    };
+  },
+  computed: {
+    ...mapState('common', ['userInfo']),
+    ...mapState('fund', ['selectFund']),
+    placeholder() {
+      let firstAMT = this.selectFund.perFirstAMT || 0;
+      let addAMT = this.selectFund.paddAMT || 0;
+      let txt = ''
+      if (addAMT > 0) {
+        txt = `${firstAMT}元起（递增金额${addAMT}）`
+      } else {
+        txt = `${firstAMT}元起`
+      }
+      return txt
+    },
+    daysList() {
+      let arr = [];
+      for (let i = 1; i < 29; i++) {
+        let item = {
+          text: i + '日',
+          value: i
+        };
+        arr.push(item)
+      }
+      return arr
+    },
+    disabled() {
+      let disabled = true;
+      if (!this.checked) {
+        disabled = true;
+      } else if (!this.transAmt) {
+        disabled = true;
+      } else if (!this.form.period) {
+        disabled = true;
+      } else if(!this.form.periodVal){
+        disabled = true;
+      } else if(!this.form.interval){
+        disabled = true;
+      } else if ((this.form.overFlag == '0' || this.form.overFlag == '2') && !this.form.periods) {
+        disabled = true;
+      } else if (this.form.overFlag == '1' && !this.form.endDate) {
+        disabled = true;
+      } else {
+        disabled = false;
+      }
+
+
+      //  else if ((this.form.period == '0' || this.form.period == '1') && !this.form.periodVal) {
+      //   disabled = true;
+      // } else if (this.form.period == '2' && !this.form.interval) {
+      //   disabled = true;
+      // } 
+      return disabled
+    },
+  },
+  methods: {
+    ...mapMutations('fund', ['SELECTFUNDPLAN']),
+    //时间选择器数据的过滤
+    formatter(type, value) {
+      if (type === "year") {
+        return `${value}年`;
+      } else if (type === "month") {
+        return `${value}月`;
+      } else if (type === "day") {
+        return `${value}日`;
+      }
+      return value;
+    },
+    //选择付款卡
+    selectPayerCard(item) {
+      console.log('选择的付款卡', item)
+      this.payerCard = { ...item };
+    },
+    amtBlur() {
+      // 判断起投金额
+      if (this.selectFund.perFirstAMT && this.selectFund.perFirstAMT > 0) {
+        if (this.transAmt < this.selectFund.perFirstAMT) {
+          this.transAmt = this.selectFund.perFirstAMT;
+        }
+      }
+    },
+    openDayPicker() {
+      if (this.form.period == "1") {
+        this.weekPicker = true;
+      } else if (this.form.period == "0") {
+        this.dayPicker = true;
+      }
+    },
+    // 选择定投周期
+    selectPeriod(picker, values) {
+      this.periodPicker = false;
+      if (this.form.period != picker.value) { //防止重复赋值 并清空关联选项
+        this.form.periodTxt = picker.text;
+        this.form.period = picker.value;
+        if (this.form.period == 0 || this.form.period == 1) {
+          this.form.periodVal = '';
+          this.form.periodValTxt = '';
+        } else if (this.form.period == 2) {
+          this.form.interval = '';
+        }
+      }
+    },
+    // 定投周期为周时 选择定投日
+    selectWeek(picker, values) {
+      this.weekPicker = false;
+      this.form.periodVal = picker.value;
+      this.form.periodValTxt = picker.text;
+    },
+    // 定投周期为月时 选择定投日
+    selectDay(picker, values) {
+      this.dayPicker = false;
+      this.form.periodVal = picker.value;
+      this.form.periodValTxt = picker.text;
+    },
+    // 选择结束方式
+    selectOverFlag(picker, values) {
+      this.overFlagPicker = false
+      if (this.form.overFlag != picker.value) { //防止重复赋值 并清空关联选项
+        this.form.overFlagTxt = picker.text;
+        this.form.overFlag = picker.value;
+        if (this.form.overFlag == 0 || this.form.overFlag == 2) {
+          this.form.periods = '';
+        } else if (this.form.overFlag == 1) {
+          this.form.endDate = '';
+        }
+      }
+    },
+    // 周期时选择执行日期（开始结束时间）
+    selectCreateDate(data) {
+      this.form.createDate = dayjs(data).format('YYYY-MM-DD');
+      this.datePicker = false;
+    },
+    // 周期时选择执行日期（开始结束时间）
+    selectEndDate(data) {
+      // execData
+      this.form.endDate = dayjs(data).format('YYYY-MM-DD');
+      this.endDatePicker = false;
+    },
+    next() {
+      this.params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        CustomerIdentifyType: '1',
+        CustomerIdentify: this.userInfo.Cif.cifNo,
+        BankAcct: this.payerCard.vouId,
+        TrsAcNo: this.payerCard.vouId,
+        ProductNo: this.selectFund.productNo,
+        AMT: this.transAmt,
+        ProductType: '0',
+        InvestCycle: this.form.period,
+        InvestmentDay: this.form.periodVal ? this.form.periodVal : '',
+        InvestInterval: this.form.interval ? this.form.interval : '',
+        OverFlag: this.form.overFlag,
+        InvestPeriod: this.form.periods,
+        EndDate: this.form.endDate ? dayjs(this.form.endDate).format("YYYYMMDD") : '',
+        StartInvestDate: dayjs(this.form.createDate).format("YYYYMMDD")
+      }
+
+      let PerFirstAMT = this.selectFund.perFirstAMT,
+        PAddAMT = this.selectFund.paddAMT;
+      if (PerFirstAMT) {
+        this.params.perFirstAMT = PerFirstAMT;
+      }
+      if (PAddAMT) {
+        this.params.PAddAMT = PAddAMT;
+      }
+      this.confirmForm = {
+        bankCard: this.payerCard.vouId,
+        transAmt: this.transAmt,
+        productName: this.selectFund.productName,
+        bankName: this.payerCard.bankName
+      }
+      this.securityShow = true;
+    },
+    // 确认窗点击下一步触发， 调用后台参数校验
+    handleConfirm() {
+      this.securityShow = false;
+      this.addConfirm();
+    },
+    addConfirm() {
+      this.request("OwnerFundInverstAddConfirm", this.params).then(res => {
+        console.log(res, "confirm")
+        this.params._tokenName = res._tokenName;
+        this.passwordCheck();
+      }).catch(err => {
+      })
+    },
+    // confirm接口后调用密码组件
+    passwordCheck() {
+      if (process.env.NODE_ENV == "development") {//随时删除
+        this.params.Password = 'MDAwMDAxNDABAgAAAWgAAACkAACrJhjt46TQZR0Hz3FCqOoKawuPsmTEwqOzo3VgOlDRvG9cvO63apTVnWlzrY6kSMrs+f0T2EGVkjBNNTtx5T+dArQF1Qb3IaW2WXaN0JQZG6mkXTanl2zKK8H6XluSS3Mvn+2dKDqYWzAklRQoC8FFvqcb69RmiLy5QMz2qtL+BDAwMDAwMjIz7F3QNk6kJVGQuT5Lh+7hPjzQwE8ueX0wNjy8uB9EFsrh4j6ER9gNGArZiIaV5g51l8NshIT01xi0UKEkMB6aGYf1qZR7ibw9m0PvltYsx4G1jlYTqdnvEGc4HMhmlp6miAf5Pt7BeVY4HHJS7wVUSndEc9Ak+tc1qmj5m/bFuU25cqSUr2sm/ulbRF/q5MeuqxXaZwmTRGpKcNiBLQSDDlSNYZu4rbc3wiamx8UHbNRwi0RTPCu2iLn/hmfa7OgTgQ7ov4l1BCL7I8ByY68SJvpWzk5wHoLOWnlV1NUr8Q==';//本地测试无法调用密码组件 写死
+        this.submit();
+      } else {
+        window.NativeCall.SecureKeyboard(param => {
+          this.params.Password = param;
+          // this.params.Password = '111111';
+          this.submit();
+        });
+      }
+    },
+    submit() {
+      this.loading = true;
+      this.request("OwnerFundInverstAdd", this.params).then(res => {
+        // this.loading = false;
+        let selectFund = { ...this.selectFund };
+        selectFund.transAmt = this.transAmt;
+        this.SELECTFUNDPLAN(selectFund);
+        this.$router.push({ name: 'fundPlanResult' })
+      }).catch(err => {
+        this.loading = false;
+      })
+    }
+  },
+  watch: {
+  }
+};
+</script>
+<style lang="scss" scoped>
+/deep/ .tranfer-amount .md-field-item-content:before {
+  border: none;
+}
+
+/deep/ .filed_cell.start-date .van-cell .van-cell__title .custom-title {
+  width: auto;
+}
+.footer-box .btn-box button {
+  margin-top: px2vw(100);
+  background: linear-gradient(
+    136deg,
+    rgba(224, 207, 174, 1) 0%,
+    rgba(199, 165, 127, 1) 100%
+  );
+}
+.nextDay {
+  font-size: px2vw(22);
+  color: #a8a8a8;
+}
+.start-date {
+  &.filed_cell {
+    .van-cell {
+      .van-cell__title {
+        width: px2vw(200);
+      }
+    }
+  }
+}
+</style>

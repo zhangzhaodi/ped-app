@@ -1,0 +1,115 @@
+<template>
+  <div class="card" :style="{zIndex:data.index}" @click="packUpChange(data.index)">
+    <div class="tab" :style="{background:data.background}">
+      <p class="title">{{data.title}}</p>
+      <p class="label">{{data.label}}</p>
+      <span :class="['iconfont',{'iconzhankai-':!this.packUp()},{'iconshouqi':this.packUp()}]"></span>
+    </div>
+    <div class="cardContent">
+      <item v-for="(item,index) in list" :key="index" :data="item"></item>
+    </div>
+  </div>
+</template>
+
+<script>
+import item from "../components/item.vue";
+export default {
+  data() {
+    return {
+      // packUp: true
+    };
+  },
+  props: {
+    data: {
+      require: true
+    },
+    list: {
+      require: true
+    },
+    nowIndex: {
+      require: true
+    }
+  },
+  components: {
+    item
+  },
+
+  methods: {
+    packUpChange(val) {
+      let items = document.getElementsByClassName("cardContent")[val];
+      let item = document.getElementsByClassName("cardContent");
+      let length = item.length;
+      if (this.$parent.nowIndex == val) {
+        this.$parent.nowIndex = null;
+      } else {
+        this.$parent.nowIndex = val;
+      }
+      if (!this.packUp()) {
+        items.style.height = 0 + "vw";
+      } else {
+        for (let i = 0; i < length; i++) {
+          item[i].style.height = 0;
+        }
+        items.style.height = 383 / (750 / 100) + "vw";
+      }
+    },
+    packUp() {
+      // console.log(this.$parent.nowIndex==this.data.index)
+      return this.$parent.nowIndex == this.data.index;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.card {
+  width: px2vw(690);
+  margin-top: px2vw(-23);
+  // padding: 0 px2vw(10) 0 px2vw(30);
+  box-sizing: border-box;
+  .tab {
+    border-radius: px2vw(16) px2vw(16) 0 0;
+    height: px2vw(113);
+    padding: 0 px2vw(20) 0 px2vw(40);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    .title {
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+    }
+    .label {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+      flex: 1;
+      text-align: right;
+    }
+    .iconfont {
+      padding: px2vw(20);
+      font-size: px2vw(20);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+  .cardContent {
+    // height: px2vw(383);
+    background: #fff;
+    margin-top: -1px;
+    overflow: auto;
+    height: 0;
+    transition: all 0.5s;
+  }
+  .item {
+    margin-top: px2vw(26);
+  }
+  .item:last-child {
+    padding-bottom: px2vw(46);
+  }
+}
+</style>

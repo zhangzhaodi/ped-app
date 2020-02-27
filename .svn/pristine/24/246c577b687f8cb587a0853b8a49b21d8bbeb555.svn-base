@@ -1,0 +1,56 @@
+<template>
+  <div class="electron-search-box">
+    <form  action="/">
+        <van-search
+            v-model="searchTxt"
+            :placeholder="placeholder"
+            @search="handleSearch"
+        />
+    </form>
+  </div>
+</template>
+
+  <script>
+import { Search } from "vant";
+export default {
+  components: {
+    [Search.name]: Search
+  },
+  props: {
+    value: {
+      type: [String,Number],
+      default: ""
+    },
+    placeholder: {
+      type: String,
+      default: "请输入搜索关键词"
+    },
+  },
+  data() {
+    return {
+        searchTxt: this.value
+    };
+  },
+ 
+  created() {},
+  methods: {
+    handleSearch() {
+      this.$emit('search', this.value)
+    },
+    handleCancel() {
+      this.value = '';
+      this.$emit('cancel', this.value)
+    },
+  }
+};
+</script>
+<style lang="scss">
+.electron-search-box{
+    .van-search__content{
+        border-radius: 35px;
+        .van-field__control{
+            line-height: inherit; //修复浏览器 行高抖动问题
+        }
+    }
+}
+</style>

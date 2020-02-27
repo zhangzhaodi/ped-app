@@ -1,0 +1,167 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" backgroundColor="none" :params="params" :isWhite="true"></Myheader>
+    <div class="state-box">
+      <div class="state" @click="changeState(1)">
+        <p :class="{active:isSelected == 1}">2017年</p>
+        <div class="state-bottom" :class="{activestate:isSelected == 1}"></div>
+      </div>
+      <div class="state" @click="changeState(2)">
+        <p :class="{active:isSelected == 2}">2018年</p>
+        <div class="state-bottom" :class="{activestate:isSelected == 2}"></div>
+      </div>
+      <div class="state" @click="changeState(3)">
+        <p :class="{active:isSelected == 3}">2019年</p>
+        <div class="state-bottom" :class="{activestate:isSelected == 3}"></div>
+      </div>
+    </div>
+    <div class="monthlyBills">
+      <p>九月账单</p>
+      <span>“看中哪颗葱就任性带走！不还价”</span>
+    </div>
+    <div class="watch">立即查看</div>
+    <div class="month">
+      <ul>
+        <li>
+          <img src="@/assets/monthlyBills/img_jiuyuexiaotu@2x.png" alt />
+          <p>七月</p>
+        </li>
+        <li>
+          <img src="@/assets/monthlyBills/img_jiuyuexiaotu@2x.png" alt />
+          <p>八月</p>
+        </li>
+        <li>
+          <img src="@/assets/monthlyBills/img_jiuyuexiaotu@2x.png" alt />
+          <p>九月</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { Button } from "vant";
+import { mapMutations } from "vuex";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      isSelected: 1
+    };
+  },
+  computed: {
+    //vuex的getter和state
+  },
+  created() {},
+  methods: {
+    changeState(value) {
+      this.isSelected = value;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  height: 100%;
+  background: url("~@/assets/monthlyBills/img_jiuyue@2x.png") top center
+    no-repeat;
+  background-size: 100% 100%;
+  .state-box {
+    padding-top: px2vw(36);
+    display: flex;
+    justify-content: space-around;
+    .state {
+      width: 33%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      p {
+        font-size: px2vw(26);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .active {
+        color: rgba(255, 255, 255, 1);
+        font-weight: 500;
+        font-size: px2vw(30);
+      }
+      .state-bottom {
+        width: px2vw(32);
+        height: px2vw(4);
+        background: none;
+        border-radius: px2vw(2);
+        margin-top: px2vw(12);
+      }
+      .activestate {
+        background: #fff;
+      }
+    }
+  }
+  .monthlyBills {
+    margin-top: px2vw(82);
+    font-size: px2vw(60);
+    font-family: PingFangSC-Medium, PingFang SC;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    padding-left: px2vw(40);
+    span {
+      font-size: px2vw(30);
+      font-weight: 400;
+      margin-top: px2vw(28);
+    }
+  }
+  .watch {
+    // height: px2vw(54);
+    line-height: px2vw(54);
+    width: px2vw(154);
+    background: rgba(79, 151, 131, 1);
+    border-radius: px2vw(29);
+    margin-top: px2vw(32);
+    margin-left: px2vw(40);
+    font-size: px2vw(26);
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    text-align: center;
+  }
+  .month {
+    margin-top: px2vw(450);
+    ul {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow: auto;
+      padding-left: px2vw(140);
+      li {
+        flex-shrink: 0;
+        width: px2vw(238);
+        height: px2vw(330);
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: px2vw(16);
+        padding: px2vw(10);
+        margin-right: px2vw(30);
+        img {
+          width: 100%;
+        }
+        p {
+          margin-top: px2vw(30);
+          font-size: px2vw(30);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+          text-align: center;
+        }
+      }
+    }
+  }
+}
+</style>

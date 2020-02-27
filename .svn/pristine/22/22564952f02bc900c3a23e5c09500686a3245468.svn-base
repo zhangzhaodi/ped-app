@@ -1,0 +1,226 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter"></Myheader>
+    <Scroller>
+      <Pagetitle :title="title" :notice="notice"></Pagetitle>
+      <div class="sel-item">
+        <div class="sel-m">{{form.username}}</div>
+      </div>
+      <div class="sel-item">
+        <div class="sel-m">{{form.phone}}</div>
+      </div>
+      <div class="sel-item">
+        <div class="sel-m">{{form.IDCard}}</div>
+      </div>
+      <div class="sel-item">
+        <div class="sel-m">
+          <div class="sel-left">
+            <van-field
+              @blur="verifyCheck"
+              v-model="form.bankCard"
+              :value="form.bankCard"
+              placeholder="请输入绑定银行卡号"
+              type="number"/>
+          </div>
+          <img src="@/assets/bankIcon/icon_dianzizanghu_saomiao.png" @click="ScanOcrBankCard" alt />
+        </div>
+      </div>
+      <div class="bank-card-tip">
+        <div class="bank-name">{{form.bankName}}</div>
+        <div class="bank-btn" @click="bankListModal=true">支持银行列表</div>
+      </div>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button :disabled="forbidden"  @click="next">提交</van-button>
+        </div>
+      </div>
+    </Scroller>
+    <!-- 支持银行列表  -->
+    <van-dialog v-model="bankListModal" title="支持银行列表" confirm-button-text="我知道了">
+      <Scroller>
+        <van-cell v-for="(item,index) in bankList" :key="index" :title="item.BankName" />
+      </Scroller>
+    </van-dialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import vInput from "@/components/Input/v-input/";
+import Pagetitle from "./components/Pagetitle";
+import { Popup, Cell,Button,Field } from "vant";
+import { mapGetters, mapActions, mapState } from "vuex";
+export default {
+  components: {
+    [Cell.name]: Cell,
+    Myheader: Header,
+    Scroller,
+    vInput,
+    Pagetitle,
+    [Popup.name]: Popup,
+    [Button.name]: Button
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: false
+      },
+      bankListModal: false,
+      title: "绑定银行卡",
+      notice: "绑定、验证个人相关信息，提高账户安全系",
+      forbidden:true,
+      form: {
+        username: "",
+        IDCard: "",
+        phone: "",
+        bankCard: "",
+        bankName: "",
+        InnerCardFlag:'',
+      },
+      bankList: [],
+      headerBackRouter: {}
+    };
+  },
+  computed: {
+    ...mapGetters("eleAccounts", ["eleForm"]),
+  },
+  created() {
+    console.log(this.eleForm, "vuex");
+    this.form = { ...this.eleForm };
+    this.QryCTSSupportBank()
+  },
+  methods: {
+    ...mapActions("eleAccounts", ["updateEleForm"]),
+    changeName(event) {
+      console.log(event, this.cardPhone);
+    },
+    //查询卡显示 获取银行信息
+    verifyCheck(){
+      console.log();
+      if(this.form.bankCard.length>15){
+        this.request("BankBinQuery",{
+                AcctNbr: this.form.bankCard,
+                BranchId: '2336',
+                ChnlId: '62'
+              },true)
+              .then(res=>{
+                console.log(res);
+              if(res.PayeeBankName){
+              this.form.bankName=res.PayeeBankName
+              this.form.InnerCardFlag=res.InnerCardFlag
+              this.forbidden = false
+              }else{
+              this.form.bankName = '暂不支持该银行'
+              }
+              // this.forbidden = false
+              })
+              .catch(error=>{
+                console.log(error);
+              })
+      }
+        },
+    showMask() {
+      this.$router.push("/smsVerification");
+    },
+    //扫描银行卡
+    ScanOcrBankCard() {
+      window.NativeCall.ScanOcrBankCard(params => {
+        let res = JSON.parse(params);
+        this.form.bankCard = res.CardNum;
+        this.form.bankName = res.BankName;
+        this.verifyCheck()
+      });
+    },
+    //支持银行查询
+    QryCTSSupportBank(){
+    this.request('QryCTSSupportBank',{},true)
+    .then(res=>{
+      console.log(res)
+      this.bankList = res.BankList
+    })
+    .catch(error=>{
+      console.log(error)
+    })
+    },
+    //根据返回信息，跳转页面
+    next() {
+      this.updateEleForm(this.form);
+      this.request('BankCardJudeg',{
+        AcNo:this.form.bankCard
+      },true)
+        .then(res=>{
+          console.log(res)
+      if(this.form.InnerCardFlag == 1){
+          this.$router.push({ name: "tradersPassword" ,
+      query:{
+        checkCode:this.form.InnerCardFlag
+      }
+      });
+      }else{
+          this.$router.push({ name: "smsVerification" ,
+      query:{
+        checkCode:this.form.InnerCardFlag
+      }
+      });
+      }
+        })
+        .catch(error=>{
+          this.form.bankName = '暂不支持该银行'
+          this.forbidden = true
+          console.log(error)
+        })
+  }
+}
+};
+</script>
+<style lang="scss" scoped>
+.bank-card-tip {
+  display: flex;
+  padding: px2vw(24) 0;
+  margin: 0 px2vw(60);
+  justify-content: space-between;
+  .bank-name {
+    color: #7d7d7d;
+    font-size: px2vw(24);
+  }
+  .bank-btn {
+    color: #0085ff;
+    font-size: px2vw(24);
+  }
+}
+.van-dialog {
+  width: px2vw(540);
+  border-radius: px2vw(20);
+  // height: px2vw(800);
+  background: rgba(255, 255, 255, 1);
+  overflow: auto;
+}
+.footer-box{
+  display: flex;
+  justify-content: center;
+  .btn-box{
+    width: px2vw(670);
+  }
+}
+/deep/ .van-dialog{
+  width:px2vw(552);
+  height:px2vw(800);
+  background:rgba(255,255,255,1);
+  border-radius:px2vw(20);
+
+  display: flex;
+  flex-direction: column;
+  -webkit-scrollbar {
+    display: none;
+}
+}
+/deep/ .van-dialog__content{
+ display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  padding-left: px2vw(40);
+  box-sizing: border-box;
+}
+</style>

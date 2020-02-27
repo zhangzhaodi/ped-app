@@ -1,0 +1,225 @@
+<template>
+  <div class="outer fundPlan">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter">
+    </Myheader>
+    <Scroller>
+      <van-list :finished="page.finished" @load="getData">
+        <div class="fund-wrap" v-for="(item,index) in fundPlanList" :key="index" @click="toFundPlan">
+          <div class="fund-item">
+            <div class="left">
+              <div :class="{'title': true,'stoped': item.FinishFlag == '1'}">{{item.ProductName}}【{{item.ProductNo}}】</div>
+              <div class="main">
+                <div class="item">
+                  <div>累计定投</div>
+                  <div>{{item.money | Money}}</div>
+                  <!-- 还需展示小数点后两位.00 -->
+                </div>
+                <div class="item">
+                  <div>已投期数</div>
+                  <div>{{item.money}}</div>
+                </div>
+              </div>
+            </div>
+            <p class="status">
+              {{item.status}}
+            </p>
+          </div>
+        </div>
+      </van-list>
+      <div v-if="fundPlanList.length==0" class="nodata-box">
+        <img :src="require(`@/assets/fund/img_zanwudingtou@2x.png`)" alt />
+        <p class="text">暂无定投计划</p>
+      </div>
+    </Scroller>
+    <div class="add-btn">
+      新增定投
+    </div>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import { mapGetters, mapActions , mapState } from "vuex";
+import { List } from 'vant';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [List.name]: List
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      fundPlanList: [],
+      fundPlanList1: [{
+        name: '易方达财富快线货币市场基金A类快线货币市快线货币市【000647】',
+        money: '1000',
+        periods: '4',
+        status: '已终止',
+      },
+      {
+        name: '易方达财富快线货币市场基金A类快线货币市快线货币市【000647】',
+        money: '1000',
+        periods: '3',
+        status: '已完成',
+      }],
+      page: {
+        pageNum: 10, //每页数据有多少条
+        page: 1,
+        loading: false,
+        finished: false,
+      }
+    };
+  },
+  filters: {
+    overDue(data, status) {
+
+    }
+  },
+  computed: {
+    ...mapState('common', ['userInfo']),
+    startNum() {
+      return (this.page.page - 1) * this.page.pageNum + 1
+    },
+  },
+  created() { console.log("213j1l31l3kl") },
+  mounted() { },
+  methods: {
+    getData() {
+      let params = {
+        BranchId: "PHNE",
+        ChnlId: "62",
+        CustomerIdentifyType: '1',
+        CustomerIdentify: this.userInfo.Cif.cifNo,
+        PositionString: this.startNum,
+        QueryRowsNum: this.page.pageNum,
+        EndFlag: 1,//结束定投标记 0 有效 1已终止
+      }
+      this.request("OwnerFundInverstList", params , false, true).then(res => {
+        let { CurCommisList } = res;
+        if (CurCommisList.length > 0) {
+          if (!this.fundPlanList) {
+            this.fundPlanList = res.CurCommisList
+          } else {
+            this.fundPlanList = [...this.fundPlanList, ...CurCommisList];
+          }
+          if (CurCommisList.length < this.page.pageNum) {//获取的新数据小于每页数据量，则不需再次翻页
+            this.finished = true;
+          } else {
+            this.page.page++;
+          }
+
+        } else {
+          this.page.finished = true;
+        }
+      }).catch(err => {
+        this.page.finished = true;
+      })
+    },
+    toFundPlan() {
+      // this.$router.push({ name: 'fund' })
+      console.log("跳转至定投详情")
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.fundPlan {
+  background: #f5f6f8;
+  .scrollerBox {
+    background: #f5f6f8;
+    margin-top: px2vw(20);
+  }
+  .add-btn {
+    height: px2vw(118);
+    line-height: px2vw(118);
+    font-size: px2vw(34);
+    text-align: center;
+    color: #da9a78;
+    box-shadow: 0px 0px 44px 0px rgba(62, 62, 62, 0.12);
+  }
+  .fund-wrap {
+    background: #fff;
+    padding: 0 px2vw(40);
+  }
+  .fund-item {
+    // margin-top: px2vw(20);
+    padding: px2vw(40) px2vw(0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid #f5f6f8;
+    .status {
+      display: flex;
+      height: 100%;
+      width: px2vw(90);
+      justify-content: center;
+      align-items: center;
+      font-weight: 400;
+      font-size: px2vw(28);
+      &.error {
+        color: #f75a50;
+      }
+      &.end {
+        color: #a8a8a8;
+      }
+    }
+    .left {
+      width: px2vw(56);
+      display: flex;
+      flex: 1;
+      margin-right: px2vw(54);
+      flex-direction: column;
+      .title {
+        height: px2vw(35);
+        line-height: px2vw(35);
+        font-size: px2vw(26);
+        color: $color-text;
+        margin-right: px2vw(27);
+        font-family: $font-family;
+        font-weight: 400;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        &.stoped {
+          background: url("~@/assets/fund/img_yizanting@2x.png") no-repeat right
+            center;
+          background-size: px2vw(94) px2vw(34);
+        }
+      }
+      .main {
+        margin-top: px2vw(40);
+        display: flex;
+        // flex-direction: column;
+        .item {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          height: 100%;
+          div {
+            &:first-child {
+              font-size: px2vw(24);
+              color: #7d7d7d;
+              font-weight: 400;
+              font-family: $font-family;
+              margin-bottom: px2vw(20);
+            }
+            &:last-child {
+              font-size: px2vw(30);
+              font-weight: 500;
+              font-family: $font-family;
+              color: #262626;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+</style>

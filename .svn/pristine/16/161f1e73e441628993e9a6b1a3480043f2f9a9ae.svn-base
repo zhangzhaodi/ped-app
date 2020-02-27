@@ -1,0 +1,667 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title"></Myheader>
+    <Scroller v-if="isLogin">
+      <div v-if="flag == 0 && openUpgrade && twoFlag == 1" class="upgrade">
+        <div class="upgrade-left">
+          您的电子账户(II类户)可升级为I类户
+        </div>
+        <div @click="openUpgrade = false" class="upgrade-right">
+          <!-- <span @click="goDetails(showTwoTypeUpgrade)">去升级</span> -->
+          <i class="iconfont">&#xe62b;</i>
+        </div>
+      </div>
+      <div class="content">
+        <div class="card-type" v-if="accountList.length > 0">
+          {{ cardType }}
+        </div>
+        <div class="card-box" v-if="accountList.length == 0">
+          <div class="img-box">
+            <img src="@/assets/myAccount/bianzu2@2x.png" alt />
+          </div>
+          <div class="bindCard">暂无绑定卡</div>
+        </div>
+        <div class="card-box" v-else>
+          <div
+            class="bank-info"
+            @click="goDetails(index)"
+            v-for="(item, index) in accountList"
+            :key="index"
+            :class="{
+              electronicCard: item.acctTypCd == '1',
+              electronicCardOne:
+                item.acctTypCd == '3' ||
+                item.acctTypCd == '4' ||
+                item.acctTypCd == '5',
+              goldCard: item.cardLevel == 'goldCard',
+              platinumCard: item.cardLevel == 'platinumCard',
+              diamondCard: item.cardLevel == 'diamondCard',
+              reportForLoss: item.cardState == '1'
+            }"
+          >
+            <div v-if="item.cardState == 1" class="loss">该卡已挂失冻结</div>
+            <div v-else>
+              <div class="info-top">
+                <div class="info-left">
+                  <div class="info-img">
+                    <img
+                      src="@/assets/myAccount/allCard/img_yinhangkalogo@2x.png"
+                      alt
+                    />
+                  </div>
+                  <p>{{ item.contTypCd == "2" ? "借记卡" : "电子账户" }}</p>
+                </div>
+                <div v-if="item.default" class="default">默认卡</div>
+              </div>
+              <div class="info-middle">
+                <p v-if="hideCardNum == '1'">
+                  <span>{{ item.vouId.substr(0, 4) }}</span>
+                  <span>****</span>
+                  <span>****</span>
+                  <span>***</span>
+                  <span>{{ item.vouId.substr(15, 4) }}</span>
+                </p>
+                <p v-else>
+                  <span>{{ item.vouId.substr(0, 4) }}</span>
+                  <span>{{ item.vouId.substr(4, 4) }}</span>
+                  <span>{{ item.vouId.substr(8, 4) }}</span>
+                  <span>{{ item.vouId.substr(12, 3) }}</span>
+                  <span>{{ item.vouId.substr(15, 4) }}</span>
+                </p>
+              </div>
+              <div class="info-bottom">
+                <div>
+                  <p>账户余额（人民币）</p>
+                  <span v-if="item.balance - 0 >= 0">{{
+                    item.balance | Money
+                  }}</span>
+                  <span v-else>{{ item.balance }}</span>
+                </div>
+                <!-- <div>
+                <p>开户网点</p>
+                <span>{{item.bankName}}</span>
+              </div>-->
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="footer-box">
+          <div class="btn-box">
+            <van-button @click="goAddAccount">
+              <div class="add-box">
+                <div class="add">
+                  <img
+                    src="@/assets/myAccount/myAccount/icon_tianjai@2x.png"
+                    alt
+                  />
+                </div>
+                <p>添加银行卡</p>
+              </div>
+            </van-button>
+          </div>
+        </div>
+      </div>
+    </Scroller>
+    <Scroller v-else>
+      <div class="content">
+        <div class="card-type" v-if="accountList.length > 0">
+          {{ cardType }}
+        </div>
+        <div class="card-box" v-if="accountList.length == 0">
+          <div class="img-box">
+            <img src="@/assets/myAccount/bianzu2@2x.png" alt />
+          </div>
+          <div class="bindCard">暂无绑定卡</div>
+        </div>
+        <div class="card-box" v-else>
+          <div
+            @click="showDialog"
+            class="bank-info"
+            v-for="(item, index) in accountList"
+            :key="index"
+            :class="{
+              electronicCard: item.acctTypCd == '1',
+              electronicCardOne:
+                item.acctTypCd == '3' ||
+                item.acctTypCd == '4' ||
+                item.acctTypCd == '5',
+              goldCard: item.cardLevel == 'goldCard',
+              platinumCard: item.cardLevel == 'platinumCard',
+              diamondCard: item.cardLevel == 'diamondCard',
+              reportForLoss: item.cardState == '1'
+            }"
+          >
+            <div v-if="item.cardState == 1" class="loss">该卡已挂失冻结</div>
+            <div v-else>
+              <div class="info-top">
+                <div class="info-left">
+                  <div class="info-img">
+                    <img
+                      src="@/assets/myAccount/allCard/img_yinhangkalogo@2x.png"
+                      alt
+                    />
+                  </div>
+                  <p>{{ item.contTypCd == "2" ? "借记卡" : "电子账户" }}</p>
+                </div>
+                <div v-if="item.default" class="default">默认卡</div>
+              </div>
+              <div class="info-middle">
+                <p v-if="hideCardNum == '1'">
+                  <span>{{ item.vouId.substr(0, 4) }}</span>
+                  <span>****</span>
+                  <span>****</span>
+                  <span>****</span>
+                  <span>{{ item.vouId.substr(item.vouId.length - 3) }}</span>
+                </p>
+                <p v-else>
+                  <span>{{ item.vouId.substr(0, 4) }}</span>
+                  <span>{{ item.vouId.substr(4, 4) }}</span>
+                  <span>{{ item.vouId.substr(8, 4) }}</span>
+                  <span>{{ item.vouId.substr(12, 4) }}</span>
+                  <span>{{ item.vouId.substr(item.vouId.length - 3) }}</span>
+                </p>
+              </div>
+              <div class="info-bottom">
+                <div>
+                  <p>账户余额（人民币元）</p>
+                  <span v-if="item.balance - 0 >= 0">{{
+                    item.balance | Money
+                  }}</span>
+                  <span v-else>{{ item.balance }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Scroller>
+    <MyDialog
+      @cancel="cancel"
+      :show="alertShow"
+      :isClose="false"
+      @con="confirm"
+      confirmButtonText="去登录"
+      cancelButtonText="取消"
+    >
+      <p slot="content" class="dialog-content">
+        此功能需要登录使用
+      </p>
+    </MyDialog>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import Dialog from "@/components/Dialog/Dialog.vue";
+import { Button, Toast } from "vant";
+import { mapMutations } from "vuex";
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    [Button.name]: Button,
+    MyDialog: Dialog,
+    [Toast.name]: Toast
+  },
+  data() {
+    return {
+      cardType: "本行银行卡",
+      hideCardNum: "1", //账号保护 1 保护 0 不保护
+      alertShow: false, //是否显示Dialog
+      params: {}, //免登录查询的数据
+      //账户列表
+      accountList: [
+        // {
+        //   acctTypCd: "2",
+        //   cardLevel: "diamondCard",
+        //   contTypCd: "2",
+        //   acctName: "王凯",
+        //   userLevelCd: "1", //用户等级
+        //   bankNbr: "", //开户行号
+        //   vouId: "621483382030241",
+        //   cardState: "0",
+        //   balance: "400",
+        //   income: "400"
+        // }
+      ],
+      ecifContId: "",
+      flag: "1", //是否有一类户 0 没有一类户 1有一类户
+      twoFlag: "", //是否有二类户 0 没有一类户 1有一类户
+      //二类户的序列
+      showTwoTypeUpgrade: null,
+      openUpgrade: true, // 账户升级的打开状态
+      isLogin: false,
+      queryNoLogin: "0"
+    };
+  },
+  computed: {
+    //vuex的getter和state
+  },
+  created() {
+    // 查询卡列表;
+    window.NativeCall.getUserInfo(params => {
+      let res = JSON.parse(params);
+      this.updataLoginInfo(res);
+      this.ecifContId = res.EcifContId || res.CifNo;
+      this.queryNoLogin = res.queryNoLogin;
+      //判断是否免登录查询
+      if (this.queryNoLogin == "1") {
+        //免登录查询
+        window.NativeCall.logFreequery(params => {
+          this.params = JSON.parse(params);
+          this.QryUserAddCardListNoLogin();
+        });
+      } else {
+        //登录查询
+        this.accountLists();
+      }
+    });
+    //账户保护
+    window.NativeCall.hideCardNum(value => {
+      this.hideCardNum = value;
+    });
+    // this.login();
+  },
+  methods: {
+    //vuex数据存储
+    ...// 将 `this.updateUserId()` 映射为 `this.$store.commit('updateUserId',payload)`
+    mapMutations("myAccount", [
+      "updataCardLists",
+      "updataLoginInfo",
+      "updataHideCardNum"
+    ]),
+    //登录
+    login() {
+      this.request("login", {
+        BankId: "9999",
+        LoginId: "17591168228",
+        Password: "qwer1234",
+        EquipmentId: "125657",
+        LoginType: "R",
+        LoginMode: "1",
+        BranchId: "01001",
+        ChnlId: "62",
+        AddrInfo: "zhengz"
+      })
+        .then(res => {
+          this.updataLoginInfo(res);
+          this.ecifContId = res.EcifContId || res.CifNo;
+          this.isLogin = true;
+          console.log(res);
+          this.accountLists();
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //查询卡列表
+    accountLists() {
+      this.request("accountList", {
+        BankId: "9999",
+        BranchId: "0101",
+        ChnlId: "62"
+      })
+        .then(res => {
+          console.log(res);
+          this.isLogin = true;
+          this.accountList = res.QueryAddAccount; //取到卡列表
+          this.updataCardLists(this.accountList); //存入vuex
+          this.flag = res.Flag; //判断是否拥有一类户 1 有 0 无
+          this.twoFlag = res.Flag; // 判断是否拥有二类户 1 有 0 无
+          for (let i = 0; i < this.accountList.length; i++) {
+            if (this.accountList[i].contTypCd == "1") {
+              this.showTwoTypeUpgrade = i; //找到二类户序列
+              break;
+            }
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //免登录查询
+    QryUserAddCardListNoLogin() {
+      this.request(
+        "QryUserAddCardListNoLogin",
+        {
+          UserId: this.params.UserId,
+          AddrInfo: this.params.AddrInfo,
+          AddrDetailInfo: this.params.AddrDetailInfo,
+          AddrTude: this.params.AddrTude,
+          TermTypCd: this.params.TermTypCd,
+          TermOs: this.params.TermOs,
+          TermVer: this.params.TermVer,
+          TermResolution: this.params.TermResolution,
+          MacAddr: this.params.MacAddr,
+          EquipmentId: this.params.EquipmentId
+        },
+        false,
+        true
+      )
+        .then(res => {
+          console.log(res);
+          this.accountList = [...res.QueryAddAccount]; //取到卡列表
+        })
+        .catch(error => {
+          console.log(error);
+          if (
+            error._RejMessage ==
+            "您在当前设备上未开通免登录查询功能，请登录后查询！"
+          ) {
+            // Toast("请登录后在安全中心开启免登录查询功能");
+            this.goToLogin();
+          } else {
+            Toast(error._RejMessage);
+          }
+        });
+    },
+    //显示弹窗
+    showDialog() {
+      this.alertShow = true;
+    },
+    //关闭弹出框
+    cancel() {
+      this.alertShow = false;
+    },
+    //弹出框确认事件
+    confirm() {
+      this.alertShow = false;
+      this.goToLogin();
+    },
+    //去登陆
+    goToLogin() {
+      window.NativeCall.goToNativePage(
+        {
+          ClassName:
+            "com.example.zlv_master.activity.login.login.LoginActivity",
+          ios: "DLoginVController"
+        },
+        params => {
+          let res = JSON.parse(params);
+          this.updataLoginInfo(res);
+          this.ecifContId = res.EcifContId || res.CifNo;
+          this.queryNoLogin = res.queryNoLogin;
+          //判断是否免登录查询
+          this.accountLists();
+        }
+      );
+    },
+    //加挂
+    goAddAccount() {
+      if (this.ecifContId && this.accountList.length > 0) {
+        this.$router.push({
+          name: "addBankCard",
+          query: {
+            index: "2"
+          }
+        });
+      } else {
+        this.$router.push({
+          name: "addBankCard",
+          query: {
+            index: "1"
+          }
+        });
+      }
+    },
+    //卡号 卡类型E5 开户行名 加挂账号编号
+    goDetails(index) {
+      this.updataCardLists(this.accountList);
+      this.$router.push({
+        name: "bankCardDetails",
+        query: {
+          cardIndex: index,
+          flag: this.flag
+        }
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.outer {
+  .scrollerBox {
+    background: rgba(245, 246, 248, 1);
+    .upgrade {
+      background: #fff6ef;
+      padding: 0 px2vw(40);
+      display: flex;
+      justify-content: space-between;
+      .upgrade-left {
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(255, 110, 57, 1);
+        line-height: px2vw(68);
+      }
+      .upgrade-right {
+        span {
+          font-size: px2vw(24);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(62, 143, 255, 1);
+          margin-right: px2vw(40);
+          line-height: px2vw(68);
+          border-bottom: 1px solid rgba(62, 143, 255, 1);
+        }
+        i {
+          font-size: px2vw(21);
+          color: #ff6e39;
+          line-height: px2vw(68);
+        }
+      }
+    }
+    .content {
+      padding: 0 px2vw(40);
+      .card-box {
+        .img-box {
+          width: px2vw(300);
+          margin: 0 auto;
+          margin-top: px2vw(168);
+          img {
+            width: 100%;
+          }
+        }
+        .bindCard {
+          margin-top: px2vw(40);
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFangSC;
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+          line-height: px2vw(40);
+          text-align: center;
+        }
+      }
+      .card-type {
+        font-size: px2vw(28);
+        font-family: PingFangSC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(28);
+        padding: px2vw(30) 0 px2vw(20);
+      }
+      .bank-info {
+        height: px2vw(316);
+        background: url("~@/assets/myAccount/allCard/img_yinhnagka@2x.png")
+          no-repeat;
+        background-size: px2vw(670) px2vw(316);
+        background-position: top right;
+        padding: 0 px2vw(40);
+        margin-bottom: px2vw(30);
+        .loss {
+          padding-top: px2vw(147);
+          padding-left: px2vw(197);
+          font-size: px2vw(28);
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: rgba(38, 38, 38, 1);
+          margin: auto;
+        }
+        .info-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          .info-left {
+            display: flex;
+            align-items: center;
+            margin-top: px2vw(30);
+            .info-img {
+              width: px2vw(200);
+              margin-right: px2vw(20);
+              img {
+                width: 100%;
+              }
+            }
+            p {
+              font-size: px2vw(20);
+              font-family: PingFangSC;
+              font-weight: 300;
+              color: rgba(255, 255, 255, 1);
+            }
+          }
+          .default {
+            width: px2vw(98);
+            background: url("~@/assets/myAccount/allCard/img_biaoqian@2x(2).png")
+              no-repeat;
+            background-size: px2vw(98) px2vw(40);
+            background-position: top right;
+            font-size: px2vw(22);
+            font-family: PingFangSC;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 1);
+            line-height: px2vw(40);
+            text-align: center;
+            margin-top: px2vw(1.8);
+            margin-right: px2vw(0.3);
+          }
+        }
+        .info-middle {
+          font-size: px2vw(40);
+          margin-top: px2vw(30);
+          font-family: PingFangSC;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 1);
+          p {
+            display: flex;
+            justify-content: space-between;
+          }
+        }
+        .info-bottom {
+          display: flex;
+          justify-content: space-between;
+          margin-top: px2vw(30);
+          p {
+            font-size: px2vw(24);
+            font-family: PingFangSC;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 1);
+            margin-bottom: px2vw(8);
+          }
+          span {
+            font-size: px2vw(34);
+            font-family: PingFangSC;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 1);
+          }
+        }
+      }
+      .goldCard {
+        background: url("~@/assets/myAccount/allCard/img_yinhangka @2x.png")
+          no-repeat;
+        background-size: px2vw(670);
+      }
+      .platinumCard {
+        background: url("~@/assets/myAccount/allCard/img_bg_yinhangka@2x.png")
+          no-repeat;
+        background-size: px2vw(670);
+      }
+      .diamondCard {
+        background: url("~@/assets/myAccount/allCard/img-yinhangka@2x.png")
+          no-repeat;
+        background-size: px2vw(670);
+      }
+      .electronicCard {
+        background: url("~@/assets/myAccount/allCard/img_yinhangkaIIlei@2x.png")
+          no-repeat;
+        background-size: px2vw(670);
+      }
+      .electronicCardOne {
+        background: url("~@/assets/myAccount/allCard/img_yinhangkaIlei@2x.png")
+          no-repeat;
+        background-size: px2vw(670);
+      }
+      .reportForLoss {
+        background: url("~@/assets/myAccount/allCard/img_yinhangkadongjie@2x.png")
+          no-repeat;
+        background-size: px2vw(670);
+      }
+      .bank-card-content {
+        display: flex;
+        margin: 0 15px 10px;
+        border: 1px solid #816e6e;
+        border-radius: 5px;
+        font-size: 12px;
+        padding: 5px 5px 10px;
+        .card-left {
+          margin-left: 10px;
+        }
+        .card-middle {
+          .bank-name {
+            font-size: 10px;
+            color: #ad9f9f;
+          }
+          .bank-balance {
+            font-size: 6px;
+            color: #ad9f9f;
+            margin-top: 5px;
+            span {
+              font-size: 12px;
+              color: black;
+            }
+          }
+        }
+        .card-right {
+          flex: 1;
+          position: relative;
+        }
+      }
+      .add-card {
+        margin: 10px 15px;
+        height: 50px;
+        border: 1px solid #816e6e;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        p:first-child {
+          font-size: 14px;
+          color: blueviolet;
+          margin-bottom: 5px;
+        }
+      }
+      .footer-box {
+        margin-top: px2vw(100);
+        margin-bottom: px2vw(56);
+        .van-button {
+          background: none;
+          border: 1px solid rgba(62, 143, 255, 1);
+          color: #3e8fff;
+          .add-box {
+            display: flex;
+            justify-content: center;
+            .add {
+              width: px2vw(40);
+              margin-right: px2vw(20);
+              img {
+                width: 100%;
+                padding-top: px2vw(22);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,274 @@
+<template>
+  <div class="outer optional">
+    <Myheader :title="$route.meta.title" :params="headerParams" :backRouter="headerBackRouter">
+      <div class="edit" slot="left" @click="editShow = !editShow">{{editShow ? '完成' : '编辑'}}</div>
+    </Myheader>
+    <div class="search-bar">
+      <Search :placeholder="`闲钱理财，首选游小宝`" @search="handleSearch" @clear="handleSearch"></Search>
+      <!-- <div class="filter" @click="drawerShow = true">
+        筛选
+        <img src="~@/assets/fund/icon_shaixuan@2x.png" alt="">
+      </div> -->
+    </div>
+    <van-list v-model="loading" :finished="finished" @load="getData">
+      <el-table class="table" :data="tableData" style="width: 100%;height:100%;" header-row-class-name="header-row" @sort-change="sortChange" @row-click="toDetail">
+        <el-table-column label="基金名称" :width="240 | toPx" class-name="column1" fixed>
+          <template slot-scope="scope">
+            <div class="fund-name">
+              {{scope.row.productName}}
+            </div>
+            <div class="fund-num">
+              {{scope.row.productNo}}
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="prodValue" :width="180 | toPx" class-name="normal-column" sortable label="最新净值">
+          <template slot-scope="scope ">
+            <div class="fund-name">
+              {{scope.row.prodValue}}
+            </div>
+            <div class="fund-num">
+              {{getDate(scope.row.date)}}
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="dayFloat" :width="180 | toPx" class-name="normal-column red col-gray" sortable label="日涨跌幅">
+        </el-table-column>
+        <!-- <el-table-column prop="weekTrip" :width="180 | toPx" class-name="normal-column red" sortable label="周涨跌幅"> -->
+        </el-table-column>
+        <el-table-column prop="monthFloat" :width="180 | toPx" class-name="normal-column red col-gray" sortable label="月涨跌幅">
+        </el-table-column>
+        <!-- <el-table-column prop="halfYearTrip" :width="200 | toPx" class-name="normal-column red" sortable label="半年涨跌幅"> -->
+        </el-table-column>
+        <!-- <el-table-column prop="yearTrip" :width="180 | toPx" class-name="normal-column red col-gray" sortable label="年涨跌幅"> -->
+        </el-table-column>
+        <el-table-column prop="perFirstAmt" :width="180 | toPx" class-name="normal-column" sortable label="起购金额">
+          <template slot-scope="scope ">
+            <div>
+              {{scope.row.perFirstAmt | Money}}
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </van-list>
+    <div v-if="tableData.length > 0" class="add-btn" @click="toMarket">
+      <img src="~@/assets/fund/icon_tianjia@2x.png" alt=""> 添加自选
+    </div>
+    <!-- 表格无数据时显示 -->
+    <div v-else class="nodata-box">
+      <img :src="require(`@/assets/fund/img_zanwudingtou@2x.png`)" alt />
+      <p class="text">暂无自选基金，请点击下方按钮添加</p>
+      <div class="footer-box">
+        <div class="btn-box">
+          <van-button class="fund-btn" @click="toMarket">添加自选</van-button>
+        </div>
+      </div>
+    </div>
+    <!-- 点击header编辑后展示 -->
+    <edit v-if="editShow" :show.sync="editShow" :fundList="tableData" @submit="updateList"></edit>
+
+    <my-drawer :show.sync="drawerShow" @submit="filterFund"></my-drawer>
+  </div>
+</template>
+<script>
+import Header from "@/components/Header/Header.vue";
+import Scroller from "@/components/Scroller.vue";
+import Search from '@/components/Search.vue'
+import { mapGetters, mapActions, mapState, mapMutations } from "vuex";
+import Edit from './edit.vue'
+import MyDrawer from '../market/drawer.vue'
+import dayjs from 'dayjs'
+import { List } from 'vant';
+export default {
+  components: {
+    Myheader: Header,
+    Scroller,
+    Search,
+    Edit,
+    MyDrawer,
+    [List.name]: List
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: true,
+        rightShow: true
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      tableData: [],
+      tableData1: [{
+        name: '天聚红利灵活0',
+        number: "001647",
+        newValue: "1.3722",
+        date: '08-15',
+        dayTrip: '29.34%',
+        monthTrip: '29.4262%',
+        weekTrip: '28.4325%',
+        halfYearTrip: '30.2325%',
+        yearTrip: '22.2325%',
+        startMoney: '3000',
+        id: 0,
+      }, {
+        name: '天聚红利灵活1',
+        number: "001647",
+        newValue: "2.3722",
+        date: '08-15',
+        dayTrip: '12.34%',
+        weekTrip: '28.4325%',
+        halfYearTrip: '30.2325%',
+        yearTrip: '23.2325%',
+        startMoney: '2500',
+        monthTrip: '40.4262%',
+        id: 1,
+      }, {
+        name: '天聚红利灵活2',
+        number: "001647",
+        newValue: "3.3722",
+        date: '08-15',
+        dayTrip: '31.34%',
+        weekTrip: '28.4325%',
+        halfYearTrip: '30.2325%',
+        yearTrip: '24.2325%',
+        startMoney: '2000',
+        monthTrip: '24.4262%',
+        id: 2,
+      }, {
+        name: '天聚红利灵活4',
+        number: "001647",
+        newValue: "1.4722",
+        date: '08-15',
+        dayTrip: '24.34%',
+        weekTrip: '28.4325%',
+        halfYearTrip: '30.2325%',
+        yearTrip: '25.2325%',
+        startMoney: '4000',
+        monthTrip: '28.4262%',
+        id: 3,
+      }],
+      editShow: false,
+      drawerShow: false,
+      RiskGrade: '',
+      TACode: '',
+      searchName: '',
+      page: 1,
+      pageNum: 10,
+      finished: false,
+      loading: false,
+    };
+  },
+  filters: {
+    overDue(data, status) {
+
+    }
+  },
+  computed: {
+    ...mapState('common',['userInfo']),
+    startNum() {
+      let start = (this.page - 1) * this.pageNum + 1;
+      return start
+    },
+    endNum() {
+      // return 1
+      return this.page * this.pageNum
+    }
+  },
+  created() {
+  },
+  mounted() { },
+  methods: {
+    ...mapMutations('fund', ['SELECTFUND']),
+    toDetail(row) {
+      console.log(row, "row")
+      this.SELECTFUND(row);
+      this.$router.push({ name: 'fundDetail' })
+    },
+    getDate(val) {
+      return dayjs(val).format('MM-DD')
+    },
+    getData() {
+      this.loading = false;
+      let params = {
+        BranchId: 'PHNE',
+        ChnlId: '62',
+        ProductInfo: this.searchName,
+        // ProdValue: '',
+        // DayFloat: '',
+        // ProcudtAtrrib: this.active == 0 ? '' : this.active,
+        StartPageNum: this.startNum,
+        EndPageNum: this.endNum,
+        RiskGrade: this.RiskGrade,
+        TACode: this.TACode,
+        UserId: this.userInfo.CifNo,
+      }
+      this.request('FundOwnChoice', params).then(res => {
+        console.log("基金列表", res)
+        if (res.List.length > 0) {
+          if (!this.tableData) {
+            this.tableData = res.List;
+          } else {
+            this.tableData = [...this.tableData, ...res.List];
+          }
+          if (res.List.length < this.pageNum) {//获取的新数据小于每页数据量，则不需再次翻页
+            this.finished = true;
+          } else {
+            this.page++;
+          }
+
+        } else {
+          this.finished = true;
+        }
+        console.log("当前页码", this.page)
+        this.loading = false;
+      }).catch(err => {
+        this.loading = false;
+        this.finished = true;
+      })
+    },
+    // 筛选基金
+    filterFund(data) {
+      this.RiskGrade = data.RiskGrade;
+      if (data.RiskGrade == 0) {
+        this.RiskGrade = ""
+      }
+      this.TACode = data.TACode;
+      this.handleSearch();
+    },
+    handleSearch(data) {
+      this.page = 1;
+      this.searchName = data;
+      this.finished = false;
+      this.tableData = [];
+    },
+    // 跳转至基金超市
+    toMarket() {
+      this.$router.push({ name: 'market' })
+    },
+    sortChange(data) {
+      console.log(data, "排序")
+    },
+    updateList(data) {
+      console.log("新列表", data)
+      this.tableData = data;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.optional {
+  /deep/ .headerBox {
+    z-index: 1003;
+    .customerBtn {
+      width: auto;
+    }
+  }
+  .footer-box{
+    .btn-box .fund-btn{
+      color:#DA9A78;
+      border:px2vw(2) solid rgba(218,154,120,1);
+      background:#f5f6f8;
+    }
+  }
+}
+</style>

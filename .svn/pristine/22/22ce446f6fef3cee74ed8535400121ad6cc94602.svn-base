@@ -1,0 +1,447 @@
+<template>
+  <div class="outer">
+    <div>
+      <Myheader :title="$route.meta.title" :params="params"></Myheader>
+      <div class="content" v-if="inputShow">
+        <div class="top">
+          <img src="@/assets/assistant/coinChange/bg_img.png" />
+        </div>
+        <div class="input">
+          <van-field
+            label="姓名"
+            placeholder="请输入身份证姓名"
+            type="string"
+            v-model="form.name"
+            :class="['cardNo',{'active':form.name}]"
+          ></van-field>
+          <van-field
+            label="证件号码"
+            placeholder="请输入身份证号"
+            type="number"
+            v-model="form.CardNo"
+            :class="{'active':form.CardNo}"
+          ></van-field>
+          <van-field
+            label="手机号"
+            placeholder="请输入手机号"
+            type="tel"
+            v-model="form.PhoneNumber"
+            :class="{'active':form.PhoneNumber}"
+          ></van-field>
+          <van-field
+            label="兑换网点"
+            disabled
+            placeholder="请选择兑换网点"
+            v-model="form.ChangeNet"
+            right-icon="arrow"
+            @click="netSelect"
+            :class="{'active':form.ChangeNet}"
+          ></van-field>
+          <van-field
+            label="币种"
+            disabled
+            placeholder="请选择币种"
+            v-model="form.CoinType.text"
+            right-icon="arrow"
+            @click="selectCoin"
+            :class="{'active':form.CoinType}"
+          ></van-field>
+          <van-field
+            label="币值"
+            disabled
+            placeholder="请选择币值"
+            v-model="form.CoinValue.text"
+            right-icon="arrow"
+            @click="selectValue"
+            :class="{'active':form.CoinValue}"
+          ></van-field>
+          <van-field
+            label="数量"
+            type="number"
+            placeholder="请输入数量"
+            v-model="form.Number"
+            :class="{'active':form.Number}"
+          ></van-field>
+          <van-field label="总金额" disabled v-model="form.ATM" :class="{'active':form.ATM}"></van-field>
+          <van-field
+            label="兑换时间"
+            disabled
+            placeholder="请选择兑换时间"
+            v-model="form.ChangeTime"
+            right-icon="arrow"
+            @click="selectTime"
+            :class="{'active':form.ChangeTime}"
+          ></van-field>
+        </div>
+        <div class="btn">
+          <van-button @click="confirm">提交</van-button>
+        </div>
+      </div>
+      <selectDay :selectDay="selectDay"></selectDay>
+      <selectNet :selectNet="selectNet" :netList="netList"></selectNet>
+      <bottomPopup :Lists="Lists" :type="typeId" :show="bottomFlag" :title="title"></bottomPopup>
+    </div>
+    <div v-if="contentShow">
+      <Myheader :title="$route.meta.title" :params="params"></Myheader>
+      <div class="content hasInfo">
+        <div class="items" v-for="(item,index) in dataList" :key="index">
+          <div class="time">
+            <p class="plot"></p>
+            <p class="text">{{new Date(parseInt(item.reservationTime))|Format("yyyy-MM-dd")}}</p>
+          </div>
+          <div class="box">
+            <div class="appoint">
+              <img src="@/assets/assistant/coinChange/icon_lingqianbi@2x.png" alt />
+              <span class="type">{{item.reservationType=='1'?'零币兑换预约':'大额取现预约'}}</span>
+            </div>
+            <p class="net">{{item.reservationNet}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { Field, Button } from "vant";
+import selectDay from "../components/selectDay.vue";
+import selectNet from "../components/selectNet.vue";
+import bottomPopup from "../components/bottomPopup.vue";
+export default {
+  components: {
+    Myheader: Header,
+    [Field.name]: Field,
+    [Button.name]: Button,
+    selectDay,
+    selectNet,
+    bottomPopup
+  },
+  watch: {
+    "form.CoinValue.value": {
+      handler(val) {
+        this.changeAtm();
+      }
+    },
+    "form.Number": {
+      handler(val) {
+        this.changeAtm();
+      }
+    },
+    $route: {
+      handler() {
+        this.myReservation();
+      }
+    }
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false,
+        rightShow: false
+      },
+      form: {
+        CoinValue: {},
+        CoinType: {}
+      },
+      selectDay: false,
+      selectNet: false,
+      bottomFlag: false,
+      Lists: [],
+      typeId: null, //0币种1币值
+      title: "",
+      contentShow: false,
+      inputShow: false,
+      dataList: [],
+      netList: []
+    };
+  },
+  methods: {
+    netSelect() {
+      this.selectNet = true;
+    },
+    selectCoin() {
+      this.bottomFlag = true;
+      this.Lists = [{ text: "硬币", value: 1 }, { text: "纸币", value: 2 }];
+      this.typeId = 0;
+      this.title = "请选择币种";
+    },
+    selectValue() {
+      this.bottomFlag = true;
+      this.Lists = [
+        { text: "5角", value: 0.5 },
+        { text: "1元", value: 1 },
+        { text: "5元", value: 5 }
+      ];
+      this.title = "请选择币值";
+      this.typeId = 1;
+    },
+    selectTime() {
+      this.selectDay = true;
+    },
+
+    changeAtm() {
+      this.form.ATM =
+        this.form.CoinValue.value * parseInt(this.form.Number)
+          ? this.form.CoinValue.value * parseInt(this.form.Number)
+          : "";
+      // console.log(,this.form.Number)
+    },
+    confirm() {
+      let params = {
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "39",
+        ReserUserName: this.form.name,
+        IdenNum: this.form.CardNo,
+        Phone: this.form.PhoneNumber,
+        ExchangeNet: "人民路",
+        CurrencyType: this.form.CoinType.value,
+        CurrencyValue: this.form.CoinValue.value,
+        Quantity: this.form.Number,
+        ExchangeTime: new Date(this.form.ChangeTime).getTime()
+      };
+      this.request("ReservationCoinExchangeConfirm", { ...params }).then(
+        res => {
+          console.log(res);
+          this.secureKeyboard();
+        }
+      );
+    },
+    toResult() {
+      let params = {
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "39",
+        ReserUserName: this.form.name,
+        IdenNum: this.form.CardNo,
+        Phone: this.form.PhoneNumber,
+        ExchangeNet: "人民路",
+        CurrencyType: this.form.CoinType.value,
+        CurrencyValue: this.form.CoinValue.value,
+        Quantity: this.form.Number,
+        ExchangeTime: new Date(this.form.ChangeTime).getTime()
+      };
+      this.request("ReservationCoinExchange", { ...params }).then(res => {
+        this.$router.push({ name: "result", params: params });
+      });
+    },
+    //调用系统密码键盘
+    secureKeyboard() {
+      this.toResult();
+      window.NativeCall.SecureKeyboard(params => {
+        this.toResult();
+      });
+    },
+    //登录
+    login() {
+      let params = {
+        BankId: "9999",
+        LoginId: "15670538691",
+        Password: "123456asd",
+        EquipmentId: "123456asd",
+        ChnlId: "62",
+        LoginType: "R",
+        BranchId: "01001",
+        LoginMode: "1",
+        AddrInfo: "郑州"
+      };
+      window.NativeCall.getUserInfo(params => {
+        let res = JSON.parse(params);
+        this.$store.state.userInfo = res;
+        this.myReservation();
+        this.NetworkQry();
+      });
+      //测试
+      this.request("login", { ...params }).then(res => {
+        // console.log(this.$store);
+        this.$store.state.userInfo = res;
+        this.myReservation();
+        this.NetworkQry();
+      });
+    },
+    //我的预约
+    myReservation() {
+      let params = {
+        BankId: "9999",
+        BranchId: "1699",
+        ChnlId: "39",
+        ReservationType: "1",
+        StartTime: new Date().getTime(),
+        EndTime: new Date().getTime() + 365 * 24 * 60 * 60 * 1000
+      };
+      this.request("MyReservation", { ...params }).then(res => {
+        // console.log(res)
+        this.dataList = res.List ? res.List : [];
+        if (this.dataList.length > 0) {
+          this.contentShow = true;
+        } else {
+          this.inputShow = true;
+        }
+      });
+    },
+    //营业网点
+    NetworkQry() {
+      this.request("NetworkQry").then(res => {
+        // console.log(res);
+        this.netList = res.List;
+      });
+    }
+  },
+  created() {
+    this.login();
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.headerBox {
+  position: absolute;
+}
+.outer {
+  height: 100vh;
+}
+.content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  .top {
+    height: px2vw(320);
+    img {
+      width: 100%;
+    }
+  }
+  .input {
+    margin-top: px2vw(-52);
+  }
+  .btn {
+    padding: 0 px2vw(40);
+    padding-bottom: px2vw(40);
+    margin-top: px2vw(101);
+    .van-button {
+      width: 100%;
+      height: px2vw(90);
+      font-size: px2vw(34);
+      font-weight: 400;
+      color: rgba(255, 255, 255, 1);
+      background: linear-gradient(#6babff, #6c8af9);
+      border-radius: px2vw(45);
+    }
+  }
+}
+.content::-webkit-scrollbar {
+  display: none; /*隐藏滚动条*/
+}
+.hasInfo {
+  margin-top: px2vw(88);
+}
+.outer::-webkit-scrollbar {
+  display: none; /*隐藏滚动条*/
+}
+/deep/ .van-field__control {
+  font-size: px2vw(30);
+}
+// 控制placeholder颜色
+input::-webkit-input-placeholder {
+  /* WebKit browsers */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input:-moz-placeholder {
+  /* Mozilla Firefox 4 to 18 */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input::-moz-placeholder {
+  /* Mozilla Firefox 19+ */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+input:-ms-input-placeholder {
+  /* Internet Explorer 10+ */
+  font-size: px2vw(30);
+  color: #a8a8a8;
+}
+/deep/ .van-field__control:disabled {
+  color: #a8a8a8;
+  font-size: px2vw(30);
+}
+.active {
+  /deep/ .van-field__control:disabled {
+    color: #262626;
+    margin-top: px2vw(-6);
+    font-size: px2vw(30);
+  }
+}
+/deep/ .van-field__label {
+  width: px2vw(120);
+  margin-right: px2vw(40);
+}
+.signInfo /deep/ .van-field__label {
+  width: px2vw(180);
+}
+/deep/ .van-cell__title,
+/deep/ .van-cell__value {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.van-cell {
+  padding-left: px2vw(40);
+  padding-right: px2vw(40);
+}
+.cardNo {
+  border-top-right-radius: px2vw(20);
+  border-top-left-radius: px2vw(20);
+}
+
+.items {
+  .time {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: px2vw(40);
+    .plot {
+      width: px2vw(12);
+      height: px2vw(12);
+      background: #262626;
+      border-radius: 50%;
+      margin-left: px2vw(30);
+    }
+    .text {
+      font-size: px2vw(30);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+      margin-left: px2vw(9);
+    }
+  }
+  .box {
+    width: px2vw(660);
+    height: px2vw(220);
+    border-radius: px2vw(16);
+    background: #fff;
+    margin-top: px2vw(30);
+    margin-left: px2vw(60);
+    box-sizing: border-box;
+    padding: px2vw(25) px2vw(40) px2vw(24);
+    img {
+      width: px2vw(40);
+      height: px2vw(40);
+    }
+    .type {
+      font-size: px2vw(30);
+      font-family: PingFangSC-Medium, PingFang SC;
+      font-weight: 500;
+      color: rgba(38, 38, 38, 1);
+    }
+    .net {
+      font-size: px2vw(24);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+    }
+  }
+}
+</style>

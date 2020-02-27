@@ -1,0 +1,143 @@
+<template>
+  <van-popup v-model="show" position="bottom" :close-on-click-overlay="false" lazy-render>
+    <van-datetime-picker
+      v-model="currentDate"
+      type="date"
+      :title="title"
+      confirm-button-text="完成"
+      :min-date="minDate"
+      :max-date="maxDate==''?tenYear():maxDate"
+      :formatter="formatter"
+      @cancel="onCancel"
+      @confirm="onConfirm"
+    />
+  </van-popup>
+</template>
+
+<script>
+import { DatetimePicker, Popup } from "vant";
+export default {
+  components: {
+    [DatetimePicker.name]: DatetimePicker,
+    [Popup.name]: Popup
+  },
+  props: {
+    selectDay: {
+      require: false,
+      default: false
+    },
+    isExe: {
+      require: false
+    }
+  },
+  data() {
+    return {
+      currentDate: new Date(),
+      minDate: new Date(new Date().getTime()+24*60*60*1000),
+      maxDate: "",
+      show: false,
+      selectData: "",
+      title: ""
+    };
+  },
+  methods: {
+    formatter(type, value) {
+      if (type === "year") {
+        return `${value}年`;
+      } else if (type === "month") {
+        return `${value}月`;
+      } else {
+        return `${value}日`;
+      }
+      return value;
+    },
+    onCancel() {
+      this.show = false;
+      this.$parent.selectDay = false;
+    },
+    tenYear() {
+      let nowDate = new Date();
+      let year = new Date().getFullYear() + 10;
+      let month = new Date().getMonth()+1;
+      let day = new Date().getDate();
+      // console.log(day)
+      console.log(year + "/" + month + "/" + day)
+      return new Date(year + "/" + month + "/" + day);
+    },
+    onConfirm(picker) {
+      let year = new Date(picker).getFullYear();
+      let month = new Date(picker).getMonth() + 1;
+      let day = new Date(picker).getDate();
+      // console.log(picker);
+      let data =
+        year +
+        "-" +
+        (month > 9 ? month : "0" + month) +
+        "-" +
+        (day > 9 ? day : "0" + day);
+      this.selectData = data;
+      this.show = false;
+      this.$parent.selectDay = false;
+      if (this.isExe) {
+        this.minDate = picker;
+      } else {
+        this.maxDate = picker;
+      }
+    }
+  },
+  watch: {
+    selectDay: {
+      handler(val) {
+        this.show = val;
+      }
+    },
+    isExe: {
+      handler() {
+        if (this.isExe) {
+          this.title = "选择执行日期";
+        } else {
+          this.title = "选择截止日期";
+        }
+      }
+    },
+    selectData: {
+      handler(val) {
+        // console.log(this.isExe)
+        if (this.isExe) {
+          //是执行日期
+          this.$parent.exeTime = val;
+          //当执行日期大于截止时间时，让截止日期为空
+          this.$parent.endTime = '';
+        } else {
+          //是截止日期
+          this.$parent.endTime = val;
+          // console.log(this.$parent)
+        }
+      }
+    },
+    show: {
+      //监听父组件show变化
+      handler(val) {
+        if (val) {
+          // console.log(this.$parent.exeTime);
+          if (this.isExe) {
+            if (this.$parent.exeTime != "") {
+              //如果有执行时间，进行修改时，最小时间为new Date()，最大为十年后
+              this.minDate = new Date(new Date().getTime()+24*60*60*1000);
+              this.maxDate = this.tenYear();
+            }
+          } else {
+            if (this.$parent.endTime != "") {
+              //如果有截止时间，修改时，最大时间为十年后
+              this.maxDate = this.tenYear();
+            }
+          }
+        }
+      }
+    }
+  }
+};
+</script>
+
+<style>
+</style>

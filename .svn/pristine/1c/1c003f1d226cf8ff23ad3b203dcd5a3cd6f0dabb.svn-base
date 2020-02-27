@@ -1,0 +1,42 @@
+<template>
+  <nav class="nav">
+    <span class="iconfont iconic_back"
+          @click="$router.go(-1)"></span>
+    <p class="title">{{title}}</p>
+    <span class="tips"
+          @click="$router.push({path:'/rateList'})">利率表</span>
+  </nav>
+</template>
+<script>
+export default {
+  props: {
+    title: {
+      default: '',
+      type: String
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.nav {
+  margin-bottom: px2vw(20);
+  height: px2vw(88);
+  padding: 0 px2vw(20);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  .iconfont {
+    padding: px2vw(20);
+    font-size: px2vw(30);
+  }
+  .title {
+    font-size: px2vw(36);
+    font-weight: 500;
+  }
+  .tips {
+    padding: px2vw(20);
+    font-size: px2vw(30);
+    color: #008bff;
+  }
+}
+</style>

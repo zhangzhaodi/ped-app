@@ -1,0 +1,415 @@
+<template>
+  <div class="outer">
+    <Myheader :title="$route.meta.title" :params="params"></Myheader>
+    <div class="content">
+      <div class="top">
+        <div class="top_left" @click="todownor">
+          年利率
+            <div v-if="Sortshow">
+            <div v-if="condition">
+              <img src="@/assets/deposit/index/icon_up_red@2x.png" alt />
+              <img src="@/assets/deposit/index/icon_down@2x.png" alt />
+            </div>
+            <div v-else>
+              <img src="@/assets/deposit/index/icon_up@2x.png" alt />
+              <img src="@/assets/deposit/index/icon_down_red@2x.png" alt />
+            </div>
+          </div>
+          <div v-else>
+              <div>
+                <img src="@/assets/deposit/index/icon_up@2x.png" alt />
+                <img src="@/assets/deposit/index/icon_down@2x.png" alt />
+              </div>
+          </div>
+        </div>
+        <!-- <div>
+          期限
+          <i slot="left" class="iconfont little_mark">&#xe623;</i>
+        </div> -->
+      <van-dropdown-menu>
+        <van-dropdown-item v-model="value1" :options="option1"  @change="changevalue1" />
+      </van-dropdown-menu>
+      </div>
+      <div class="main">
+      <div class="biglist" v-for="(itme,inden) in  specialList">
+        <div class="bigliststyle" @click="gotodetail(itme)">
+          <div class="left">
+            <p>
+              {{itme.Rate | toFixedNum}}<span>%</span>
+            </p>
+            <h5>年利率</h5>
+          </div>
+          <div class="middle">
+            <p v-if="itme.TermType == 'D'">
+              {{itme.PrdName}}
+            </p>
+            <P class="span" v-if="itme.TermType == 'D'">
+              <span class="day">{{itme.TermCode}}天</span>
+              <h5 >
+              {{itme.MinFixAmt | toFixedNum }}元起购
+            </h5>
+            </P>
+            <p v-if="itme.TermType == 'M'">
+              {{itme.PrdName}}
+            </p>
+            <P  class="span" v-if="itme.TermType == 'M'">
+              <span class="day">{{itme.TermCode}}个月</span>
+              <h5 >
+              {{itme.MinFixAmt | toFixedNum }}元起购
+            </h5>
+            </P>
+            <p v-if="itme.TermType == 'Y'">
+              {{itme.PrdName}}
+            </p>
+            <P  class="span" v-if="itme.TermType == 'Y'">
+              <span class="day">{{itme.TermCode}}年</span>
+              <h5>
+              {{itme.MinFixAmt  | toFixedNum }}元起购
+            </h5>
+            </P>
+          </div>
+          <!-- <div class="right">
+            <p>
+              {{itme.PrdName}}
+            </p>
+          </div> -->
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+import { mapActions,mapMutations,mapState, mapGetters,} from 'vuex';
+import { DropdownMenu, DropdownItem } from 'vant';
+export default {
+  components: {
+    Myheader: Header
+  },
+  data() {
+    return {
+      params: {
+        leftShow: false
+      },
+      value1: "全部产品",
+      option1: [
+        { text: "全部产品", value: "全部产品"},
+        { text: '鑫农宝', value: '鑫农宝'},
+        { text: '鑫贵宝', value: '鑫贵宝'}
+      ],
+      Sortshow:false,
+      condition: true,
+      specialList:[],
+      SpecialList:[],//数据存储
+    };
+  },
+  created() {
+        this.request("ProdInfoQry", {
+          BankId: "9999",
+          BranchId: "62",
+          ChnlId:"62",
+          Type:'1',
+          ChannelType:"0310",
+          BusinessType:"PHNE"
+        },false)
+          .then(res => {
+            console.log(res);
+            this.specialList=res.List
+            this.SpecialList=res.List
+          })
+          .catch(error => {
+            console.log(error);
+          })
+  },
+  mounted() {
+  },
+  computed:{
+    ...mapGetters('deposit',['Setuserinfo']),
+    ...mapState("common", ["userInfo"]),
+  },
+  methods: {
+    ...mapActions("deposit",['setuserinfo']),
+    ...mapActions("common", ["getUserInfo"]),
+    todownor() {
+      let that = this
+      this.Sortshow = true
+      this.condition = !this.condition;
+        if(!that.condition){
+          if(that.SpecialList.length>0){
+            var data=that.SpecialList.sort(that.comparee("Rate"))
+            this.specialList = data
+          }
+        }
+        if(that.condition){
+            if(that.SpecialList.length>0){
+            var data=that.SpecialList.sort(that.compare("Rate"))
+            this.specialList = data
+          }
+        }
+    },
+    //对象排序 大小
+    comparee(prop){
+         return function (obj1, obj2) {
+        var val1 = obj1[prop];
+        var val2 = obj2[prop];
+        if (!isNaN(Number(val1)) && !isNaN(Number(val2))) {
+            val1 = Number(val1);
+            val2 = Number(val2);
+        }
+        if (val1 < val2) {
+            return 1;
+        } else if (val1 > val2) {
+            return -1;
+        } else {
+            return 0;
+        }
+     }
+    },
+    //对象排序 小大
+    compare(prop){
+         return function (obj1, obj2) {
+        var val1 = obj1[prop];
+        var val2 = obj2[prop];
+        if (!isNaN(Number(val1)) && !isNaN(Number(val2))) {
+            val1 = Number(val1);
+            val2 = Number(val2);
+        }
+        if (val1 < val2) {
+            return -1;
+        } else if (val1 > val2) {
+            return 1;
+        } else {
+            return 0;
+        }
+     }
+    },
+    changevalue1(value){
+      console.log(value)
+      if(value == "全部产品"){
+        this.specialList=this.SpecialList
+      }
+      if(value == "鑫农宝"){
+        var data=[]
+        if(this.SpecialList.length>0){
+          for(var i=0;i<this.SpecialList.length;i++){
+            if(this.SpecialList[i].PrdName.indexOf('鑫农宝') !== -1){
+                data.push(this.SpecialList[i])
+            }
+          }
+          this.specialList = data
+        }
+      }
+      if(value == "鑫贵宝"){
+        var data=[]
+        if(this.SpecialList.length>0){
+          for(var i=0;i<this.SpecialList.length;i++){
+            if(this.SpecialList[i].PrdName.indexOf('鑫贵宝') !== -1 ){
+                data.push(this.SpecialList[i])
+            }
+          }
+          this.specialList = data
+        }
+      }
+    },
+    gotodetail(e){
+    this.setuserinfo({...e});
+      console.log(e);
+      if(e.PrdName.indexOf('鑫贵宝') !== -1){
+         this.$router.push({
+        path:'/expensiveTreasurerollin',
+        query:{
+          e
+        }
+      })
+      }
+      if(e.PrdName.indexOf('鑫农宝') !== -1){
+      this.$router.push({
+        path:'/farmersTreasurerollin',
+        query:{
+          e
+        }
+      })
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+// 重置样式
+p,h1,h2,h3,h4,h5,img,div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  background: #fff;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  padding: 0 px2vw(40) 0;
+}
+//头部
+.top {
+  position:fixed;
+  height: px2vw(24);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: px2vw(90);
+  background: rgba(255, 255, 255, 1);
+  font-size: px2vw(24);
+  font-family: PingFangSC-Regular, PingFangSC;
+  font-weight: 400;
+  color: rgba(38, 38, 38, 1);
+  line-height: px2vw(24);
+    .iconfont {
+    font-size: px2vw(22);
+  }
+  .top_left {
+    display: flex;
+    align-items: center;
+    div {
+      display: flex;
+      flex-direction: column;
+      img {
+        height: px2vw(8);
+        width: px2vw(12);
+        margin-left: px2vw(10);
+      }
+    }
+  }
+}
+//详情
+.biglist{
+  .bigliststyle{
+  box-sizing: border-box;
+  display:flex;
+  align-items:center;
+  width: 100%;
+  justify-content:flex-start;
+  padding:px2vw(40);
+  border-bottom: px2vw(1) rgba(239,240,241,1) solid;
+  h5{
+    height:px2vw(24);
+    font-size:px2vw(24);
+    font-family:PingFangSC-Regular,PingFang SC;
+    font-weight:400;
+    color:rgba(168,168,168,1);
+    line-height:pc2vw(24);
+    margin-top: px2vw(22);
+  }
+  .left{
+    width: px2vw(150);
+    p{
+      height:px2vw(46);
+      font-size:px2vw(54);
+      font-family:PingFangSC-Medium,PingFangSC;
+      font-weight:500;
+      color:rgba(247,90,80,1);
+      line-height:px2vw(46);
+      span{
+        font-size:px2vw(36);
+        font-family:PingFangSC-Medium,PingFang SC;
+        font-weight:500;
+        color:rgba(247,90,80,1);
+      }
+      }
+    }
+    .middle{
+      margin-left: px2vw(90);
+      font-size:px2vw(32);
+      font-family:PingFangSC-Regular,PingFangSC;
+      font-weight:400;
+      color:rgba(38,38,38,1);
+      line-height:px2vw(44);
+      p{
+        width: 100%;
+      }
+      .span{
+        display:flex;
+        align-items: baseline;
+        h5{
+        height:px2vw(22);
+        line-height: px2vw(22);
+        background:linear-gradient(212deg,rgba(255,251,246,1) 0%,rgba(255,244,233,1) 100%);
+        border-radius:px2vw(4);
+        font-size:px2vw(22);
+        font-family:PingFangSC-Regular,PingFang SC;
+        font-weight:400;
+        color:rgba(227,158,92,1);
+        padding: px2vw(4) px2vw(8);
+        }
+      }
+      .yuexi{
+        width: 100%;
+      height:px2vw(28);
+      background:linear-gradient(155deg,rgba(58,138,255,0.1) 0%,rgba(58,180,255,0.1) 100%);
+      border-radius:px2vw(4);
+      font-size:px2vw(20);
+      line-height:px2vw(28);
+      font-weight:400;
+      color:rgba(62,143,255,1);
+      }
+      .day{
+        margin-right: px2vw(20);
+        height:px2vw(22);
+        line-height: px2vw(22);
+        background:linear-gradient(212deg,rgba(255,251,246,1) 0%,rgba(255,244,233,1) 100%);
+        border-radius:px2vw(4);
+        font-size:px2vw(22);
+        font-family:PingFangSC-Regular,PingFang SC;
+        font-weight:400;
+        color:rgba(227,158,92,1);
+        padding: px2vw(4) px2vw(8);
+      }
+      span{
+        color:rgba(38,38,38,1);
+      }
+    }
+    .right{
+      float: right;
+      text-align: end;
+      width: px2vw(370);
+      height:px2vw(32);
+      font-size:px2vw(30);
+      font-family:PingFangSC-Regular,PingFangSC;
+      font-weight:400;
+      color:rgba(38,38,38,1);
+      line-height:px2vw(32);
+    }
+  }
+}
+.main{
+  margin-top: px2vw(80);
+}
+// 下拉框
+.van-hairline--top-bottom::after{
+  border:none;
+}
+/deep/ .van-dropdown-menu__title .van-ellipsis{
+  height:px2vw(26);
+  font-size:px2vw(24);
+  font-family:PingFangSC-Regular,PingFang SC;
+  font-weight:400;
+  color:rgba(38,38,38,1);
+  line-height:px2vw(26);
+}
+/deep/ .van-cell {
+  padding: px2vw(20) px2vw(40);
+  box-sizing: border-box;
+}
+</style>

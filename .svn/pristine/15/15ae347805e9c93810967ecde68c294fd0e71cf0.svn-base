@@ -1,0 +1,553 @@
+<template>
+  <!-- 外部包裹 -->
+  <div class="outer">
+    <!-- 头部组件 -->
+    <Myheader
+      :title="$route.meta.title"
+      :params="headerParams"
+      :backRouter="headerBackRouter"
+      :backgroundColor="'#fff'"
+    ></Myheader>
+    <!-- <button @click="gogogo">试一下</button> -->
+    <div class="content">
+      <div class="article">
+        <van-dropdown-menu>
+          <van-dropdown-item v-model="value1" :options="option1" @change="changevalue1" />
+          <van-dropdown-item :title="selectDate" ref="dateDropDown">
+            <van-datetime-picker v-model="currentDate" type="year-month" :max-date="maxDate" :formatter="formatter" />
+            <footer class="footer-btn">
+              <button class="cancel-btn" @click="cancelDate">取消</button>
+              <button class="confirm-btn" @click="confirmDate">确认</button>
+            </footer>
+          </van-dropdown-item>
+          <van-dropdown-item v-model="value3" :options="option3" @change="changevalue3" />
+        </van-dropdown-menu>
+      </div>
+      <div class="main">
+      <div  v-show="ListData.length>0"  v-for="(item,i) in Listdata"   class="mian">
+        <div class="left">
+          <div v-if="item.IncomeOrOut=='收入'" class="left_de">
+            <img src="@/assets/deposit/index/icon_cunru@2x.png" alt class="img" />
+          </div>
+          <div v-else class="left_de">
+            <img src="@/assets/deposit/index/icon_zhiqu@2x.png" alt class="img" />
+          </div>
+          <div class="right_de">
+            <p>{{item.PrdName}}</p>
+            <h4>{{item.TrsTime | DateChangetime}}</h4>
+          </div>
+        </div>
+        <div class="right">
+          <p>{{item.TrsAmt}}</p>
+          <h5>成功</h5>
+        </div>
+      </div>
+    </div>
+     <div v-show="ListData.length == 0" class="empty">
+      <div class="img-box">
+        <img src="@/assets/deposit/index/img_kongzhuangtai@2x.png" alt />
+        <p>暂无记录</p>
+      </div>
+    </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Header from "@/components/Header/Header.vue";
+// import {DropMenu} from 'mand-mobile'
+import PopupRound from "@/components/PopupRound";
+import { DropdownMenu, DropdownItem, DatetimePicker } from "vant";
+import dayjs from 'dayjs';
+import Scroller from "@/components/Scroller.vue";
+import { mapActions, mapMutations, mapState, mapGetters } from "vuex";
+import { nextTick } from 'q';
+export default {
+  components: {
+    Myheader: Header,//头部组件
+    // [DropMenu.name]: DropMenu,
+    PopupRound,
+  },
+  data() {
+    return {
+      headerParams: {
+        leftShow: false,
+        rightShow: true,
+      },
+      headerBackRouter: {
+        // name:'confirm',
+      },
+      value1: "全部账户",
+      value3: "交易类型",
+      option1: [{ text: "全部账户", value: "全部账户" }],
+      option3: [
+        { text: "交易类型", value: "交易类型" },
+        { text: "存入", value: "收入" },
+        { text: "支取", value: "支出" },
+      ],
+      deposit: false,
+      draw: false,
+      Listdata: [],//展示
+      ListData:[],//数据更新
+      //是否显示提示信息
+      isShow: false,
+      //快捷选择查询时间
+      weekly: true,
+      threeMonth: false,
+      sixMonth: false,
+      selectDate: '交易日期',
+      currentDate: new Date(),
+      maxDate: new Date("2045/12/31"),
+      //默认查询记录时间
+      userList:[],
+    };
+  },
+  computed: {
+    ...mapState("common", ["userInfo"]),
+    nowMonth() {
+      return dayjs().format('YYYY-MM')
+    },
+  },
+  created() {
+    this.getallList();
+      //获取个人信息
+    window.NativeCall.getUserInfo(params => {
+        let par=JSON.parse(params)
+        this.userList = par.AcList;
+        this.userInfoAcList()
+    });
+  },
+  mounted() {
+
+  },
+  methods: {
+    ...mapActions("common", ["getUserInfo"]),
+    //     gogogo(){
+    //     this.$router.push({
+    //     path: "/win",
+    //   });
+    // },
+    changevalue1: function(value) {
+      console.log(value);
+      if (value == "全部账户") {
+        this.Listdata=this.ListData
+      } else {
+        this.getallListone(value);
+      }
+    },
+    changevalue3: function(value) {
+      console.log(value);
+      console.log(this.Listdata);
+      if (value == "交易类型") {
+        if(this.ListData.length != 0){
+          this.Listdata=this.ListData
+        }else{
+          this.getallList();
+        }
+      }
+      if(value == "收入"){
+        if(this.ListData.length != 0){
+          var  ListdataOut=[]
+          for(var i=0;this.ListData.length>i;i++){
+            if(this.ListData[i].IncomeOrOut=="收入"){
+                ListdataOut.push(this.ListData[i])
+                console.log(ListdataOut);
+            }
+          }
+          this.Listdata=ListdataOut
+        }
+      }
+       if(value == "支出"){
+        if(this.ListData.length!= 0){
+            var ListdataOut =[]
+            for(var i=0;this.ListData.length>i;i++){
+              if(this.ListData[i].IncomeOrOut=="支出"){
+                  ListdataOut.push(this.ListData[i])
+                  console.log(ListdataOut);
+              }
+            }
+            this.Listdata=ListdataOut
+          }
+      }
+    },
+    userInfoAcList() {
+      var UserList=[]
+      for (var i = 0; this.userList.length > i; i++) {
+        if(this.userList[i].department.name){
+  var a = this.userList[i].department.name +"("+ this.userList[i].no.substr(this.userList[i].no.length - 4) +")"
+        }else{
+  var a = this.userList[i].no.substr(0,4)+' **** '+this.userList[i].no.substr(this.userList[i].no.length - 4)
+        }
+          var obj = {
+          text: a,
+          value: this.userList[i].no
+        };
+        UserList.push(obj)
+      }
+      this.option1=[...this.option1,...UserList]
+    },
+    // 用户时间
+    // userdate() {
+      // console.log('aa');
+      //  if(this.ListData.length > 0 ){
+      //    console.log(this.ListData.length );
+      //    var b =[]
+      //      for (var j = 0; this.ListData.length > j; j++){
+      //        console.log(this.ListData[j].TrsTime.slice(0,6));
+      //         b.push(this.ListData[j].TrsTime.slice(0,6));
+      //       var a = [...new Set(b)];
+      //       var obj = {
+      //         text: a,
+      //         value: a
+      //       };
+      //       this.option2.push(obj);
+      //     }
+      //  }
+      // var par = this.formatDate(new Date());
+      // console.log(par);
+      // this.value2 =par
+      // this.getMonths()
+    // },
+      // 之前一年月份
+    //  getMonths() {
+    //   // var dataArr = [];
+    //   var data = new Date();
+    //   var year = data.getFullYear();
+    //   data.setMonth(data.getMonth() , 1); //获取到当前月份,设置月份   获取月份是应该+1的，月份0是1月 这里特殊处理
+    //   for (var i = 0; i < 12; i++) {
+    //     data.setMonth(data.getMonth() - 1); //每次循环一次 月份值减1
+    //     var m = data.getMonth() + 1;
+    //     m = m < 10 ? "0" + m : m;
+    //     // dataArr.push(data.getFullYear() + "-" + m);
+    //     var obj = {
+    //           text: data.getFullYear() + "-" + m,
+    //           value: data.getFullYear() + "-" + m
+    //         };
+    //         this.option2.push(obj);
+    //         console.log( this.option2)
+    //   };
+    // },
+    // 时间格式
+    // formatDate (date) {
+    // var y = date.getFullYear();
+    // var m = date.getMonth() + 1;
+    // m = m < 10 ? '0' + m : m;
+    // var d = date.getDate();
+    // d = d < 10 ? ('0' + d) : d;
+    // return y + '-' + m   // 日期 + '-' + d;
+    // },
+    //获取账户数据
+    getallList() {
+      this.request(
+        "BasicDetailQry",
+        {
+          BankId: "1999",
+          BranchId: "1999",
+          AccountNo: ""
+        },
+      false
+      )
+        .then(res => {
+          console.log(res);
+          let nowdatetime = dayjs().subtract(1, 'month').format('YYYYMMDDHHMMss')
+          this.ListData = res.List;
+          var  ListdataOut=[]
+          for(let item of res.List){
+            if(item.TrsTime - nowdatetime >= 0 ){
+                ListdataOut.push(item)
+            }
+          }
+          this.Listdata=ListdataOut
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    //单独个人数据
+    getallListone(data) {
+      this.request(
+        "BasicDetailQry",
+        {
+          BankId: "1999",
+          BranchId: "1999",
+          AccountNo: data
+        },
+        false
+      )
+        .then(res => {
+          console.log(res);
+          let nowdatetime = dayjs().subtract(1, 'month').format('YYYYMMDDHHMMss')
+          this.ListData = res.List;
+          var  ListdataOut=[]
+          for(let item of res.List){
+            if(item.TrsTime - nowdatetime >= 0 ){
+                ListdataOut.push(item)
+            }
+          }
+          this.Listdata=ListdataOut
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+   // 获取时间
+    formatter(type, value) {
+      if (type === 'year') {
+        return `${value}年`;
+      } else if (type === 'month') {
+        return `${value}月`
+      }
+      return value;
+    },
+    //关闭弹框
+    cancelDate() {
+      this.$refs.dateDropDown.toggle();
+    },
+    //时间更新
+    confirmDate() {
+      this.$refs.dateDropDown.toggle();
+      this.selectDate = dayjs(this.currentDate).format('YYYY-MM');
+      let nowDate = dayjs().format('YYYY-MM')
+      if (this.selectDate == nowDate) {
+        this.selectDate = nowDate
+      }
+      // this.currentDate = dayjs(this.currentDate).format('YYYY-MM');
+      console.log(this.selectDate)
+      var Time= this.selectDate.slice(0,4) + this.selectDate.slice(5,9)
+      console.log(Time)
+      if(this.ListData.length > 0){
+          var  ListdataOut=[]
+          for(let item of this.ListData){
+            console.log(item.TrsTime,typeof item.TrsTime, Time)
+            if(item.TrsTime.indexOf(Time) !== -1 ){
+                ListdataOut.push(item)
+            }
+          }
+          this.Listdata=ListdataOut
+        }
+    },
+  },
+  watch: {
+
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+// 重置样式
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+img,
+div {
+  margin: 0;
+  padding: 0;
+}
+// 外部样式
+.outer {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  width: 100vw;
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+// 内部样式
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+}
+.top {
+  height: px2vw(110);
+  background: rgba(255, 255, 255, 1);
+  display: flex;
+  padding: 0 px2vw(40) 0;
+  align-content: center;
+  justify-content: space-between;
+  margin-bottom: px2vw(20);
+  p {
+    height: px2vw(110);
+    font-size: px2vw(30);
+    font-family: PingFangSC-Regular, PingFangSC;
+    font-weight: 400;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(110);
+    letter-spacing: px2vw(1);
+  }
+}
+// 内容展示
+.mian {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 px2vw(40) 0;
+  height: px2vw(130);
+  background: #fff;
+  border-bottom: px2vw(1) rgba(239, 240, 241, 1) solid;
+  .left {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    height: px2vw(130);
+    .img {
+      height: px2vw(70);
+      width: px2vw(70);
+      margin-right: px2vw(10);
+    }
+    .right_de {
+      display: flex;
+      justify-content: space-around;
+      flex-direction: column;
+      height: px2vw(70);
+      p {
+        height: px2vw(30);
+        font-size: px2vw(30);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(38, 38, 38, 1);
+        line-height: px2vw(30);
+        letter-spacing: px2vw(1);
+      }
+      h4 {
+        margin-top: px2vw(16);
+        height: px2vw(24);
+        font-size: px2vw(24);
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(125, 125, 125, 1);
+        line-height: px2vw(24);
+      }
+    }
+  }
+  .right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    height: px2vw(70);
+    align-items: flex-end;
+    font-size: px2vw(38);
+    font-family: PingFangSC-Medium, PingFang SC;
+    font-weight: 500;
+    color: rgba(38, 38, 38, 1);
+    line-height: px2vw(38);
+    h5 {
+      margin-top: px2vw(14);
+      height: px2vw(24);
+      font-size:px2vw(28);
+      font-family:PingFangSC-Regular,PingFang SC;
+      font-weight:400;
+      color:rgba(49,204,105,1);
+      line-height: px2vw(24);
+    }
+  }
+}
+.article{
+  width: 100%;
+  position:fixed;
+}
+.main{
+  margin-top:px2vw(110);
+}
+
+/deep/ .van-cell {
+  padding: px2vw(20) px2vw(40);
+}
+// 时间显示
+/deep/ .select-date {
+  height: px2vw(90);
+  display: flex;
+  .van-dropdown-item__option--active {
+    background: #f9fafb;
+  }
+  .van-dropdown-menu__item {
+    height: px2vw(90);
+  }
+  .van-dropdown-item__content {
+    .van-overlay {
+      background: rgba(0, 0, 0, 1);
+      opacity: 0.5;
+    }
+    .van-cell--clickable {
+      .van-cell__title {
+        padding-left: px2vw(40);
+        color: inherit;
+      }
+      .van-cell__value {
+        padding-right: px2vw(40);
+        flex: none;
+      }
+    }
+  }
+  .van-popup .van-cell:not(:last-child)::after {
+    border-bottom: 2px solid #ebeef0;
+    left: px2vw(40);
+    width: px2vw(670);
+  }
+}
+// 显示确认按钮
+.footer-btn {
+  display: flex;
+  box-shadow: px2vw(-5) px2vw(-5) px2vw(20) 0px rgba(69, 69, 83, 0.5);
+  button {
+    height: px2vw(90);
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    &.cancel-btn {
+      color: #262626;
+      font-size: px2vw(30);
+      background: #fff;
+    }
+    &.confirm-btn {
+      color: #fff;
+      font-size: px2vw(30);
+      background: linear-gradient(
+        270deg,
+        rgba(107, 171, 255, 1) 0%,
+        rgba(108, 138, 249, 1) 100%
+      );
+    }
+  }
+}
+// 确认按钮
+/deep/ .van-picker {
+  .van-picker__toolbar {
+    display: none;
+  }
+  .van-picker__columns {
+    .van-hairline--top-bottom::after {
+      border-width: 0;
+    }
+  }
+  .van-picker__frame {
+    border-top: 1px solid rgba(229, 229, 229, 1);
+    border-bottom: 1px solid rgba(229, 229, 229, 1);
+  }
+}
+
+// 无数据
+.empty {
+  .img-box {
+    width: px2vw(300);
+    margin: px2vw(86) auto 0;
+    img {
+      width: 100%;
+    }
+    p {
+      font-size: px2vw(28);
+      font-family: PingFangSC;
+      font-weight: 400;
+      color: rgba(168, 168, 168, 1);
+      line-height: px2vw(40);
+      text-align: center;
+      margin-top: px2vw(26);
+    }
+  }
+}
+</style>

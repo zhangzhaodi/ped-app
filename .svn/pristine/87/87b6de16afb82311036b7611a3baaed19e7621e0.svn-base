@@ -1,0 +1,94 @@
+<template>
+  <van-popup class="popup-round security" round v-model="show" position="bottom">
+    <header>
+      <span class="iconfont close" @click="show = false">&#xe62b;</span>
+      {{title}}
+    </header>
+    <van-cell
+      @click="click(item)"
+      v-for="(item,index) in IDType"
+      :key="index"
+      :value="item"
+      clickable
+    ></van-cell>
+  </van-popup>
+</template>
+
+<script>
+import { Popup, Cell } from "vant";
+
+export default {
+  name: "captcha",
+  components: {
+    [Popup.name]: Popup,
+    [Cell.name]: Cell
+  },
+  props: {
+    // 输入项名（用于报错提示）
+    visible: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+      show: this.visible,
+      IDType: ["身份证", "户口簿", "护照","士兵证","警官证","军官证","港澳居民来往内地通行证","台湾同胞来往内地通行证","外国人居留证","其他"],
+      title: "请选择证件类型"
+    };
+  },
+  mounted() {},
+  computed: {},
+  methods: {
+    click(value) {
+      this.$emit("click", value);
+    }
+  },
+  watch: {
+    //监听父组件变化，并赋值
+    visible: {
+      handler(val) {
+        this.show = val;
+      }
+    },
+    show: {
+      handler(val) {
+        this.$emit("update:visible", val);
+      }
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.popup-round {
+  border-radius: px2vw(20) px2vw(20) 0px 0px;
+  header {
+    height: px2vw(100);
+    line-height: px2vw(100);
+    font-size: px2vw(34);
+    font-weight: 400;
+    text-align: center;
+    color: $color-text;
+    position: relative;
+    .iconfont {
+      font-size: px2vw(22);
+      color: #7d7d7d;
+    }
+    .close {
+      position: absolute;
+      left: px2vw(40);
+    }
+  }
+
+  .van-cell__value {
+    padding: 0 px2vw(40);
+    span {
+      font-size: px2vw(30);
+      font-family: PingFangSC-Regular, PingFang SC;
+      font-weight: 400;
+      color: rgba(38, 38, 38, 1);
+      letter-spacing: 1px;
+    }
+  }
+}
+</style>

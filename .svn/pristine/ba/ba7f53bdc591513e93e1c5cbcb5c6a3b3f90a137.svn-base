@@ -1,0 +1,72 @@
+<template>
+  <div class="footer">
+    <ul>
+      <li @click="goIndex">
+        <img v-if="show" src="@/assets/assetsLiabilities/footer/icon_tongji_press@2x.png" alt />
+        <img v-else src="@/assets/assetsLiabilities/footer/icon_tongji@2x.png" alt />
+        <p v-if="show">统计</p>
+        <span v-else>统计</span>
+      </li>
+      <li @click="goDetail">
+        <img v-if="show" src="@/assets/assetsLiabilities/footer/icon_mingxi@2x.png" alt />
+        <img v-else src="@/assets/assetsLiabilities/footer/icon_mingxi_press@2x.png" alt />
+        <span v-if="show">明细</span>
+        <p v-else>明细</p>
+      </li>
+    </ul>
+  </div>
+</template>
+<script>
+export default {
+  props: {
+    show: {
+      type: Boolean,
+      default: true
+    }
+  },
+  data() {
+    return {};
+  },
+  methods: {
+    goIndex() {
+      // this.$router.push({ name: "index" });
+        this.$router.go(-1)
+    },
+    goDetail() {
+      this.$emit('click')
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.footer {
+  height: px2vw(98);
+  border-top: 1px solid rgba(235, 238, 240, 1);
+  ul {
+    height: 100%;
+    padding: 0 px2vw(60);
+    display: flex;
+    justify-content: space-between;
+    font-size: px2vw(20);
+    font-family: PingFangSC;
+    font-weight: 400;
+    li {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      img {
+        width: px2vw(40);
+        margin-bottom: px2vw(10);
+      }
+      p {
+        color: rgba(62, 143, 255, 1);
+      }
+      span {
+        color: rgba(125, 125, 125, 1);
+      }
+    }
+  }
+}
+</style>

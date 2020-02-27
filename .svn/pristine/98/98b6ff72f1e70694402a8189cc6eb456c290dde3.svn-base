@@ -1,0 +1,371 @@
+<template>
+  <div class="outer">
+    <div class="header">
+      <span class="iconfont iconic_back" @click="goBack"></span>
+      <span class="title">{{$route.meta.title}}</span>
+      <span class="edit" @click="finish">{{$route.meta.right}}</span>
+    </div>
+
+    <section class="field-section">
+      <div class="filed_cell">
+        <div class="label">姓名</div>
+        <div class="filed">
+          <m-input :maxlength="20" v-model="form.PayeeName" :value="form.PayeeName" @blur="payeeNameCheck" placeholder="请输入真实姓名">
+          </m-input>
+        </div>
+      </div>
+    </section>
+
+    <section class="field-section">
+      <div class="filed_cell">
+        <div class="label">账户</div>
+        <div class="filed">
+          <m-input :maxlength="19" type="bankCard" v-model="form.PayeeAcctNbr" :value="form.PayeeAcctNbr" @blur="bankNumBlur" placeholder="请输入账户">
+          </m-input>
+        </div>
+      </div>
+
+      <div class="filed_cell picker">
+        <van-cell is-link @click="bankListShow =  true">
+          <template slot="title" class="label">
+            <span class="custom-title">开户银行</span>
+          </template>
+          <template>
+            <div v-if="form.BankName" style="color:#262626;">{{form.BankName}}</div>
+            <div v-else>请选择开户行</div>
+          </template>
+        </van-cell>
+      </div>
+      <div class="filed_cell picker">
+        <van-cell @click="areaShow =  true" is-link>
+          <template slot="title" class="label">
+            <span class="custom-title">开户城市</span>
+          </template>
+          <template>
+            <div v-if="form.openCity" style="color:#262626;">{{form.openCity}}</div>
+            <div v-else>请选择</div>
+          </template>
+        </van-cell>
+      </div>
+      <div class="filed_cell picker">
+        <van-cell @click="openBankNetWork" is-link>
+          <template slot="title" class="label">
+            <span class="custom-title">开户网点</span>
+          </template>
+          <template>
+            <div v-if="form.DotNbr" style="color:#262626;">{{form.DotName}}</div>
+            <div v-else>请选择</div>
+          </template>
+        </van-cell>
+      </div>
+    </section>
+    <section class="field-section">
+      <div class="filed_cell">
+        <div class="label">手机号</div>
+        <div class="filed">
+          <m-input type="phone" v-model="form.PayeePhoneNbr" :value="form.PayeePhoneNbr" placeholder="选填">
+          </m-input>
+        </div>
+      </div>
+    </section>
+    <div class="del">
+      <van-button type="default" :disabled="disabled" @click="handleSubmit" :close-on-click-overlay="false">确认</van-button>
+    </div>
+
+    <bankList :show.sync="bankListShow" :zl="true" @select="selectBank"></bankList>
+    <area-picker :visible.sync="areaShow" :title="`请选择开户地址`" @confirm="selectArea"></area-picker>
+    <!-- 开户网点 -->
+    <BankNetWorkList :show.sync="bankNetWorkListShow" :bankName="form.BankName" :bankId="form.bankId" :cityCode="form.PayeeCityCd" @select="selectBankNewWork"></BankNetWorkList>
+  </div>
+</template>
+
+<script>
+import mInput from "@/components/Input/bankCardNum.vue";
+import BankList from "@/components/Picker/bankList";
+import AreaPicker from '@/components/Picker/Area';
+import BankNetWorkList from "../components/bankNetWorkList";
+import { ActionSheet } from "vant";
+import { mapGetters, mapActions, mapState } from "vuex";
+import { Toast } from "vant";
+export default {
+  components: {
+    mInput,
+    BankList,
+    AreaPicker,
+    BankNetWorkList,
+    [Toast.name]: Toast,
+    [ActionSheet.name]: ActionSheet,
+  },
+  data() {
+    return {
+      form: {
+        PayeeName: '',
+        PayeeAcctNbr: '',
+        Reconciliation: '0',
+        PayeeProvinceCd: '',
+        PayeeCityCd: '',
+        BankName: '',
+        bankId: '',
+        DotNbr: '',
+        // IBPSFlag: '0',
+        PayeePhoneNbr: '',
+      },
+      bankListShow: false,
+      areaShow: false,
+      bankNetWorkListShow: false,
+      ibpsBankListshow: false,
+      ibpsBankList: [],//超网银行列表
+      area: {
+        provinceCode: '',
+        cityCode: ''
+      },
+      bankSelected: false,
+      nameValidator: false,
+    };
+  },
+  created() {
+  },
+  computed: {
+    disabled() {
+      let disabled = false;
+      if (!this.form.PayeeName) {
+        disabled = true;
+      }
+      if (!this.form.PayeeAcctNbr) {
+        disabled = true;
+      }
+      if (this.form.PayeeAcctNbr.length <= 12) {
+        disabled = true;
+      }
+      if (!this.bankSelected) {
+        disabled = true;
+      }
+      if (!this.form.DotNbr) {
+        disabled = true;
+      }
+      if (!this.form.openCity) {
+        disabled = true;
+      }
+      return disabled
+    }
+  },
+  methods: {
+    goBack() {
+      this.$router.go(-1);
+    },
+    finish() {
+      this.$store.state.payeeInfo = this.form
+      this.$router.push({ name: "allPayee" })
+      //   this.$router.push({ name: "edit", params: this.form });
+    },
+    openBankNetWork() {
+      // console.log(this.payee.cityCode, "开启判断")
+      if (!this.form.PayeeCityCd) {
+        Toast("请先选择省市")
+      } else {
+        this.bankNetWorkListShow = true;
+      }
+    },
+    bankNumBlur() {
+      if (this.form.PayeeAcctNbr && this.form.PayeeAcctNbr.length >= 13) {
+        // this.qryBankBin(this.form.PayeeAcctNbr);
+      }
+    },
+    //查询卡bin
+    qryBankBin(card) {
+      let params = {
+        AcctNbr: card,
+        //branchId: '2336',
+        ChnlId: '62'
+      }
+      this.request('BankBinQuery',
+        params, true
+      ).then((res) => {
+        console.log("查询kabin", res)
+        let { InnerCardFlag, OpenIbpsYn, BankId, Banks, PayeeBankNbr } = res;
+        let bankInfo = {};
+        if (Banks.length == 1) {//匹配到唯一银行时
+          bankInfo = Banks[0];
+        } else {
+          this.bankList = Banks;
+        }
+        // 是否为本行卡或别行卡标记
+        if (InnerCardFlag == 0) {
+          this.form.Reconciliation = 0;
+        } else if (InnerCardFlag == 1) {
+          this.form.Reconciliation = 1;
+        }
+        // // 超网标志
+        // if (OpenIbpsYn === 'Y') {
+        //   this.form.IBPSFlag = 1;
+        // } else {
+        //   this.form.IBPSFlag = 0;
+        // }
+
+        if (bankInfo) {//卡bin设置银行
+          this.$set(this.form, 'BankName', bankInfo.bankname)
+          this.$set(this.form, 'BankNbr', bankInfo.bankagent)//设置清算行号
+          this.$set(this.form, 'bankId', BankId)
+          this.form.BankName = bankInfo.bankname;
+          this.bankSelected = true;
+        }
+
+      }).catch((error) => {
+        console.log(error)
+      })
+    },
+    // 选择银行
+    selectBank(data) {
+      console.log(data, '选择银行');
+      this.form.BankName = data.bankName;
+      this.form.bankId = data.bankId;
+      this.bankSelected = true;
+      // 重置网点选择
+      this.form.DotNbr = '';
+      this.form.DotName = '';
+      this.form.openCity = '';
+      this.form.PayeeProvinceCd = '';
+      this.form.PayeeCityCd = '';
+
+      if (data.ibpsFlage === 'Y') {
+        this.form.IBPSFlag = 1;
+      } else {
+        this.form.IBPSFlag = 0;
+      }
+      if (data.bankName == '焦作中旅银行') {
+        this.form.Reconciliation = 1;
+      } else {
+        this.form.Reconciliation = 0;
+      }
+    },
+    // 选择省市
+    selectArea(data) {
+      let str = '';
+      for (let item of data) {
+        str += item.text
+      }
+      this.form.openCity = str;
+      this.form.PayeeProvinceCd = data[0].provinceCode;
+      this.form.PayeeCityCd = data[1].cityCode;
+      this.form.DotNbr = '';
+      this.form.DotName = '';
+      this.areaShow = false;
+    },
+    // 获取省市名称
+    getAreaName(data) {
+      // console.log(data, "城市变化")
+      this.form.PayeeProvinceCd = data[0].value;
+      this.form.PayeeCityCd = data[1].value;
+      this.form.openCity = data[0].text + data[1].text;
+    },
+
+    //选择开户网点
+    selectBankNewWork(data) {
+      // console.log('选择开户网点', data)
+      this.form.BankNbr = data.directbankno;
+      this.form.DotNbr = data.bankno;
+      this.form.DotName = data.bankname;
+    },
+    payeeNameCheck() {
+      var regEn = /[`+~!@#$%^&*()_\-\=\\+<>?:"{},\/;'[\]]/g;
+      var regCn = /[·！#￥（——）：；“”‘、，|《。》？、【】[\]]/g;
+      var regBlank = /\s/g;
+      let str = '+86150 3182 0102'  
+      console.log(str.replace(/[+-\s]/g, '').slice(-11));
+      // console.log( / /.test(this.form.PayeeName))
+      // console.log(String(str).replace(/\s|\-/g, '').substring(0, 11))
+      // console.log(pwdblank.test(this.form.PayeeName))
+      if(regBlank.test(this.form.PayeeName)){
+        this.$toast("收款人输入错误,请重新输入");
+        return false;
+      }
+      if (regEn.test(this.form.PayeeName) || regCn.test(this.form.PayeeName)) {
+        this.$toast("收款人输入错误,请重新输入");
+        return false;
+      }
+      return true
+    },
+    async handleSubmit() {
+      let validateRes = await this.payeeNameCheck();
+      if (!validateRes) {
+        return
+      }
+      let params = {
+        //branchId: '2336',
+        ChnlId: '62',
+        InsertFlag: 'Y', //如果是主动添加收款人名册添加字段  Y则是主动添加 N是转账结果后添加的
+        PayeeAcctNbr: this.form.PayeeAcctNbr,//收款人账号
+        PayeeName: this.form.PayeeName,
+        Reconciliation: this.form.Reconciliation,
+        BankNbr: this.form.BankNbr,//收款行清算行行号
+        BankName: this.form.BankName,
+        PayeeProvinceCd: this.form.PayeeProvinceCd,//收款行省码
+        PayeeCityCd: this.form.PayeeCityCd,//收款行省码
+        PayeePhoneNbr: this.form.PayeePhoneNbr,
+        // IBPSFlag: this.form.IBPSFlag,
+        DotNbr: this.form.DotNbr,//网点号  行内和超网非必传
+        DotName: this.form.DotName,//网点号  行内和超网非必传
+      }
+      this.request('PayeeRosterEntry',
+        params
+      ).then((res) => {
+        let { data } = res;
+        if (res.RespCode == '000000') {
+          if(res.Msg == 'Y'){
+            Toast("用户已存在")
+          }else{
+            Toast("添加成功")
+          }
+          this.$router.go(-1);
+        }
+
+      }).catch((error) => {
+        console.log(error)
+      })
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+@import "../../../../assets/IconFont/iconfont.css";
+// @import "../../../../styles/transferAccounts/common.scss";
+.outer {
+  width: 100%;
+  height: 100%;
+  background-color: #f5f6f8;
+  font-size: px2vw(30);
+  font-family: PingFangSC;
+  color: #262626;
+  line-height: px2vw(30);
+  .header {
+    height: px2vw(88);
+    background-color: #fff;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-content: center;
+    align-items: center;
+    padding: 0 px2vw(40);
+    .title {
+      font-size: px2vw(36);
+      line-height: px2vw(36);
+    }
+    .iconfont {
+      font-size: px2vw(32);
+    }
+  }
+}
+
+.del {
+  padding: 0 px2vw(40);
+  /deep/ .van-button {
+    width: px2vw(670);
+    height: px2vw(90);
+    color: #fff;
+    background:linear-gradient(270deg,rgba(107,171,255,1) 0%,rgba(108,138,249,1) 100%);
+    font-size: px2vw(34);
+    border-radius: px2vw(45);
+    margin-top: px2vw(101);
+  }
+}
+</style>

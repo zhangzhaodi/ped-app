@@ -1,0 +1,279 @@
+<template>
+  <div class="outer">
+    <Myheader></Myheader>
+    <div class="tab">
+      <p :class="{'active':nowIndex==1}" @click="tab(1)">跨行收款</p>
+      <p :class="{'active':nowIndex==2}" @click="tab(2)">手机号收款</p>
+    </div>
+    <allGathering :Lists="Lists"></allGathering>
+    <!-- <p @click="gotopackage" class="toGathering">跳转到别的模块</p> -->
+    <div class="toGathering" @click="toGathering">发起跨行收款</div>
+  </div>
+</template>
+
+<script>
+import header from "../components/header";
+import allGathering from "../components/allGathering";
+// import { mapActions, mapState } from "vuex";
+export default {
+  components: {
+    Myheader: header,
+    allGathering
+  },
+  data() {
+    return {
+      nowIndex: 1,
+      hasRecord: null, //是否有数据
+      data: "",
+      param: null,
+      Lists: []
+    };
+  },
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      // console.log(from);
+      if (!from.name) {
+        // vm.$store.state.fundCollection = {};
+        if (vm.$store.state.nowIndex) {
+          vm.nowIndex = vm.$store.state.nowIndex;
+        }
+        vm.login();
+      } else {
+        vm.getUserList();
+      }
+    });
+  },
+  methods: {
+    // ...mapActions("common", ["getUserInfo"]),
+    tab(val) {
+      //tab切换
+      this.nowIndex = val;
+      this.$store.state.nowIndex = val;
+      if (val == 2) {
+        this.$router.replace({ name: "startGathering" });
+      }
+    },
+    //获取用户的加挂账号
+    getList(PayeeAcNo) {
+      let params = {
+        BankId: "9999",
+        CustomerNo: this.$store.state.userInfo.CifNo,
+        ChildBatchNum: "1",
+        LeftChildNum: "5",
+        LoginType: "R",
+        BranchId: "7010",
+        ChnlId: "62",
+        //测试
+        PayeeAcNo: PayeeAcNo
+      };
+      this.request("CrossBankGetheringQry", params)
+        .then(res => {
+          // console.log(res);
+          this.$store.state.fundCollection.signInfo = res.AddInfo;
+          let arr = [];
+          //把PayerAcList和addInfo的数据放一块
+          res.PayerAcList.map((item, index) => {
+            arr.push({ ...item, ...res.AddInfo[index] });
+          });
+          // console.log(arr)
+          // this.$store.state.fundCollection.payerList = res.PayerAcList; //正确的
+          this.$store.state.fundCollection.payerList = arr; //正确的
+          //false时不加载，true时加载
+          this.$store.state.fundCollection.PayerAcListFlag = true;
+          this.getUserList();
+          // this.$store.state.fundCollection.payerList = res.RecverAcList;
+        })
+        .catch(err => {
+          this.$store.state.fundCollection.payerList = [];
+          // this.$store.state.nowIndex = 1;
+          this.$router.replace({ name: "startGathering" });
+          this.$router.options.routes[2].meta.goToNative = true;
+        });
+    },
+    //收款卡
+    accountLists() {
+      //付款卡
+      let params = {
+        BankId: "9999",
+        BranchId: "0101",
+        ChnlId: "62"
+      };
+      this.request("accountList", params)
+        .then(res => {
+          // console.log(res);
+          //收款人列表
+          this.$store.state.fundCollection.cardList = res.QueryAddAccount;
+          this.$store.state.fundCollection.payeer = this.$store.state.fundCollection.cardList[0].vouId;
+          // console.log(this.$store.state.fundCollection.payeer);
+          this.getList(this.$store.state.fundCollection.cardList[0].vouId);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    getUserList() {
+      let params = {
+        ExtTransTypCd: "1132"
+      };
+      //获取进行中的列表
+      if (!this.$store.state.fundCollection.executeListFlag) {
+        this.request("QueryTransBookingList", params).then(res => {
+          // console.log(res)
+          this.Lists = res.ExecuteList;
+          if (res.ExecuteList.length <= 0) {
+            this.$router.replace({ name: "startGathering" });
+            this.$router.options.routes[2].meta.goToNative = true;
+          } else {
+            this.$store.state.fundCollection.executeList = res.ExecuteList;
+            this.$store.state.fundCollection.executeListFlag = true;
+          }
+        });
+      } else {
+        this.Lists = this.$store.state.fundCollection.executeList;
+        if (this.Lists.length <= 0) {
+          this.$router.replace({ name: "startGathering" });
+          this.$router.options.routes[2].meta.goToNative = true;
+        }
+      }
+    },
+    login() {
+      let params = {
+        BankId: "9999",
+        LoginId: "15670538691",
+        Password: "123456asd",
+        // EquipmentId: "cs123321",
+        EquipmentId: "123456asd",
+        ChnlId: "62",
+        LoginType: "R",
+        BranchId: "01001",
+        LoginMode: "1",
+        AddrInfo: "郑州"
+      };
+      // let params={
+      //   BankId:"9999",
+      //   LoginId:"13253628236",
+      //   Password:"Wgy12347644",
+      //   EquipmentId:"72064de3b8c29d57d8368beb642b633a",
+      //   LoginExtInfo:"147259",
+      //   ChnlId:"62",
+      //   LoginType:"R",
+      //   BranchId:"70010",
+      //   LoginMode:"1",
+      //   AddrDetailInfo:"河南郑州",
+      //   AddrTude:"40n50e",
+      //   AddrInfo:""
+      // }
+      // let params={
+      //   BankId:"9999",
+      //   LoginId:"13588666688",
+      //   Password:"qa147258",
+      //   EquipmentId:"qa147258",
+      //   LoginExtInfo:"147259",
+      //   ChnlId:"62",
+      //   LoginType:"R",
+      //   BranchId:"70010",
+      //   LoginMode:"1",
+      //   AddrDetailInfo:"河南郑州",
+      //   AddrTude:"40n50e",
+      //   AddrInfo:"周口"
+      // }
+      // let params={
+      //   BankId:"9999",
+      //   LoginId:"18800113916",
+      //   Password:"1qaz2wsx",
+      //   EquipmentId:"1qaz2wsx",
+      //   LoginExtInfo:"147259",
+      //   ChnlId:"62",
+      //   LoginType:"R",
+      //   BranchId:"70010",
+      //   LoginMode:"1",
+      //   AddrDetailInfo:"河南郑州",
+      //   AddrTude:"40n50e",
+      //   AddrInfo:"周口"
+      // }
+      if (process.env.NODE_ENV == "development") {
+        this.request("login", params)
+          .then(res => {
+            this.$store.state.userInfo = res;
+            this.accountLists();
+          })
+          .catch(err => {});
+      } else {
+        window.NativeCall.getUserInfo(params => {
+          let res = JSON.parse(params);
+          this.$store.state.userInfo = res;
+          this.accountLists();
+        });
+      }
+    },
+    // gotopackage() {
+    //   let params={
+    //     package:'manageMoney',
+    //     router:'prodNetWorth',
+    //     routerDic:''
+    //   }
+    //   window.NativeCall.goToPackage(params);
+    // },
+
+    toGathering() {
+      this.$router.push({ name: "startGathering" });
+    }
+  },
+  created() {}
+};
+</script>
+
+<style lang="scss" scoped>
+.outer {
+  background-color: #f5f6f8;
+  // padding-bottom: px2vw(59)
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.tab {
+  padding: 0 px2vw(40);
+  height: px2vw(90);
+  background-color: #fff;
+  display: flex;
+  flex-direction: row;
+  p {
+    font-size: px2vw(26);
+    font-family: PingFangSC;
+    font-weight: 400;
+    color: #7d7d7d;
+    line-height: px2vw(90);
+    flex: 1;
+    text-align: center;
+  }
+  .active {
+    font-size: px2vw(30);
+    font-weight: 500;
+    color: #262626;
+    position: relative;
+  }
+  .active::after {
+    content: "";
+    width: px2vw(32);
+    height: px2vw(4);
+    background-color: #262626;
+    border-radius: px2vw(2);
+    position: absolute;
+    bottom: px2vw(10);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+  }
+}
+.toGathering {
+  height: px2vw(118);
+  width: 100%;
+  background-color: #fff;
+  box-shadow: px2vw(-5) px2vw(-5) px2vw(20) 0px rgba(69, 69, 83, 0.05);
+  font-size: px2vw(34);
+  font-weight: 400;
+  color: rgba(62, 143, 255, 1);
+  line-height: px2vw(118);
+  text-align: center;
+}
+</style>
